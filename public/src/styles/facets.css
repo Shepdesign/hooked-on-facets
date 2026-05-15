@@ -243,6 +243,184 @@
     }
 }
 
+/* Swipe deck — stacked cards driven by --hof-swipe-x (unitless px)
+   and --hof-swiper-pos (0 = topmost). */
+.hof-facet-swiper {
+    --hof-swiper-card-w: 240px;
+    --hof-swiper-card-h: 300px;
+    --hof-swiper-back-offset: 8px;
+}
+
+.hof-swiper-deck {
+    position: relative;
+    width: var(--hof-swiper-card-w);
+    height: var(--hof-swiper-card-h);
+    margin: 0 auto var(--hof-space);
+    /* Allow vertical scroll, but the pointer-events code captures horizontal. */
+    touch-action: pan-y;
+    user-select: none;
+}
+
+.hof-swiper-card {
+    position: absolute;
+    inset: 0;
+    background: var(--hof-swiper-color, var(--hof-surface));
+    background-image: var(--hof-swiper-image, none);
+    background-size: cover;
+    background-position: center;
+    border-radius: calc(var(--hof-radius-ui) * 2);
+    border: 1px solid var(--hof-border);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    cursor: grab;
+    transform:
+        translateX(calc(var(--hof-swipe-x, 0) * 1px))
+        translateY(calc(var(--hof-swiper-pos, 0) * var(--hof-swiper-back-offset)))
+        scale(calc(1 - var(--hof-swiper-pos, 0) * 0.04))
+        rotate(calc(var(--hof-swipe-x, 0) * 0.05deg));
+    z-index: calc(100 - var(--hof-swiper-pos, 0));
+    transition: transform 320ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.hof-swiper-card[data-hof-dragging] {
+    transition: none;
+    cursor: grabbing;
+}
+
+.hof-swiper-card[data-hof-swiped] {
+    transition: transform 420ms cubic-bezier(0.5, 0, 0.7, 1), opacity 420ms;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.hof-swiper-card-visual {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--hof-bg) 0%, var(--hof-surface) 100%);
+    z-index: -1;
+}
+
+.hof-swiper-card-text {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: 12px 14px;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.55) 100%);
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--hof-space);
+    font-weight: 600;
+}
+
+.hof-swiper-card-text .hof-facet-count {
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 400;
+}
+
+/* Like / Nope stamps — opacity scales with drag distance. */
+.hof-swiper-stamp {
+    position: absolute;
+    top: 16px;
+    padding: 4px 10px;
+    border: 3px solid currentColor;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 1px;
+    pointer-events: none;
+}
+
+.hof-swiper-stamp-right {
+    right: 16px;
+    color: #16a34a;
+    transform: rotate(12deg);
+    opacity: clamp(0, calc(var(--hof-swipe-x, 0) / 80), 1);
+}
+
+.hof-swiper-stamp-left {
+    left: 16px;
+    color: var(--hof-danger);
+    transform: rotate(-12deg);
+    opacity: clamp(0, calc(var(--hof-swipe-x, 0) * -1 / 80), 1);
+}
+
+/* Empty deck */
+.hof-swiper-done {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--hof-space);
+    background: var(--hof-surface);
+    border: 1px dashed var(--hof-border);
+    border-radius: calc(var(--hof-radius-ui) * 2);
+    color: var(--hof-muted);
+    text-align: center;
+    margin: 0;
+    padding: var(--hof-space);
+}
+
+/* Buttons under the deck */
+.hof-swiper-controls {
+    display: flex;
+    justify-content: center;
+    gap: calc(var(--hof-space) * 2);
+}
+
+.hof-swiper-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid var(--hof-border);
+    background: var(--hof-surface);
+    color: var(--hof-text);
+    font-size: 1.25rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 120ms;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hof-swiper-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.hof-swiper-btn:focus-visible {
+    outline: 2px solid var(--hof-primary);
+    outline-offset: 2px;
+}
+
+.hof-swiper-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.hof-swiper-include { color: #16a34a; }
+.hof-swiper-skip    { color: var(--hof-danger); }
+
+.hof-swiper-reset {
+    width: auto;
+    height: auto;
+    padding: 6px 14px;
+    border-radius: var(--hof-radius-ui);
+    font-size: 0.875rem;
+    box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hof-swiper-card,
+    .hof-swiper-card[data-hof-swiped] {
+        transition: opacity 200ms;
+    }
+}
+
 /* Reset link */
 .hof-reset {
     display: inline-block;

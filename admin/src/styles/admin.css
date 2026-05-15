@@ -384,6 +384,62 @@
     border: 1px solid var(--hof-border);
 }
 
+.hof-preview-swiper {
+    position: relative;
+    width: 140px;
+    height: 180px;
+    margin: 0 auto var(--hof-space);
+}
+
+.hof-preview-swiper-card {
+    position: absolute;
+    inset: 0;
+    border-radius: calc(var(--hof-radius-ui) * 2);
+    border: 1px solid var(--hof-border);
+    background: linear-gradient(135deg, var(--hof-bg) 0%, var(--hof-surface) 100%);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 12px;
+}
+
+.hof-preview-swiper-card-back-1 {
+    transform: translateY(6px) scale(0.96);
+    z-index: 1;
+}
+
+.hof-preview-swiper-card-back-2 {
+    transform: translateY(12px) scale(0.92);
+    z-index: 0;
+}
+
+.hof-preview-swiper-card-label {
+    font-size: 0.75rem;
+    color: var(--hof-muted);
+}
+
+.hof-preview-swiper-controls {
+    display: flex;
+    justify-content: center;
+    gap: var(--hof-space);
+}
+
+.hof-preview-swiper-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--hof-surface);
+    border: 1px solid var(--hof-border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+
+.hof-preview-swiper-btn-skip    { color: var(--hof-danger); }
+.hof-preview-swiper-btn-include { color: #16a34a; }
+
 /* ── Tokens panel ─────────────────────────────────────────────────────── */
 
 .hof-tokens {

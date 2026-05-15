@@ -9,9 +9,12 @@
 import './styles/facets.css';
 import { Store, buildUrl } from './state.js';
 import { refresh } from './refresh.js';
+import { initSwiper } from './swiper.js';
 
 const store = new Store();
 store.hydrateFromUrl();
+
+initSwiper();
 
 const DEBOUNCE_MS = 250;
 
@@ -53,7 +56,7 @@ document.addEventListener('change', (e) => {
     const display = facetEl.getAttribute('data-hof-display');
     if (!name) return;
 
-    if (display === 'checkbox' || display === 'swatch') {
+    if (display === 'checkbox' || display === 'swatch' || display === 'swiper') {
         const values = Array.from(
             facetEl.querySelectorAll('input[type="checkbox"]:checked')
         ).map((cb) => cb.value);

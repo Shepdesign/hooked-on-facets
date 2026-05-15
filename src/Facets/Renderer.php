@@ -53,6 +53,7 @@ final class Renderer {
             'range'  => $this->render_range( $facet, $current_value, $counts ),
             'search' => $this->render_search( $facet, $current_value ),
             'swatch' => $this->render_swatch( $facet, (array) $current_value, $counts ),
+            'swiper' => $this->render_swiper( $facet, (array) $current_value, $counts ),
             default  => $this->render_checkbox( $facet, (array) $current_value, $counts ),
         };
     }
@@ -272,6 +273,136 @@ final class Renderer {
                     </li>
                 <?php endforeach; ?>
             </ul>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Swipe-deck facet. Cards stack; user swipes right to include a value,
+     * left to skip. Multi-select OR semantics — backed by the same
+     * `hof[<name>][]=value` URL shape as checkbox/swatch, so the Resolver
+     * doesn't care which renderer produced the form.
+     *
+     * Taxonomy sources reuse SwatchTermFields meta keys (image / color) so
+     * one term-meta configuration powers both swatch and swiper.
+     *
+     * @param array<string, mixed>  $facet
+     * @param array<int, string>    $selected_values
+     * @param array<string, mixed>  $counts
+     */
+    private function render_swiper( array $facet, array $selected_values, array $counts ): string {
+        $name    = $facet['name'];
+        $label   = $facet['label'] ?: $name;
+        $buckets = ( $counts['type'] ?? '' ) === 'values' ? $counts['buckets'] : [];
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-swiper"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="swiper">
+            <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
+            <?php if ( empty( $buckets ) ) : ?>
+                <p class="hof-facet-empty"><?php esc_html_e( 'No options available.', 'hooked-on-facets' ); ?></p>
+            <?php else : ?>
+                <?php
+                $selected_lookup = array_fill_keys( array_map( 'strval', $selected_values ), true );
+
+                // Hydrate term meta for taxonomy sources (same pattern as render_swatch).
+                $by_slug = [];
+                if ( ( $facet['kind'] ?? '' ) === 'taxonomy' ) {
+                    $taxonomy = (string) ( $facet['source'] ?? '' );
+                    if ( $taxonomy !== '' ) {
+                        $slugs = array_map( static fn( $b ) => (string) $b['value'], $buckets );
+                        $terms = get_terms( [
+                            'taxonomy'   => $taxonomy,
+                            'slug'       => $slugs,
+                            'hide_empty' => false,
+                        ] );
+                        $ids = [];
+                        if ( ! is_wp_error( $terms ) ) {
+                            foreach ( $terms as $term ) {
+                                $by_slug[ $term->slug ] = $term;
+                                $ids[]                  = $term->term_id;
+                            }
+                        }
+                        if ( ! empty( $ids ) ) {
+                            update_termmeta_cache( $ids );
+                        }
+                    }
+                }
+                ?>
+                <div class="hof-swiper-deck"
+                     role="group"
+                     aria-label="<?php echo esc_attr( sprintf(
+                         /* translators: %s: facet label */
+                         __( 'Swipe through %s', 'hooked-on-facets' ),
+                         $label
+                     ) ); ?>">
+                    <?php foreach ( $buckets as $bucket ) :
+                        $value     = (string) $bucket['value'];
+                        $count     = (int) $bucket['count'];
+                        $included  = isset( $selected_lookup[ $value ] );
+                        $term      = $by_slug[ $value ] ?? null;
+                        $image_id  = $term ? (int) get_term_meta( $term->term_id, SwatchTermFields::META_IMAGE, true ) : 0;
+                        $color     = $term ? (string) get_term_meta( $term->term_id, SwatchTermFields::META_COLOR, true ) : '';
+                        $img_url   = $image_id > 0 ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
+                        $style     = '';
+                        if ( $img_url ) {
+                            $style .= sprintf( "--hof-swiper-image: url('%s');", esc_url_raw( $img_url ) );
+                        }
+                        if ( $color !== '' ) {
+                            $style .= sprintf( '--hof-swiper-color: %s;', $color );
+                        }
+                    ?>
+                        <div class="hof-swiper-card"
+                             data-hof-swiper-card
+                             data-hof-swiper-value="<?php echo esc_attr( $value ); ?>"
+                             <?php if ( $included ) echo 'data-hof-swiped="right" hidden'; ?>
+                             <?php if ( $style !== '' ) printf( 'style="%s"', esc_attr( $style ) ); ?>>
+                            <input type="checkbox"
+                                   class="hof-swiper-input screen-reader-text"
+                                   name="hof[<?php echo esc_attr( $name ); ?>][]"
+                                   value="<?php echo esc_attr( $value ); ?>"
+                                   <?php checked( $included ); ?>>
+                            <span class="hof-swiper-card-visual" aria-hidden="true"></span>
+                            <div class="hof-swiper-card-text">
+                                <span class="hof-swiper-card-name"><?php echo esc_html( $bucket['display'] ); ?></span>
+                                <span class="hof-facet-count"
+                                      data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo (int) $count; ?></span>
+                            </div>
+                            <span class="hof-swiper-stamp hof-swiper-stamp-right" aria-hidden="true">
+                                <?php esc_html_e( 'Include', 'hooked-on-facets' ); ?>
+                            </span>
+                            <span class="hof-swiper-stamp hof-swiper-stamp-left" aria-hidden="true">
+                                <?php esc_html_e( 'Skip', 'hooked-on-facets' ); ?>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                    <p class="hof-swiper-done" data-hof-swiper-done hidden>
+                        <span class="hof-swiper-done-text">
+                            <?php esc_html_e( 'No more cards.', 'hooked-on-facets' ); ?>
+                        </span>
+                        <button type="button" class="hof-swiper-btn hof-swiper-reset" data-hof-swiper-reset>
+                            <?php esc_html_e( 'Restart', 'hooked-on-facets' ); ?>
+                        </button>
+                    </p>
+                </div>
+                <div class="hof-swiper-controls">
+                    <button type="button"
+                            class="hof-swiper-btn hof-swiper-skip"
+                            data-hof-swiper-action="skip"
+                            aria-label="<?php esc_attr_e( 'Skip', 'hooked-on-facets' ); ?>">
+                        <span aria-hidden="true">←</span>
+                    </button>
+                    <button type="button"
+                            class="hof-swiper-btn hof-swiper-include"
+                            data-hof-swiper-action="include"
+                            aria-label="<?php esc_attr_e( 'Include', 'hooked-on-facets' ); ?>">
+                        <span aria-hidden="true">→</span>
+                    </button>
+                </div>
+            <?php endif; ?>
         </div>
         <?php
         return (string) ob_get_clean();

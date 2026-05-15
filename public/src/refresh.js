@@ -85,6 +85,14 @@ function swapFacets(doc) {
             return;
         }
 
+        // Swiper deck: never replace innerHTML — the user's skip-history
+        // and deck position live only in the client DOM. Patch counts and
+        // reconcile right-swipes from the URL state.
+        if (current.getAttribute('data-hof-display') === 'swiper') {
+            patchSwiper(current, incomingEl);
+            return;
+        }
+
         if (focused && current.contains(focused)) {
             // User is editing this facet — only update count badges so we don't
             // clobber the input value or steal focus.
@@ -124,6 +132,46 @@ function patchSwatch(current, incoming) {
             tile.setAttribute('data-hof-selected', '1');
         } else {
             tile.removeAttribute('data-hof-selected');
+        }
+    });
+}
+
+function patchSwiper(current, incoming) {
+    incoming.querySelectorAll('[data-hof-swiper-value]').forEach((next) => {
+        const value = next.getAttribute('data-hof-swiper-value');
+        if (value === null) return;
+        const card = current.querySelector(
+            `[data-hof-swiper-value="${cssEscape(value)}"]`
+        );
+        if (!card) return;
+
+        // Counts
+        const incomingCount = next.querySelector(`[data-hof-count="${cssEscape(value)}"]`);
+        const currentCount = card.querySelector(`[data-hof-count="${cssEscape(value)}"]`);
+        if (incomingCount && currentCount) {
+            currentCount.textContent = incomingCount.textContent;
+        }
+
+        // Reconcile right-swiped (included) state from the URL. The server's
+        // copy of the card has data-hof-swiped="right" + hidden iff the value
+        // is in the URL filter; mirror that locally. Left-swipes (skips) live
+        // only in the client and are preserved.
+        const serverIncluded = next.getAttribute('data-hof-swiped') === 'right';
+        const localSwipe     = card.getAttribute('data-hof-swiped');
+
+        if (serverIncluded && localSwipe !== 'right') {
+            card.setAttribute('data-hof-swiped', 'right');
+            card.hidden = true;
+            const cb = card.querySelector('input[type="checkbox"]');
+            if (cb && !cb.checked) cb.checked = true;
+        } else if (!serverIncluded && localSwipe === 'right') {
+            // Server says not included but we have it as right-swiped — must
+            // mean a popstate / external reset. Restore the card.
+            card.removeAttribute('data-hof-swiped');
+            card.hidden = false;
+            card.style.removeProperty('--hof-swipe-x');
+            const cb = card.querySelector('input[type="checkbox"]');
+            if (cb && cb.checked) cb.checked = false;
         }
     });
 }

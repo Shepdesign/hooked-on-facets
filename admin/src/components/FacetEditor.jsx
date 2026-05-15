@@ -9,6 +9,7 @@ const DISPLAYS = [
     { value: 'range',    label: 'Range slider' },
     { value: 'search',   label: 'Search box' },
     { value: 'swatch',   label: 'Fluid swatches' },
+    { value: 'swiper',   label: 'Swipe deck' },
 ];
 
 const sanitizeSlug = (raw) =>
@@ -95,6 +96,18 @@ export default function FacetEditor({ facet, onChange, onDelete }) {
                                 (<em>Edit term</em> screen for <code>{facet.source || 'your-taxonomy'}</code>).
                             </span>
                         )}
+                        {facet.display === 'swiper' && facet.kind === 'taxonomy' && (
+                            <span className="hof-field-help">
+                                Card visuals reuse the swatch image/color per term. Swipe right to include,
+                                left to skip. Multi-select OR within the facet.
+                            </span>
+                        )}
+                        {facet.display === 'swiper' && facet.kind !== 'taxonomy' && (
+                            <span className="hof-field-help">
+                                Works best with a taxonomy source so cards can show per-term images.
+                                Non-taxonomy sources still work but cards will be label-only.
+                            </span>
+                        )}
                     </label>
 
                     <div className="hof-editor-actions">
@@ -138,6 +151,28 @@ function FacetPreview({ facet }) {
                 <div className="hof-preview-label">{label}</div>
                 <input className="hof-input" type="search" placeholder="Search…" disabled />
                 <p className="hof-preview-note">Matches against the configured source field.</p>
+            </div>
+        );
+    }
+
+    if (facet.display === 'swiper') {
+        return (
+            <div className="hof-preview">
+                <div className="hof-preview-label">{label}</div>
+                <div className="hof-preview-swiper">
+                    <div className="hof-preview-swiper-card hof-preview-swiper-card-back hof-preview-swiper-card-back-2"></div>
+                    <div className="hof-preview-swiper-card hof-preview-swiper-card-back hof-preview-swiper-card-back-1"></div>
+                    <div className="hof-preview-swiper-card">
+                        <span className="hof-preview-swiper-card-label">Top card</span>
+                    </div>
+                </div>
+                <div className="hof-preview-swiper-controls">
+                    <span className="hof-preview-swiper-btn hof-preview-swiper-btn-skip">←</span>
+                    <span className="hof-preview-swiper-btn hof-preview-swiper-btn-include">→</span>
+                </div>
+                <p className="hof-preview-note">
+                    Right = include, left = skip. Cards reuse the term's swatch image/color.
+                </p>
             </div>
         );
     }

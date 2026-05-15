@@ -82,7 +82,7 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 
 | Feature | Phase |
 |---|---|
-| Tinder Swiper, Venn Matrix, 2D Slider, Spin the Wheel, Saved Bin, fluid swatches | 2 |
+| Swipe Deck, Venn Matrix, 2D Slider, Spin the Wheel, Saved Bin, fluid swatches | 2 |
 | Elementor, Divi, Bricks, Breakdance integrations | 2 |
 | AI Semantic Prompt Box | 3 (premium) |
 | ACF / Meta Box / Pods source plugins | 2 |
@@ -103,7 +103,7 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 ## Phase 2 candidates (not sequenced)
 
 1. First page builder bridge — **Elementor** (largest WC overlap)
-2. Three "wow" facets in priority order: **Visual Fluid Swatches → Tinder Swiper → Venn Matrix**
+2. Three "wow" facets in priority order: **Visual Fluid Swatches → Swipe Deck → Venn Matrix**
 3. Action Scheduler-backed incremental reindex
 4. CSS Variable Engine — full theming UI
 5. ACF/Meta Box source plugins
