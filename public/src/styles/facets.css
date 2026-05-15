@@ -1,0 +1,165 @@
+/* Public-runtime facet styles. Uses the same --hof-* tokens the admin uses;
+   PHP prints a <style id="hof-tokens"> block in <head> that overrides these
+   defaults from the hof_public_css_tokens filter. */
+
+.hof-facet,
+.hof-results {
+    --hof-primary: #5b6cff;
+    --hof-on-primary: #ffffff;
+    --hof-surface: #ffffff;
+    --hof-bg: #f4f5fb;
+    --hof-border: #e3e4ec;
+    --hof-text: #1a1c2c;
+    --hof-muted: #6b6e7f;
+    --hof-danger: #e0364f;
+    --hof-radius-ui: 8px;
+    --hof-space: 8px;
+}
+
+.hof-facet {
+    background: var(--hof-surface);
+    border: 1px solid var(--hof-border);
+    border-radius: var(--hof-radius-ui);
+    padding: calc(var(--hof-space) * 2);
+    margin: 0 0 calc(var(--hof-space) * 2) 0;
+    color: var(--hof-text);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.hof-facet * {
+    box-sizing: border-box;
+}
+
+.hof-facet-fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.hof-facet-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: var(--hof-space);
+}
+
+.hof-facet-label-text {
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* Checkbox list */
+.hof-facet-options {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hof-facet-option label {
+    display: flex;
+    align-items: center;
+    gap: var(--hof-space);
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.hof-facet-option input[type='checkbox'] {
+    accent-color: var(--hof-primary);
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.hof-facet-name {
+    flex: 1;
+}
+
+.hof-facet-count {
+    color: var(--hof-muted);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.875rem;
+}
+
+.hof-facet-empty {
+    color: var(--hof-muted);
+    margin: 0;
+}
+
+/* Range */
+.hof-facet-range-inputs {
+    display: flex;
+    align-items: center;
+    gap: var(--hof-space);
+}
+
+.hof-facet-range-inputs input {
+    flex: 1;
+    min-width: 0;
+    background: var(--hof-surface);
+    border: 1px solid var(--hof-border);
+    border-radius: var(--hof-radius-ui);
+    padding: 6px 10px;
+    color: var(--hof-text);
+    font: inherit;
+}
+
+.hof-facet-range-inputs input:focus {
+    outline: 2px solid var(--hof-primary);
+    outline-offset: 1px;
+    border-color: transparent;
+}
+
+.hof-facet-range-sep {
+    color: var(--hof-muted);
+}
+
+.hof-facet-range-bounds {
+    color: var(--hof-muted);
+    font-size: 0.8125rem;
+    margin: 6px 0 0 0;
+}
+
+/* Search */
+.hof-facet-search input[type='search'] {
+    width: 100%;
+    background: var(--hof-surface);
+    border: 1px solid var(--hof-border);
+    border-radius: var(--hof-radius-ui);
+    padding: 8px 12px;
+    color: var(--hof-text);
+    font: inherit;
+}
+
+.hof-facet-search input[type='search']:focus {
+    outline: 2px solid var(--hof-primary);
+    outline-offset: 1px;
+    border-color: transparent;
+}
+
+/* Reset link */
+.hof-reset {
+    display: inline-block;
+    color: var(--hof-muted);
+    font-size: 0.875rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.hof-reset:hover {
+    color: var(--hof-primary);
+}
+
+/* Results region — minimal styling. The theme owns the cards inside;
+   we just give a tiny refresh affordance via opacity. */
+.hof-results {
+    transition: opacity 200ms ease;
+}
+
+.hof-results[data-hof-loading] {
+    opacity: 0.55;
+}

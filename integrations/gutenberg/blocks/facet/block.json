@@ -1,0 +1,28 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "hof/facet",
+    "version": "0.1.0",
+    "title": "Hooked Facet",
+    "category": "widgets",
+    "icon": "filter",
+    "description": "Render a Hooked on Facets filter on the page.",
+    "keywords": ["facet", "filter", "search"],
+    "textdomain": "hooked-on-facets",
+    "attributes": {
+        "facetName": {
+            "type": "string",
+            "default": ""
+        }
+    },
+    "supports": {
+        "html": false,
+        "anchor": true,
+        "align": ["wide", "full"],
+        "spacing": {
+            "margin": true,
+            "padding": true
+        }
+    },
+    "editorScript": "file:./index.js"
+}

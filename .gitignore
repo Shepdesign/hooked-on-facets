@@ -1,0 +1,25 @@
+# Composer (lockfile is committed — plugin behaves like an application)
+/vendor/
+
+# Node
+/node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Vite build output
+/assets/dist/
+
+# OS / WP logs
+*.log
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.iml
+
+# Local env
+.env
+.env.local

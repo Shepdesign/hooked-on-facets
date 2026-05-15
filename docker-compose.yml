@@ -1,0 +1,100 @@
+# Local dev stack for Hooked on Facets.
+# OrbStack runs this natively on Apple Silicon — no platform overrides needed.
+#
+# After `docker compose up -d`:
+#   WP:    http://localhost:8080   (admin / admin)
+#   DB:    localhost:3306          (wordpress / wordpress, root password: root)
+#
+# The wp-cli sidecar idempotently installs WordPress, WooCommerce, and
+# activates the HOF plugin on first boot, then stays up so you can run
+# `docker compose exec wp-cli wp <command>` later.
+
+services:
+    db:
+        image: mysql:8.0
+        restart: unless-stopped
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: wordpress
+            MYSQL_USER: wordpress
+            MYSQL_PASSWORD: wordpress
+        volumes:
+            - db_data:/var/lib/mysql
+        ports:
+            - "3306:3306"
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+            interval: 5s
+            timeout: 3s
+            retries: 20
+
+    wordpress:
+        image: wordpress:php8.2-apache
+        restart: unless-stopped
+        depends_on:
+            db:
+                condition: service_healthy
+        ports:
+            - "8080:80"
+        environment:
+            WORDPRESS_DB_HOST: db:3306
+            WORDPRESS_DB_USER: wordpress
+            WORDPRESS_DB_PASSWORD: wordpress
+            WORDPRESS_DB_NAME: wordpress
+            WORDPRESS_DEBUG: "1"
+            WORDPRESS_CONFIG_EXTRA: |
+                define('WP_DEBUG_LOG', true);
+                define('WP_DEBUG_DISPLAY', false);
+                define('SCRIPT_DEBUG', true);
+        volumes:
+            - wp_data:/var/www/html
+            # Bind-mount the plugin source so edits show immediately.
+            - ./:/var/www/html/wp-content/plugins/hooked-on-facets
+
+    wp-cli:
+        image: wordpress:cli-php8.2
+        depends_on:
+            db:
+                condition: service_healthy
+            wordpress:
+                condition: service_started
+        # Match the wordpress container's www-data uid (33) so wp-cli can
+        # write into wp-content/ (uploads, upgrade, plugin installs). Without
+        # this override the wp-cli image's default uid can't unpack downloads.
+        user: "33:33"
+        # wp-cli loads wp-config.php from the shared volume; that file reads
+        # WORDPRESS_DB_* via getenv_docker() with `mysql` as the fallback host.
+        # Without these env vars wp-cli tries `mysql:3306` and fails — repeat
+        # what the wordpress service has so wp-cli sees the same DB.
+        environment:
+            WORDPRESS_DB_HOST: db:3306
+            WORDPRESS_DB_USER: wordpress
+            WORDPRESS_DB_PASSWORD: wordpress
+            WORDPRESS_DB_NAME: wordpress
+        volumes:
+            - wp_data:/var/www/html
+            - ./:/var/www/html/wp-content/plugins/hooked-on-facets
+        # Idempotent first-boot install. Each step is gated by a check so
+        # restarting the stack is cheap.
+        entrypoint: /bin/sh
+        command:
+            - -c
+            - |
+                until wp core is-installed 2>/dev/null; do
+                    sleep 2
+                    wp core install \
+                        --url=http://localhost:8080 \
+                        --title='Hooked on Facets — Dev' \
+                        --admin_user=admin \
+                        --admin_password=admin \
+                        --admin_email=admin@example.com \
+                        --skip-email 2>/dev/null && break
+                done
+                wp plugin is-installed woocommerce || wp plugin install woocommerce --activate
+                wp plugin is-active hooked-on-facets || wp plugin activate hooked-on-facets || \
+                    echo '[wp-cli] HOF activation skipped — did you run composer install?'
+                tail -f /dev/null
+
+volumes:
+    db_data:
+    wp_data:

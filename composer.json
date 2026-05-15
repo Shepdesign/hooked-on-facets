@@ -1,0 +1,23 @@
+{
+    "name": "shepdesign/hooked-on-facets",
+    "description": "Ultra-modern faceted search and filtering for WordPress + WooCommerce.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "HookedOnFacets\\": "src/"
+        },
+        "classmap": [
+            "includes/"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,19 @@
+/* HOF design tokens — defaults.
+   PHP injects an inline <style> block that overrides these from the
+   hof_admin_css_tokens filter, so this file is the fallback when filters
+   are quiet. Same custom-property names as the public runtime. */
+
+#hof-admin-root,
+.hof-admin {
+    --hof-primary: #5b6cff;
+    --hof-on-primary: #ffffff;
+    --hof-surface: #ffffff;
+    --hof-bg: #f4f5fb;
+    --hof-border: #e3e4ec;
+    --hof-text: #1a1c2c;
+    --hof-muted: #6b6e7f;
+    --hof-danger: #e0364f;
+    --hof-radius-ui: 8px;
+    --hof-space: 8px;
+    --hof-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}

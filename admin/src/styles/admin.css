@@ -1,0 +1,422 @@
+@import './tokens.css';
+
+/* Break out of the default WP admin content padding so the SPA fills the screen. */
+#hof-admin-root {
+    background: var(--hof-bg);
+    color: var(--hof-text);
+    font-family: var(--hof-font);
+    margin: -10px -20px -10px -22px;
+    min-height: calc(100vh - 32px);
+}
+
+#hof-admin-root *,
+#hof-admin-root *::before,
+#hof-admin-root *::after {
+    box-sizing: border-box;
+}
+
+.hof {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 32px);
+}
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+
+.hof-header {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--hof-space) * 2);
+    padding: calc(var(--hof-space) * 2) calc(var(--hof-space) * 3);
+    background: var(--hof-surface);
+    border-bottom: 1px solid var(--hof-border);
+}
+
+.hof-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.hof-tabs {
+    display: flex;
+    gap: 4px;
+    margin-left: calc(var(--hof-space) * 2);
+}
+
+.hof-tab {
+    background: transparent;
+    border: 0;
+    padding: 6px 12px;
+    border-radius: var(--hof-radius-ui);
+    color: var(--hof-muted);
+    cursor: pointer;
+    font: inherit;
+}
+
+.hof-tab:hover {
+    background: var(--hof-bg);
+    color: var(--hof-text);
+}
+
+.hof-tab.is-active {
+    background: var(--hof-primary);
+    color: var(--hof-on-primary);
+}
+
+.hof-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--hof-space);
+}
+
+.hof-error {
+    color: var(--hof-danger);
+    font-size: 0.875rem;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+
+.hof-btn {
+    background: var(--hof-surface);
+    border: 1px solid var(--hof-border);
+    color: var(--hof-text);
+    padding: 6px 14px;
+    border-radius: var(--hof-radius-ui);
+    cursor: pointer;
+    font: inherit;
+    transition: filter 120ms ease, border-color 120ms ease, color 120ms ease, background 120ms ease;
+}
+
+.hof-btn:hover:not(:disabled) {
+    border-color: var(--hof-primary);
+    color: var(--hof-primary);
+}
+
+.hof-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.hof-btn-primary {
+    background: var(--hof-primary);
+    border-color: var(--hof-primary);
+    color: var(--hof-on-primary);
+}
+
+.hof-btn-primary:hover:not(:disabled) {
+    color: var(--hof-on-primary);
+    filter: brightness(0.95);
+}
+
+.hof-btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--hof-muted);
+}
+
+.hof-btn-ghost:hover:not(:disabled) {
+    background: var(--hof-bg);
+    border-color: transparent;
+    color: var(--hof-text);
+}
+
+.hof-btn-danger {
+    background: transparent;
+    border-color: var(--hof-danger);
+    color: var(--hof-danger);
+}
+
+.hof-btn-danger:hover:not(:disabled) {
+    background: var(--hof-danger);
+    color: var(--hof-on-primary);
+}
+
+/* ── Main / layout ────────────────────────────────────────────────────── */
+
+.hof-main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────── */
+
+.hof-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--hof-surface);
+    border-right: 1px solid var(--hof-border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.hof-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(var(--hof-space) * 2);
+    border-bottom: 1px solid var(--hof-border);
+}
+
+.hof-sidebar-title {
+    font-weight: 600;
+    color: var(--hof-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.hof-sidebar-empty {
+    padding: calc(var(--hof-space) * 2);
+    color: var(--hof-muted);
+    font-size: 0.875rem;
+}
+
+.hof-sidebar-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.hof-sidebar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    padding: calc(var(--hof-space) * 1.5) calc(var(--hof-space) * 2);
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    color: var(--hof-text);
+    font: inherit;
+}
+
+.hof-sidebar-item:hover {
+    background: var(--hof-bg);
+}
+
+.hof-sidebar-item.is-active {
+    background: var(--hof-bg);
+    border-left-color: var(--hof-primary);
+}
+
+.hof-sidebar-label {
+    font-weight: 500;
+}
+
+.hof-sidebar-meta {
+    font-size: 0.75rem;
+    color: var(--hof-muted);
+    margin-top: 2px;
+}
+
+/* ── Content / editor ─────────────────────────────────────────────────── */
+
+.hof-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: calc(var(--hof-space) * 3);
+}
+
+.hof-empty {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--hof-muted);
+    gap: var(--hof-space);
+}
+
+.hof-editor-title {
+    margin: 0 0 calc(var(--hof-space) * 2) 0;
+}
+
+.hof-editor-subtitle {
+    margin: 0 0 var(--hof-space) 0;
+    color: var(--hof-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.hof-editor-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: calc(var(--hof-space) * 4);
+    align-items: start;
+}
+
+@media (max-width: 960px) {
+    .hof-editor-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.hof-editor-form {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--hof-space) * 2);
+}
+
+.hof-editor-actions {
+    margin-top: calc(var(--hof-space) * 2);
+}
+
+.hof-editor-preview {
+    background: var(--hof-surface);
+    border: 1px solid var(--hof-border);
+    border-radius: var(--hof-radius-ui);
+    padding: calc(var(--hof-space) * 2);
+    position: sticky;
+    top: 0;
+}
+
+/* ── Form fields ──────────────────────────────────────────────────────── */
+
+.hof-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hof-field-label {
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.hof-field-help {
+    color: var(--hof-muted);
+    font-size: 0.75rem;
+}
+
+.hof-input {
+    background: var(--hof-surface);
+    border: 1px solid var(--hof-border);
+    border-radius: var(--hof-radius-ui);
+    padding: 8px 12px;
+    color: var(--hof-text);
+    font: inherit;
+    width: 100%;
+}
+
+.hof-input:focus {
+    outline: 2px solid var(--hof-primary);
+    outline-offset: 1px;
+    border-color: transparent;
+}
+
+/* ── Preview ──────────────────────────────────────────────────────────── */
+
+.hof-preview-label {
+    font-weight: 600;
+    margin-bottom: var(--hof-space);
+}
+
+.hof-preview-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hof-preview-list label {
+    display: flex;
+    gap: var(--hof-space);
+    align-items: center;
+    cursor: not-allowed;
+    color: var(--hof-muted);
+}
+
+.hof-preview-count {
+    margin-left: auto;
+    font-size: 0.75rem;
+}
+
+.hof-preview-note {
+    color: var(--hof-muted);
+    font-size: 0.75rem;
+    margin: var(--hof-space) 0 0 0;
+}
+
+.hof-preview-range {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hof-preview-range-bounds {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--hof-muted);
+}
+
+/* ── Tokens panel ─────────────────────────────────────────────────────── */
+
+.hof-tokens {
+    padding: calc(var(--hof-space) * 3);
+    flex: 1;
+    overflow-y: auto;
+}
+
+.hof-tokens-header h2 {
+    margin: 0 0 var(--hof-space) 0;
+}
+
+.hof-tokens-header p {
+    color: var(--hof-muted);
+    max-width: 60ch;
+}
+
+.hof-tokens-empty {
+    color: var(--hof-muted);
+}
+
+.hof-tokens-list {
+    list-style: none;
+    margin: calc(var(--hof-space) * 2) 0 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--hof-space);
+}
+
+.hof-tokens-item {
+    display: flex;
+    align-items: center;
+    gap: var(--hof-space);
+    background: var(--hof-surface);
+    border: 1px solid var(--hof-border);
+    border-radius: var(--hof-radius-ui);
+    padding: calc(var(--hof-space) * 1.5);
+}
+
+.hof-tokens-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.hof-tokens-name {
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.hof-tokens-value {
+    margin-left: auto;
+    color: var(--hof-muted);
+    font-size: 0.75rem;
+    max-width: 50%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

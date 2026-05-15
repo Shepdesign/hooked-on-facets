@@ -1,0 +1,116 @@
+// Public runtime entry. Wires delegated event listeners on the document so
+// they survive page swaps (no re-attaching on every refresh).
+//
+// Flow:
+//   change → store.set() → subscriber → pushState + refresh()
+//   refresh() → fetch(currentUrl) → swap .hof-results + each [data-hof-facet]
+//   popstate → store.hydrateFromUrl() → refresh()
+
+import './styles/facets.css';
+import { Store, buildUrl } from './state.js';
+import { refresh } from './refresh.js';
+
+const store = new Store();
+store.hydrateFromUrl();
+
+const DEBOUNCE_MS = 250;
+
+// ── State → URL → refresh ──────────────────────────────────────────────────
+
+let pending = null;
+store.subscribe((state) => {
+    clearTimeout(pending);
+    pending = setTimeout(() => {
+        const url = buildUrl(state);
+        if (url.toString() !== window.location.href) {
+            history.pushState(null, '', url.toString());
+        }
+        refresh(url.toString());
+    }, 0);
+});
+
+window.addEventListener('popstate', () => {
+    store.hydrateFromUrl();
+    refresh();
+});
+
+// Loading affordance — dim .hof-results during a refresh.
+document.addEventListener('hof:refresh', (e) => {
+    const phase = e.detail?.phase;
+    document.querySelectorAll('.hof-results').forEach((el) => {
+        if (phase === 'start') el.setAttribute('data-hof-loading', '');
+        else el.removeAttribute('data-hof-loading');
+    });
+});
+
+// ── DOM events → state ────────────────────────────────────────────────────
+
+document.addEventListener('change', (e) => {
+    const facetEl = e.target.closest('[data-hof-facet]');
+    if (!facetEl) return;
+
+    const name = facetEl.getAttribute('data-hof-facet');
+    const display = facetEl.getAttribute('data-hof-display');
+    if (!name) return;
+
+    if (display === 'checkbox') {
+        const values = Array.from(
+            facetEl.querySelectorAll('input[type="checkbox"]:checked')
+        ).map((cb) => cb.value);
+        store.set(name, values);
+        return;
+    }
+
+    if (display === 'range') {
+        const min = facetEl.querySelector('[data-hof-input="min"]')?.value ?? '';
+        const max = facetEl.querySelector('[data-hof-input="max"]')?.value ?? '';
+        store.set(name, { min, max });
+        return;
+    }
+
+    if (display === 'search') {
+        // change fires on blur — input handler below handles live typing.
+        store.set(name, e.target.value);
+    }
+});
+
+// Live search + live range updates while typing. Debounced so we don't
+// flood the network with one request per keystroke.
+const debouncedSet = debounce((name, value) => store.set(name, value), DEBOUNCE_MS);
+
+document.addEventListener('input', (e) => {
+    const facetEl = e.target.closest('[data-hof-facet]');
+    if (!facetEl) return;
+    const name = facetEl.getAttribute('data-hof-facet');
+    const display = facetEl.getAttribute('data-hof-display');
+    if (!name) return;
+
+    if (display === 'search') {
+        debouncedSet(name, e.target.value);
+        return;
+    }
+
+    if (display === 'range' && e.target.matches('[data-hof-input]')) {
+        const min = facetEl.querySelector('[data-hof-input="min"]')?.value ?? '';
+        const max = facetEl.querySelector('[data-hof-input="max"]')?.value ?? '';
+        debouncedSet(name, { min, max });
+    }
+});
+
+// Reset link hijack — clear all and refresh in place.
+document.addEventListener('click', (e) => {
+    const reset = e.target.closest('[data-hof-reset]');
+    if (!reset) return;
+    e.preventDefault();
+    store.clear();
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+function debounce(fn, ms) {
+    let t;
+    return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), ms);
+    };
+}
