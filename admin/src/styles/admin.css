@@ -295,6 +295,10 @@
     font-size: 0.75rem;
 }
 
+.hof-field-warn {
+    color: var(--hof-danger);
+}
+
 .hof-input {
     background: var(--hof-surface);
     border: 1px solid var(--hof-border);
@@ -357,6 +361,27 @@
     justify-content: space-between;
     font-size: 0.75rem;
     color: var(--hof-muted);
+}
+
+.hof-preview-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hof-space);
+    align-items: flex-end;
+}
+
+.hof-preview-swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--hof-muted);
+}
+
+.hof-preview-swatch-visual {
+    border-radius: var(--hof-radius-ui);
+    border: 1px solid var(--hof-border);
 }
 
 /* ── Tokens panel ─────────────────────────────────────────────────────── */

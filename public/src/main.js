@@ -53,10 +53,21 @@ document.addEventListener('change', (e) => {
     const display = facetEl.getAttribute('data-hof-display');
     if (!name) return;
 
-    if (display === 'checkbox') {
+    if (display === 'checkbox' || display === 'swatch') {
         const values = Array.from(
             facetEl.querySelectorAll('input[type="checkbox"]:checked')
         ).map((cb) => cb.value);
+
+        if (display === 'swatch') {
+            // Optimistic selected-state flip so the tile updates before the
+            // server round-trip completes. refresh() will reconcile.
+            facetEl.querySelectorAll('[data-hof-swatch-value]').forEach((tile) => {
+                const cb = tile.querySelector('input[type="checkbox"]');
+                if (cb?.checked) tile.setAttribute('data-hof-selected', '1');
+                else tile.removeAttribute('data-hof-selected');
+            });
+        }
+
         store.set(name, values);
         return;
     }

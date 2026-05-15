@@ -8,6 +8,7 @@ const DISPLAYS = [
     { value: 'checkbox', label: 'Checkbox list' },
     { value: 'range',    label: 'Range slider' },
     { value: 'search',   label: 'Search box' },
+    { value: 'swatch',   label: 'Fluid swatches' },
 ];
 
 const sanitizeSlug = (raw) =>
@@ -83,6 +84,17 @@ export default function FacetEditor({ facet, onChange, onDelete }) {
                                 <option key={d.value} value={d.value}>{d.label}</option>
                             ))}
                         </select>
+                        {facet.display === 'swatch' && facet.kind !== 'taxonomy' && (
+                            <span className="hof-field-help hof-field-warn">
+                                Swatches require a taxonomy source. Falls back to a checkbox list at runtime.
+                            </span>
+                        )}
+                        {facet.display === 'swatch' && facet.kind === 'taxonomy' && (
+                            <span className="hof-field-help">
+                                Configure swatch image and color per term in the taxonomy admin
+                                (<em>Edit term</em> screen for <code>{facet.source || 'your-taxonomy'}</code>).
+                            </span>
+                        )}
                     </label>
 
                     <div className="hof-editor-actions">
@@ -126,6 +138,39 @@ function FacetPreview({ facet }) {
                 <div className="hof-preview-label">{label}</div>
                 <input className="hof-input" type="search" placeholder="Search…" disabled />
                 <p className="hof-preview-note">Matches against the configured source field.</p>
+            </div>
+        );
+    }
+
+    if (facet.display === 'swatch') {
+        // Mock tiles sized by descending fake counts so the preview reads as fluid.
+        const swatches = [
+            { name: 'Red',    weight: 1.0, color: '#e0364f' },
+            { name: 'Blue',   weight: 0.7, color: '#1e40af' },
+            { name: 'Green',  weight: 0.4, color: '#16a34a' },
+            { name: 'Yellow', weight: 0.2, color: '#facc15' },
+        ];
+        return (
+            <div className="hof-preview">
+                <div className="hof-preview-label">{label}</div>
+                <div className="hof-preview-swatches">
+                    {swatches.map((s) => (
+                        <div key={s.name} className="hof-preview-swatch">
+                            <span
+                                className="hof-preview-swatch-visual"
+                                style={{
+                                    width:  `${24 + s.weight * 56}px`,
+                                    height: `${24 + s.weight * 56}px`,
+                                    background: s.color,
+                                }}
+                            />
+                            <span>{s.name}</span>
+                        </div>
+                    ))}
+                </div>
+                <p className="hof-preview-note">
+                    Tile size morphs by count; image/color comes from per-term meta.
+                </p>
             </div>
         );
     }

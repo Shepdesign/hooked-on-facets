@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace HookedOnFacets\Facets;
 
+use HookedOnFacets\Admin\SwatchTermFields;
 use HookedOnFacets\Filter\Resolver;
 use HookedOnFacets\Indexer;
 
@@ -51,6 +52,7 @@ final class Renderer {
         return match ( $display ) {
             'range'  => $this->render_range( $facet, $current_value, $counts ),
             'search' => $this->render_search( $facet, $current_value ),
+            'swatch' => $this->render_swatch( $facet, (array) $current_value, $counts ),
             default  => $this->render_checkbox( $facet, (array) $current_value, $counts ),
         };
     }
@@ -152,6 +154,124 @@ final class Renderer {
                     ); ?>
                 </p>
             <?php endif; ?>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Fluid swatch tiles. Tile size is driven by bucket count via a CSS
+     * variable: `--hof-swatch-weight: 0..1`. CSS interpolates between
+     * `--hof-swatch-min` and `--hof-swatch-max`.
+     *
+     * Weight formula: `(sqrt(count) - sqrt(min)) / (sqrt(max) - sqrt(min))`.
+     * sqrt dampens the long-tail problem where one popular term would
+     * crush everything else if we used raw counts.
+     *
+     * Only taxonomy-sourced facets — for anything else we bail to the
+     * checkbox renderer so the user still sees something usable.
+     *
+     * @param array<string, mixed>  $facet
+     * @param array<int, string>    $selected_values
+     * @param array<string, mixed>  $counts
+     */
+    private function render_swatch( array $facet, array $selected_values, array $counts ): string {
+        if ( ( $facet['kind'] ?? '' ) !== 'taxonomy' ) {
+            return $this->render_checkbox( $facet, $selected_values, $counts );
+        }
+
+        $name     = $facet['name'];
+        $label    = $facet['label'] ?: $name;
+        $taxonomy = (string) ( $facet['source'] ?? '' );
+        $buckets  = ( $counts['type'] ?? '' ) === 'values' ? $counts['buckets'] : [];
+
+        if ( $taxonomy === '' || empty( $buckets ) ) {
+            ob_start();
+            ?>
+            <div class="hof-facet hof-facet-swatch"
+                 data-hof-facet="<?php echo esc_attr( $name ); ?>"
+                 data-hof-display="swatch">
+                <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
+                <p class="hof-facet-empty"><?php esc_html_e( 'No options available.', 'hooked-on-facets' ); ?></p>
+            </div>
+            <?php
+            return (string) ob_get_clean();
+        }
+
+        $selected_lookup = array_fill_keys( array_map( 'strval', $selected_values ), true );
+
+        // Hydrate term metadata in two batched calls so we don't fan out
+        // one query per bucket.
+        $slugs = array_map( static fn( $b ) => (string) $b['value'], $buckets );
+        $terms = get_terms( [
+            'taxonomy'   => $taxonomy,
+            'slug'       => $slugs,
+            'hide_empty' => false,
+        ] );
+        $by_slug   = [];
+        $term_ids  = [];
+        if ( ! is_wp_error( $terms ) ) {
+            foreach ( $terms as $term ) {
+                $by_slug[ $term->slug ] = $term;
+                $term_ids[]             = $term->term_id;
+            }
+        }
+        if ( ! empty( $term_ids ) ) {
+            update_termmeta_cache( $term_ids );
+        }
+
+        // Weight bounds from sqrt(count) so the long tail doesn't dominate.
+        $counts_list = array_map( static fn( $b ) => max( 0, (int) $b['count'] ), $buckets );
+        $sqrt_min    = sqrt( max( 0, min( $counts_list ) ) );
+        $sqrt_max    = sqrt( max( $counts_list ) );
+        $sqrt_range  = $sqrt_max - $sqrt_min;
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-swatch"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="swatch">
+            <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
+            <ul class="hof-facet-swatches">
+                <?php foreach ( $buckets as $bucket ) :
+                    $value    = (string) $bucket['value'];
+                    $count    = (int) $bucket['count'];
+                    $checked  = isset( $selected_lookup[ $value ] );
+                    $weight   = $sqrt_range > 0
+                        ? ( sqrt( $count ) - $sqrt_min ) / $sqrt_range
+                        : 1.0;
+                    $term     = $by_slug[ $value ] ?? null;
+                    $image_id = $term ? (int) get_term_meta( $term->term_id, SwatchTermFields::META_IMAGE, true ) : 0;
+                    $color    = $term ? (string) get_term_meta( $term->term_id, SwatchTermFields::META_COLOR, true ) : '';
+                    $img_url  = $image_id > 0 ? wp_get_attachment_image_url( $image_id, 'thumbnail' ) : '';
+                    $style    = sprintf( '--hof-swatch-weight: %.4f;', $weight );
+                    if ( $img_url ) {
+                        $style .= sprintf( "--hof-swatch-image: url('%s');", esc_url_raw( $img_url ) );
+                    }
+                    if ( $color !== '' ) {
+                        $style .= sprintf( '--hof-swatch-color: %s;', $color );
+                    }
+                ?>
+                    <li class="hof-facet-swatch-item">
+                        <label class="hof-facet-swatch-tile"
+                               style="<?php echo esc_attr( $style ); ?>"
+                               data-hof-swatch-value="<?php echo esc_attr( $value ); ?>"
+                               <?php echo $checked ? 'data-hof-selected="1"' : ''; ?>>
+                            <input type="checkbox"
+                                   class="hof-facet-swatch-input screen-reader-text"
+                                   name="hof[<?php echo esc_attr( $name ); ?>][]"
+                                   value="<?php echo esc_attr( $value ); ?>"
+                                   <?php checked( $checked ); ?>>
+                            <span class="hof-facet-swatch-visual" aria-hidden="true"></span>
+                            <span class="hof-facet-swatch-text">
+                                <span class="hof-facet-swatch-name"><?php echo esc_html( $bucket['display'] ); ?></span>
+                                <span class="hof-facet-count"
+                                      data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo (int) $count; ?></span>
+                            </span>
+                        </label>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
         </div>
         <?php
         return (string) ob_get_clean();

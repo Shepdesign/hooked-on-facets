@@ -150,6 +150,7 @@ final class Plugin {
             QueryHook::class,
             \HookedOnFacets\Api\RestController::class,
             \HookedOnFacets\Admin\MenuRegistrar::class,
+            \HookedOnFacets\Admin\SwatchTermFields::class,
             \HookedOnFacets\Frontend\AssetLoader::class,
             \HookedOnFacets\Frontend\Shortcodes::class,
             \HookedOnFacets\Frontend\BlockRegistrar::class,

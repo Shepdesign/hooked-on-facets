@@ -76,6 +76,15 @@ function swapFacets(doc) {
         const current = document.querySelector(`[data-hof-facet="${cssEscape(name)}"]`);
         if (!current) return;
 
+        // Swatch tiles: term list is stable across filter states, so we
+        // patch counts + weight + selected state on the existing tiles
+        // rather than swapping innerHTML. Keeps the size-morph transition
+        // running and avoids a flash of unstyled tiles.
+        if (current.getAttribute('data-hof-display') === 'swatch') {
+            patchSwatch(current, incomingEl);
+            return;
+        }
+
         if (focused && current.contains(focused)) {
             // User is editing this facet — only update count badges so we don't
             // clobber the input value or steal focus.
@@ -84,6 +93,38 @@ function swapFacets(doc) {
         }
 
         current.innerHTML = incomingEl.innerHTML;
+    });
+}
+
+function patchSwatch(current, incoming) {
+    const incomingTiles = incoming.querySelectorAll('[data-hof-swatch-value]');
+    incomingTiles.forEach((next) => {
+        const value = next.getAttribute('data-hof-swatch-value');
+        if (value === null) return;
+        const tile = current.querySelector(
+            `[data-hof-swatch-value="${cssEscape(value)}"]`
+        );
+        if (!tile) return;
+
+        const weight = next.style.getPropertyValue('--hof-swatch-weight');
+        if (weight) tile.style.setProperty('--hof-swatch-weight', weight);
+
+        const countEl = tile.querySelector(`[data-hof-count="${cssEscape(value)}"]`);
+        const incomingCount = next.querySelector(`[data-hof-count="${cssEscape(value)}"]`);
+        if (countEl && incomingCount) {
+            countEl.textContent = incomingCount.textContent;
+        }
+
+        const incomingChecked = next.querySelector('input[type="checkbox"]')?.checked ?? false;
+        const tileChecked = tile.querySelector('input[type="checkbox"]');
+        if (tileChecked && tileChecked.checked !== incomingChecked) {
+            tileChecked.checked = incomingChecked;
+        }
+        if (incomingChecked) {
+            tile.setAttribute('data-hof-selected', '1');
+        } else {
+            tile.removeAttribute('data-hof-selected');
+        }
     });
 }
 
