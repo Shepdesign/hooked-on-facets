@@ -42,12 +42,15 @@ final class MenuRegistrar implements Bootable {
 
     public function register_menu(): void {
         // Brand mark — three-plane isometric hexagon with a coral spark.
-        // See BRAND.md (brand kit repo) for the canonical SVG.
+        // See BRAND.md (brand kit repo) for the canonical SVG. The spark is
+        // enlarged here (r=8 vs canonical 3.5) because the admin menu renders
+        // this at ~20px — the canonical r=3.5 disappears below ~28px. Header
+        // logo uses the unmodified canonical mark.
         $icon_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">'
             . '<path d="M36 6L62 21L36 36L10 21Z" fill="#7F77DD"/>'
             . '<path d="M10 21L10 51L36 66L36 36Z" fill="#3C3489"/>'
             . '<path d="M62 21L62 51L36 66L36 36Z" fill="#534AB7"/>'
-            . '<circle cx="36" cy="6" r="3.5" fill="#D85A30"/>'
+            . '<circle cx="36" cy="9" r="8" fill="#D85A30"/>'
             . '</svg>';
 
         add_menu_page(
