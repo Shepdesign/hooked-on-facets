@@ -106,7 +106,13 @@ final class MenuRegistrar implements Bootable {
         if ( ! in_array( $handle, self::MODULE_HANDLES, true ) ) {
             return $tag;
         }
-        return '<script type="module" src="' . esc_url( $src ) . '"></script>';
+        // WP concatenates [wp_add_inline_script 'before'] + [main src tag] +
+        // ['after'] into the $tag handed to this filter. Replace ONLY the
+        // src tag so the inline window.hofAdmin bootstrap survives.
+        $module = '<script type="module" src="' . esc_url( $src ) . '"></script>';
+        $pattern = '#<script\s+src=(["\'])' . preg_quote( $src, '#' ) . '\1[^>]*></script>#';
+        $replaced = preg_replace( $pattern, $module, $tag, 1 );
+        return $replaced ?? $tag;
     }
 
     // ── Asset enqueue paths ─────────────────────────────────────────────────
