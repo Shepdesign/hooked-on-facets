@@ -8,10 +8,10 @@
     color: var(--hof-text);
     font-family: var(--hof-font-sans);
     font-feature-settings: 'ss01', 'cv11';
-    margin: 0 0 0 -2px;
+    margin: 12px 0 16px -2px;
     border-radius: var(--hof-radius-md);
     overflow: hidden;
-    min-height: calc(100vh - 60px);
+    min-height: calc(100vh - 90px);
 }
 
 #hof-admin-root *,
