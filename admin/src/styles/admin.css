@@ -423,12 +423,20 @@ body.toplevel_page_hooked-on-facets .wrap {
 }
 
 .hof-editor-preview {
-    background: var(--hof-surface);
-    border: 0.5px solid var(--hof-border);
-    border-radius: var(--hof-radius-ui);
-    padding: calc(var(--hof-space) * 2);
+    background: var(--hof-color-purple-50);
+    border: 0.5px solid var(--hof-color-purple-200);
+    border-radius: var(--hof-radius-lg);
+    padding: calc(var(--hof-space) * 2.5);
     position: sticky;
     top: 0;
+}
+
+.hof-editor-preview .hof-editor-subtitle {
+    color: var(--hof-color-facet-coral);
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    margin-bottom: calc(var(--hof-space) * 1.5);
 }
 
 /* ── Form fields ──────────────────────────────────────────────────────── */
@@ -460,11 +468,11 @@ body.toplevel_page_hooked-on-facets .wrap {
     background: var(--hof-surface);
     border: 0.5px solid var(--hof-border);
     border-radius: var(--hof-radius-md);
-    padding: 12px 16px;
+    padding: 9px 14px;
     color: var(--hof-text);
     font: inherit;
     font-size: 0.9375rem;
-    line-height: 1.4;
+    line-height: 1.35;
     width: 100%;
     max-width: none;
     min-height: 0;
