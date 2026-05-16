@@ -54,6 +54,7 @@ final class Renderer {
             'search' => $this->render_search( $facet, $current_value ),
             'swatch' => $this->render_swatch( $facet, (array) $current_value, $counts ),
             'swiper' => $this->render_swiper( $facet, (array) $current_value, $counts ),
+            'venn'   => $this->render_venn( $facet, (array) $current_value, $counts ),
             default  => $this->render_checkbox( $facet, (array) $current_value, $counts ),
         };
     }
@@ -403,6 +404,123 @@ final class Renderer {
                     </button>
                 </div>
             <?php endif; ?>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Venn-matrix facet. Auto-picks the top 2 or 3 terms by count, queries
+     * pairwise / triple intersections via Resolver::count_intersection (3
+     * or 4 extra queries on top of resolve), then renders an SVG with real
+     * region counts. Click a circle to toggle that term as an OR filter —
+     * URL shape stays `hof[<name>][]=value` so the Resolver doesn't care.
+     *
+     * Falls back to the checkbox renderer when fewer than 2 terms are
+     * available or when the source isn't a taxonomy.
+     *
+     * @param array<string, mixed>  $facet
+     * @param array<int, string>    $selected_values
+     * @param array<string, mixed>  $counts
+     */
+    private function render_venn( array $facet, array $selected_values, array $counts ): string {
+        if ( ( $facet['kind'] ?? '' ) !== 'taxonomy' ) {
+            return $this->render_checkbox( $facet, $selected_values, $counts );
+        }
+
+        $name    = $facet['name'];
+        $label   = $facet['label'] ?: $name;
+        $buckets = ( $counts['type'] ?? '' ) === 'values' ? $counts['buckets'] : [];
+
+        if ( count( $buckets ) < 2 ) {
+            return $this->render_checkbox( $facet, $selected_values, $counts );
+        }
+
+        // counts come pre-sorted DESC; take top 3 (or 2 if that's all we have).
+        $top    = array_slice( $buckets, 0, 3 );
+        $n      = count( $top );
+        $values = array_map( static fn( $b ) => (string) $b['value'], $top );
+        $selected_lookup = array_fill_keys( array_map( 'strval', $selected_values ), true );
+
+        // Pairwise / triple intersection counts. Derive the visible region
+        // counts via inclusion-exclusion so we only run one query per
+        // unique intersection rather than one per region.
+        if ( $n === 2 ) {
+            $ab = $this->resolver->count_intersection( $name, [ $values[0], $values[1] ] );
+            $regions = [
+                'a_only' => max( 0, (int) $top[0]['count'] - $ab ),
+                'b_only' => max( 0, (int) $top[1]['count'] - $ab ),
+                'ab'     => $ab,
+            ];
+        } else {
+            $ab  = $this->resolver->count_intersection( $name, [ $values[0], $values[1] ] );
+            $ac  = $this->resolver->count_intersection( $name, [ $values[0], $values[2] ] );
+            $bc  = $this->resolver->count_intersection( $name, [ $values[1], $values[2] ] );
+            $abc = $this->resolver->count_intersection( $name, [ $values[0], $values[1], $values[2] ] );
+            $regions = [
+                'a_only'  => max( 0, (int) $top[0]['count'] - $ab - $ac + $abc ),
+                'b_only'  => max( 0, (int) $top[1]['count'] - $ab - $bc + $abc ),
+                'c_only'  => max( 0, (int) $top[2]['count'] - $ac - $bc + $abc ),
+                'ab_only' => max( 0, $ab - $abc ),
+                'ac_only' => max( 0, $ac - $abc ),
+                'bc_only' => max( 0, $bc - $abc ),
+                'abc'     => $abc,
+            ];
+        }
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-venn hof-facet-venn-<?php echo (int) $n; ?>"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="venn">
+            <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
+
+            <?php if ( $n === 2 ) : ?>
+                <svg class="hof-venn-svg" viewBox="0 0 240 160" xmlns="http://www.w3.org/2000/svg"
+                     role="group" aria-label="<?php echo esc_attr( $label ); ?>">
+                    <text class="hof-venn-term"           x="55"  y="22" text-anchor="middle"><?php echo esc_html( $top[0]['display'] ); ?></text>
+                    <text class="hof-venn-term"           x="185" y="22" text-anchor="middle"><?php echo esc_html( $top[1]['display'] ); ?></text>
+                    <circle class="hof-venn-circle" data-hof-venn-value="<?php echo esc_attr( $values[0] ); ?>"
+                            <?php echo isset( $selected_lookup[ $values[0] ] ) ? 'data-hof-selected="1"' : ''; ?>
+                            cx="80"  cy="90" r="55" />
+                    <circle class="hof-venn-circle" data-hof-venn-value="<?php echo esc_attr( $values[1] ); ?>"
+                            <?php echo isset( $selected_lookup[ $values[1] ] ) ? 'data-hof-selected="1"' : ''; ?>
+                            cx="160" cy="90" r="55" />
+                    <text class="hof-venn-count"          x="40"  y="95" text-anchor="middle"><?php echo (int) $regions['a_only']; ?></text>
+                    <text class="hof-venn-count"          x="200" y="95" text-anchor="middle"><?php echo (int) $regions['b_only']; ?></text>
+                    <text class="hof-venn-count hof-venn-count-overlap" x="120" y="95" text-anchor="middle"><?php echo (int) $regions['ab']; ?></text>
+                </svg>
+            <?php else : ?>
+                <svg class="hof-venn-svg" viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg"
+                     role="group" aria-label="<?php echo esc_attr( $label ); ?>">
+                    <text class="hof-venn-term" x="65"  y="22"  text-anchor="middle"><?php echo esc_html( $top[0]['display'] ); ?></text>
+                    <text class="hof-venn-term" x="175" y="22"  text-anchor="middle"><?php echo esc_html( $top[1]['display'] ); ?></text>
+                    <text class="hof-venn-term" x="120" y="212" text-anchor="middle"><?php echo esc_html( $top[2]['display'] ); ?></text>
+                    <circle class="hof-venn-circle" data-hof-venn-value="<?php echo esc_attr( $values[0] ); ?>"
+                            <?php echo isset( $selected_lookup[ $values[0] ] ) ? 'data-hof-selected="1"' : ''; ?>
+                            cx="90"  cy="95"  r="60" />
+                    <circle class="hof-venn-circle" data-hof-venn-value="<?php echo esc_attr( $values[1] ); ?>"
+                            <?php echo isset( $selected_lookup[ $values[1] ] ) ? 'data-hof-selected="1"' : ''; ?>
+                            cx="150" cy="95"  r="60" />
+                    <circle class="hof-venn-circle" data-hof-venn-value="<?php echo esc_attr( $values[2] ); ?>"
+                            <?php echo isset( $selected_lookup[ $values[2] ] ) ? 'data-hof-selected="1"' : ''; ?>
+                            cx="120" cy="147" r="60" />
+                    <text class="hof-venn-count"          x="55"  y="80"  text-anchor="middle"><?php echo (int) $regions['a_only']; ?></text>
+                    <text class="hof-venn-count"          x="185" y="80"  text-anchor="middle"><?php echo (int) $regions['b_only']; ?></text>
+                    <text class="hof-venn-count"          x="120" y="180" text-anchor="middle"><?php echo (int) $regions['c_only']; ?></text>
+                    <text class="hof-venn-count hof-venn-count-overlap" x="120" y="80"  text-anchor="middle"><?php echo (int) $regions['ab_only']; ?></text>
+                    <text class="hof-venn-count hof-venn-count-overlap" x="88"  y="140" text-anchor="middle"><?php echo (int) $regions['ac_only']; ?></text>
+                    <text class="hof-venn-count hof-venn-count-overlap" x="152" y="140" text-anchor="middle"><?php echo (int) $regions['bc_only']; ?></text>
+                    <text class="hof-venn-count hof-venn-count-center"  x="120" y="120" text-anchor="middle"><?php echo (int) $regions['abc']; ?></text>
+                </svg>
+            <?php endif; ?>
+
+            <?php // Hidden inputs carry the same OR-list URL shape as checkbox/swatch. ?>
+            <?php foreach ( $values as $v ) :
+                if ( isset( $selected_lookup[ $v ] ) ) : ?>
+                    <input type="hidden" name="hof[<?php echo esc_attr( $name ); ?>][]" value="<?php echo esc_attr( $v ); ?>">
+                <?php endif;
+            endforeach; ?>
         </div>
         <?php
         return (string) ob_get_clean();

@@ -426,6 +426,63 @@
     }
 }
 
+/* Venn matrix — overlapping circles, region counts via SVG <text>. */
+.hof-facet-venn .hof-venn-svg {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    margin: var(--hof-space) auto 0;
+    overflow: visible;
+}
+
+.hof-venn-circle {
+    /* Hook purple at low alpha so overlaps darken naturally via compositing. */
+    fill: rgba(83, 74, 183, 0.18);
+    stroke: var(--hof-primary);
+    stroke-width: 0.75;
+    cursor: pointer;
+    transition: fill 160ms ease, stroke 160ms ease, stroke-width 160ms ease;
+}
+
+.hof-venn-circle:hover {
+    fill: rgba(83, 74, 183, 0.32);
+}
+
+.hof-venn-circle[data-hof-selected] {
+    fill: rgba(216, 90, 48, 0.30);
+    stroke: var(--hof-color-facet-coral, #D85A30);
+    stroke-width: 1.5;
+}
+
+.hof-venn-term {
+    fill: var(--hof-text);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.hof-venn-count {
+    fill: var(--hof-text);
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+}
+
+.hof-venn-count-overlap,
+.hof-venn-count-center {
+    fill: #fff;
+}
+
+.hof-venn-count-center {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hof-venn-circle { transition: none; }
+}
+
 /* Reset link */
 .hof-reset {
     display: inline-block;

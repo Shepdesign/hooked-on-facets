@@ -153,6 +153,33 @@ final class Resolver {
     // ── Internals ───────────────────────────────────────────────────────────
 
     /**
+     * Count objects that have ALL of the given values for one facet.
+     *
+     * One INTERSECT chain of per-value covering scans — same shape as the
+     * main resolver, but pinned to a single facet. Single value just runs
+     * one SELECT wrapped in COUNT. Used by the Venn-matrix renderer for
+     * pairwise / triple region counts (4 queries for a 3-set Venn).
+     *
+     * @param array<int, string> $values
+     */
+    public function count_intersection( string $facet_name, array $values ): int {
+        if ( empty( $values ) ) {
+            return 0;
+        }
+        global $wpdb;
+        $table = $wpdb->prefix . Activator::TABLE;
+        $legs   = [];
+        $params = [];
+        foreach ( $values as $value ) {
+            $legs[]   = "SELECT object_id FROM {$table} USE INDEX (facet_lookup) WHERE facet_name = %s AND facet_value = %s";
+            $params[] = $facet_name;
+            $params[] = (string) $value;
+        }
+        $sql = 'SELECT COUNT(*) FROM ( ' . implode( ' INTERSECT ', $legs ) . ' ) AS sub';
+        return (int) $wpdb->get_var( $wpdb->prepare( $sql, $params ) );
+    }
+
+    /**
      * Build the core filter subquery: IDs matching all configured facets in
      * the state. Returns null when state is empty / unrecognized.
      *

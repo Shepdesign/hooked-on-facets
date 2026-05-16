@@ -10,6 +10,7 @@ const DISPLAYS = [
     { value: 'search',   label: 'Search box' },
     { value: 'swatch',   label: 'Fluid swatches' },
     { value: 'swiper',   label: 'Swipe deck' },
+    { value: 'venn',     label: 'Venn matrix' },
 ];
 
 const sanitizeSlug = (raw) =>
@@ -108,6 +109,17 @@ export default function FacetEditor({ facet, onChange, onDelete }) {
                                 Non-taxonomy sources still work but cards will be label-only.
                             </span>
                         )}
+                        {facet.display === 'venn' && facet.kind === 'taxonomy' && (
+                            <span className="hof-field-help">
+                                Auto-picks the top 3 terms by count and renders overlapping circles
+                                with real intersection counts. Click any circle to toggle that term.
+                            </span>
+                        )}
+                        {facet.display === 'venn' && facet.kind !== 'taxonomy' && (
+                            <span className="hof-field-help hof-field-warn">
+                                Venn requires a taxonomy source. Falls back to a checkbox list at runtime.
+                            </span>
+                        )}
                     </label>
 
                     <div className="hof-editor-actions">
@@ -172,6 +184,22 @@ function FacetPreview({ facet }) {
                 </div>
                 <p className="hof-preview-note">
                     Right = include, left = skip. Cards reuse the term's swatch image/color.
+                </p>
+            </div>
+        );
+    }
+
+    if (facet.display === 'venn') {
+        return (
+            <div className="hof-preview">
+                <div className="hof-preview-label">{label}</div>
+                <svg viewBox="0 0 240 220" className="hof-preview-venn">
+                    <circle className="hof-preview-venn-circle" cx="90"  cy="95"  r="60" />
+                    <circle className="hof-preview-venn-circle" cx="150" cy="95"  r="60" />
+                    <circle className="hof-preview-venn-circle" cx="120" cy="147" r="60" />
+                </svg>
+                <p className="hof-preview-note">
+                    Top 3 terms render as overlapping circles with real intersection counts.
                 </p>
             </div>
         );

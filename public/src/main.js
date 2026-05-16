@@ -114,9 +114,41 @@ document.addEventListener('input', (e) => {
 // Reset link hijack — clear all and refresh in place.
 document.addEventListener('click', (e) => {
     const reset = e.target.closest('[data-hof-reset]');
-    if (!reset) return;
-    e.preventDefault();
-    store.clear();
+    if (reset) {
+        e.preventDefault();
+        store.clear();
+        return;
+    }
+
+    // Venn circle: toggle that term in the facet's selection. Hidden inputs
+    // get regenerated on refresh; we use the data-hof-selected attribute on
+    // the circles themselves as the source of truth between clicks.
+    const vennCircle = e.target.closest('.hof-venn-circle');
+    if (vennCircle) {
+        const facetEl = vennCircle.closest('[data-hof-facet]');
+        const name    = facetEl?.getAttribute('data-hof-facet');
+        const value   = vennCircle.getAttribute('data-hof-venn-value');
+        if (!facetEl || !name || !value) return;
+
+        const circles  = facetEl.querySelectorAll('.hof-venn-circle');
+        const selected = new Set();
+        circles.forEach((c) => {
+            if (c.hasAttribute('data-hof-selected')) {
+                selected.add(c.getAttribute('data-hof-venn-value'));
+            }
+        });
+        if (selected.has(value)) selected.delete(value);
+        else selected.add(value);
+
+        // Optimistic flip so the coral stroke shows before the round-trip.
+        circles.forEach((c) => {
+            const v = c.getAttribute('data-hof-venn-value');
+            if (selected.has(v)) c.setAttribute('data-hof-selected', '1');
+            else c.removeAttribute('data-hof-selected');
+        });
+
+        store.set(name, Array.from(selected));
+    }
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────────

@@ -492,6 +492,21 @@
 .hof-preview-swiper-btn-skip    { color: var(--hof-color-ink-500); }
 .hof-preview-swiper-btn-include { color: var(--hof-color-facet-coral); }
 
+/* Venn preview */
+.hof-preview-venn {
+    display: block;
+    width: 100%;
+    max-width: 220px;
+    height: auto;
+    margin: 0 auto var(--hof-space);
+}
+
+.hof-preview-venn-circle {
+    fill: rgba(83, 74, 183, 0.18);
+    stroke: var(--hof-color-hook-purple);
+    stroke-width: 0.75;
+}
+
 /* ── Tokens panel ─────────────────────────────────────────────────────── */
 
 .hof-tokens {
