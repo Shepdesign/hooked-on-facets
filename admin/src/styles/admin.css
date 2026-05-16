@@ -989,7 +989,7 @@ body.toplevel_page_hooked-on-facets .wrap {
 }
 
 .hof-bp-bar {
-    background: var(--hof-color-ink-900);
+    background: #0B0B0A;
     padding: 11px 14px;
     display: flex;
     align-items: center;
@@ -1031,20 +1031,23 @@ body.toplevel_page_hooked-on-facets .wrap {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: transparent;
-    border: 0.5px solid #444441;
-    color: var(--hof-color-ink-300);
+    background: rgba(255, 255, 255, 0.04);
+    border: 0.5px solid #5F5E5A;
+    color: var(--hof-color-warm-cream);
     padding: 6px 10px;
     border-radius: var(--hof-radius-md);
     font-family: var(--hof-font-mono);
     font-size: 12px;
     cursor: pointer;
-    transition: background 140ms ease, color 140ms ease;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
 }
 
 .hof-bp-chip-icon { padding: 6px 8px; }
 
-.hof-bp-chip:hover { color: var(--hof-color-warm-cream); background: rgba(255,255,255,0.04); }
+.hof-bp-chip:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--hof-color-ink-300);
+}
 
 .hof-bp-deploy {
     background: transparent;
