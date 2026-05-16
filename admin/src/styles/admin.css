@@ -23,75 +23,170 @@
 .hof {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 32px);
+    min-height: calc(100vh - 90px);
 }
 
-/* ── Header ───────────────────────────────────────────────────────────── */
+/* ── Status bar (dark top breadcrumb) ─────────────────────────────────── */
 
-.hof-header {
+.hof-statusbar {
+    background: var(--hof-color-ink-900);
+    padding: 9px 14px;
     display: flex;
     align-items: center;
-    gap: calc(var(--hof-space) * 2);
-    padding: calc(var(--hof-space) * 2) calc(var(--hof-space) * 3);
-    background: var(--hof-surface);
-    border-bottom: 0.5px solid var(--hof-border);
+    gap: 8px;
+    color: var(--hof-color-ink-500);
 }
 
-.hof-title {
-    display: inline-flex;
+.hof-statusbar svg {
+    color: var(--hof-color-ink-700);
+    flex-shrink: 0;
+}
+
+.hof-crumb {
+    font-family: var(--hof-font-mono);
+    font-size: 11px;
+    color: var(--hof-color-ink-300);
+}
+
+.hof-crumb-muted { color: var(--hof-color-ink-500); }
+.hof-crumb-active { color: var(--hof-color-warm-cream); }
+
+.hof-version {
+    margin-left: auto;
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    color: var(--hof-color-ink-700);
+}
+
+/* ── Layout ────────────────────────────────────────────────────────────── */
+
+.hof-layout {
+    display: grid;
+    grid-template-columns: 168px minmax(0, 1fr);
+    flex: 1;
+}
+
+/* ── Dark nav sidebar ──────────────────────────────────────────────────── */
+
+.hof-nav {
+    background: var(--hof-color-deep-ink);
+    color: var(--hof-color-ink-300);
+    padding: 18px 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.hof-nav-brand {
+    display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 1.25rem;
+    gap: 8px;
+    margin: 0 0 22px;
+    padding: 4px 10px;
+}
+
+.hof-nav-wordmark {
+    font-size: 12px;
     font-weight: 500;
-    letter-spacing: -0.02em;
+    color: var(--hof-color-warm-cream);
+    white-space: nowrap;
+}
+
+.hof-nav-section {
+    margin-bottom: 14px;
+}
+
+.hof-nav-section-label {
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    color: var(--hof-color-ink-700);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0 10px 6px;
     margin: 0;
 }
 
-.hof-logo-mark {
-    flex-shrink: 0;
-    display: block;
-}
-
-.hof-wordmark {
-    line-height: 1;
-}
-
-.hof-tabs {
-    display: flex;
-    gap: 4px;
-    margin-left: calc(var(--hof-space) * 2);
-}
-
-.hof-tab {
-    background: transparent;
-    border: 0;
-    padding: 6px 12px;
-    border-radius: var(--hof-radius-ui);
-    color: var(--hof-muted);
-    cursor: pointer;
-    font: inherit;
-}
-
-.hof-tab:hover {
-    background: var(--hof-bg);
-    color: var(--hof-text);
-}
-
-.hof-tab.is-active {
-    background: var(--hof-primary);
-    color: var(--hof-on-primary);
-}
-
-.hof-actions {
-    margin-left: auto;
+.hof-nav-item {
     display: flex;
     align-items: center;
-    gap: var(--hof-space);
+    gap: 10px;
+    width: 100%;
+    background: transparent;
+    border: 0;
+    padding: 7px 10px;
+    color: var(--hof-color-ink-500);
+    font: inherit;
+    font-size: 13px;
+    border-radius: var(--hof-radius-md);
+    cursor: pointer;
+    text-align: left;
+    margin-bottom: 1px;
+    transition: background 140ms ease, color 140ms ease;
+}
+
+.hof-nav-item:hover {
+    color: var(--hof-color-warm-cream);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.hof-nav-item.is-active {
+    background: rgba(216, 90, 48, 0.14);
+    color: var(--hof-color-warm-cream);
+}
+
+/* ── View (cream main content) ─────────────────────────────────────────── */
+
+.hof-view {
+    background: var(--hof-color-warm-cream);
+    padding: 22px;
+    overflow-y: auto;
 }
 
 .hof-error {
     color: var(--hof-danger);
     font-size: 0.875rem;
+}
+
+/* ── Eyebrow / live dot / chip utilities (reusable patterns from BRAND.md) */
+
+.hof-eyebrow {
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    color: var(--hof-color-facet-coral);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.hof-live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--hof-color-facet-coral);
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.hof-live-dot-muted {
+    background: var(--hof-color-ink-300);
+}
+
+.hof-chip {
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    color: var(--hof-color-purple-700);
+    background: var(--hof-color-purple-50);
+    padding: 3px 9px;
+    border-radius: var(--hof-radius-pill);
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+.hof-chip-muted {
+    color: var(--hof-color-ink-700);
+    background: var(--hof-color-ink-200);
 }
 
 /* ── Buttons ──────────────────────────────────────────────────────────── */
@@ -151,24 +246,53 @@
     color: var(--hof-on-primary);
 }
 
-/* ── Main / layout ────────────────────────────────────────────────────── */
+/* ── Facets view header (above the editor pane) ───────────────────────── */
 
-.hof-main {
-    flex: 1;
+.hof-view-header {
     display: flex;
-    overflow: hidden;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
 }
 
-/* ── Sidebar ──────────────────────────────────────────────────────────── */
+.hof-view-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--hof-color-deep-ink);
+    letter-spacing: -0.02em;
+}
+
+.hof-view-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--hof-space);
+}
+
+.hof-facets-pane {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.hof-facets-content {
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
+    padding: calc(var(--hof-space) * 3);
+    min-height: 400px;
+}
+
+/* ── Facets sidebar (list of configured facets inside the Facets view) ── */
 
 .hof-sidebar {
-    width: 260px;
-    flex-shrink: 0;
     background: var(--hof-surface);
-    border-right: 0.5px solid var(--hof-border);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    overflow: hidden;
 }
 
 .hof-sidebar-header {
@@ -567,4 +691,202 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* ── Button variants (coral CTA, outline secondary) ───────────────────── */
+
+.hof-btn-coral {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--hof-color-facet-coral);
+    border: 0.5px solid var(--hof-color-facet-coral);
+    color: var(--hof-color-coral-50);
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--hof-radius-md);
+}
+
+.hof-btn-coral:hover:not(:disabled) {
+    filter: brightness(0.95);
+    color: var(--hof-color-coral-50);
+}
+
+.hof-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 0.5px solid var(--hof-color-deep-ink);
+    color: var(--hof-color-deep-ink);
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--hof-radius-md);
+}
+
+.hof-btn-outline:hover:not(:disabled) {
+    background: var(--hof-color-deep-ink);
+    color: var(--hof-color-warm-cream);
+}
+
+/* ── Dashboard view ───────────────────────────────────────────────────── */
+
+.hof-dash-hero {
+    background: var(--hof-color-purple-50);
+    border-radius: var(--hof-radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 14px;
+}
+
+.hof-dash-headline {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--hof-color-purple-700);
+    margin: 10px 0 6px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.hof-dash-sub {
+    font-size: 13px;
+    color: var(--hof-color-hook-purple);
+    margin: 0;
+    line-height: 1.5;
+    max-width: 480px;
+}
+
+.hof-dash-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.hof-stat {
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
+    padding: 14px;
+}
+
+.hof-stat .hof-eyebrow {
+    color: var(--hof-color-ink-500);
+    margin-bottom: 10px;
+    letter-spacing: 0.12em;
+    display: block;
+}
+
+.hof-stat-value {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--hof-color-deep-ink);
+    margin: 0;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.hof-stat-unit {
+    font-size: 13px;
+    color: var(--hof-color-ink-700);
+    margin-left: 2px;
+    font-weight: 400;
+}
+
+.hof-dash-section-label {
+    color: var(--hof-color-ink-500);
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.hof-dash-facets {
+    list-style: none;
+    margin: 0 0 18px;
+    padding: 0;
+}
+
+.hof-dash-facet {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto auto;
+    gap: 12px;
+    align-items: center;
+    padding: 11px 14px;
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
+    margin-bottom: 6px;
+    transition: border-color 140ms ease;
+}
+
+.hof-dash-facet:hover {
+    border-color: var(--hof-color-ink-300);
+}
+
+.hof-dash-facet[data-hof-draft] {
+    opacity: 0.6;
+}
+
+.hof-dash-facet-icon {
+    color: var(--hof-color-hook-purple);
+}
+
+.hof-dash-facet[data-hof-draft] .hof-dash-facet-icon {
+    color: var(--hof-color-ink-500);
+}
+
+.hof-dash-facet-text {
+    min-width: 0;
+}
+
+.hof-dash-facet-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--hof-color-deep-ink);
+    margin: 0;
+}
+
+.hof-dash-facet-source {
+    font-size: 11px;
+    color: var(--hof-color-ink-500);
+    margin: 2px 0 0;
+    font-family: var(--hof-font-mono);
+}
+
+.hof-dash-empty {
+    color: var(--hof-color-ink-700);
+    font-size: 13px;
+    margin: 0 0 18px;
+}
+
+.hof-dash-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+/* ── Stub view ────────────────────────────────────────────────────────── */
+
+.hof-stub {
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
+    padding: 32px;
+    max-width: 560px;
+}
+
+.hof-stub-title {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--hof-color-deep-ink);
+    letter-spacing: -0.02em;
+}
+
+.hof-stub-body {
+    margin: 0;
+    color: var(--hof-color-ink-700);
+    font-size: 14px;
+    line-height: 1.55;
 }

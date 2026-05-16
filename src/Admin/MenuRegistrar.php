@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 namespace HookedOnFacets\Admin;
 
+use HookedOnFacets\Activator;
 use HookedOnFacets\Contracts\Bootable;
 use HookedOnFacets\Indexer;
 
@@ -79,10 +80,12 @@ final class MenuRegistrar implements Bootable {
         $inline = sprintf(
             'window.hofAdmin = %s;',
             wp_json_encode( [
-                'restUrl' => esc_url_raw( rest_url( 'hof/v1/' ) ),
-                'nonce'   => wp_create_nonce( 'wp_rest' ),
-                'facets'  => array_values( (array) get_option( Indexer::OPTION_FACETS, [] ) ),
-                'tokens'  => $tokens,
+                'restUrl'         => esc_url_raw( rest_url( 'hof/v1/' ) ),
+                'nonce'           => wp_create_nonce( 'wp_rest' ),
+                'facets'          => array_values( (array) get_option( Indexer::OPTION_FACETS, [] ) ),
+                'tokens'          => $tokens,
+                'productsIndexed' => $this->count_indexed_products(),
+                'version'         => HOF_VERSION,
             ] )
         );
 
@@ -212,6 +215,17 @@ final class MenuRegistrar implements Bootable {
         $cache   = is_array( $decoded ) ? $decoded : false;
 
         return is_array( $decoded ) ? $decoded : null;
+    }
+
+    /**
+     * Distinct objects in the HOF index — what the dashboard shows as
+     * "products indexed." Cheap covering scan on the wp_hof_index PK.
+     */
+    private function count_indexed_products(): int {
+        global $wpdb;
+        $table = $wpdb->prefix . Activator::TABLE;
+        $sql   = "SELECT COUNT(DISTINCT object_id) FROM {$table}";
+        return (int) $wpdb->get_var( $sql );
     }
 
     /**

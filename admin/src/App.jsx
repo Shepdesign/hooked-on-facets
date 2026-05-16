@@ -1,13 +1,31 @@
 import { useCallback, useState } from 'react';
+import {
+    IconArrowsShuffle,
+    IconChevronRight,
+    IconDatabase,
+    IconFilter,
+    IconLayoutGrid,
+    IconPalette,
+    IconSettings,
+    IconTools,
+} from '@tabler/icons-react';
 import { saveFacets } from './api.js';
 import Sidebar from './components/Sidebar.jsx';
 import FacetEditor from './components/FacetEditor.jsx';
 import TokensPanel from './components/TokensPanel.jsx';
+import Dashboard from './components/Dashboard.jsx';
 
-const TABS = [
-    { id: 'facets', label: 'Facets' },
-    { id: 'tokens', label: 'Tokens' },
+const VIEWS = [
+    { id: 'dashboard',  label: 'Dashboard',     section: 'Main',   Icon: IconLayoutGrid },
+    { id: 'facets',     label: 'Facets',        section: 'Main',   Icon: IconFilter },
+    { id: 'queryloops', label: 'Query loops',   section: 'Main',   Icon: IconArrowsShuffle },
+    { id: 'indexer',    label: 'Indexer',       section: 'Main',   Icon: IconDatabase },
+    { id: 'blueprint',  label: 'Blueprint',     section: 'Studio', Icon: IconTools },
+    { id: 'tokens',     label: 'Design tokens', section: 'Studio', Icon: IconPalette },
+    { id: 'settings',   label: 'Settings',      section: 'System', Icon: IconSettings },
 ];
+
+const SECTION_ORDER = ['Main', 'Studio', 'System'];
 
 const blankFacet = () => ({
     name: '',
@@ -18,7 +36,7 @@ const blankFacet = () => ({
 });
 
 export default function App({ bootstrap }) {
-    const [tab, setTab] = useState('facets');
+    const [view, setView] = useState('dashboard');
     const [facets, setFacets] = useState(() =>
         Array.isArray(bootstrap.facets) ? bootstrap.facets : []
     );
@@ -46,6 +64,7 @@ export default function App({ bootstrap }) {
             return next;
         });
         setDirty(true);
+        setView('facets');
     };
 
     const deleteSelected = () => {
@@ -72,74 +91,120 @@ export default function App({ bootstrap }) {
         }
     };
 
+    const currentView = VIEWS.find((v) => v.id === view) || VIEWS[0];
+
     return (
         <div className="hof">
-            <header className="hof-header">
-                <h1 className="hof-title">
-                    <svg className="hof-logo-mark" width="32" height="32" viewBox="0 0 72 72" role="img" aria-label="Hooked on Facets">
-                        <title>Hooked on Facets</title>
-                        <path d="M36 6 L62 21 L36 36 L10 21 Z" fill="#7F77DD" />
-                        <path d="M10 21 L10 51 L36 66 L36 36 Z" fill="#3C3489" />
-                        <path d="M62 21 L62 51 L36 66 L36 36 Z" fill="#534AB7" />
-                        <circle cx="36" cy="11" r="11" fill="#D85A30" stroke="#F1EFE8" strokeWidth="1.5" />
-                    </svg>
-                    <span className="hof-wordmark">hooked on facets</span>
-                </h1>
-                <nav className="hof-tabs">
-                    {TABS.map((t) => (
-                        <button
-                            key={t.id}
-                            className={`hof-tab ${tab === t.id ? 'is-active' : ''}`}
-                            onClick={() => setTab(t.id)}
-                            type="button"
-                        >
-                            {t.label}
-                        </button>
-                    ))}
-                </nav>
-                <div className="hof-actions">
-                    {error && <span className="hof-error" role="alert">{error}</span>}
-                    <button
-                        className="hof-btn hof-btn-primary"
-                        disabled={!dirty || saving}
-                        onClick={save}
-                        type="button"
-                    >
-                        {saving ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
-                    </button>
-                </div>
+            <header className="hof-statusbar">
+                <span className="hof-crumb hof-crumb-muted">wp-admin</span>
+                <IconChevronRight size={12} stroke={1.75} aria-hidden="true" />
+                <span className="hof-crumb">hooked-on-facets</span>
+                <IconChevronRight size={12} stroke={1.75} aria-hidden="true" />
+                <span className="hof-crumb hof-crumb-active">{currentView.label.toLowerCase()}</span>
+                <span className="hof-version">v{bootstrap.version || '0.1.0'}</span>
             </header>
 
-            <main className="hof-main">
-                {tab === 'facets' ? (
-                    <>
-                        <Sidebar
+            <div className="hof-layout">
+                <aside className="hof-nav">
+                    <div className="hof-nav-brand">
+                        <svg width="22" height="22" viewBox="0 0 72 72" aria-label="Hooked on Facets">
+                            <path d="M36 6 L62 21 L36 36 L10 21 Z" fill="#7F77DD" />
+                            <path d="M10 21 L10 51 L36 66 L36 36 Z" fill="#3C3489" />
+                            <path d="M62 21 L62 51 L36 66 L36 36 Z" fill="#534AB7" />
+                            <circle cx="36" cy="11" r="11" fill="#D85A30" stroke="#F1EFE8" strokeWidth="1.5" />
+                        </svg>
+                        <span className="hof-nav-wordmark">hooked on facets</span>
+                    </div>
+
+                    {SECTION_ORDER.map((section) => (
+                        <div key={section} className="hof-nav-section">
+                            <p className="hof-nav-section-label">{section}</p>
+                            {VIEWS.filter((v) => v.section === section).map(({ id, label, Icon }) => (
+                                <button
+                                    key={id}
+                                    type="button"
+                                    className={`hof-nav-item ${view === id ? 'is-active' : ''}`}
+                                    onClick={() => setView(id)}
+                                >
+                                    <Icon size={15} stroke={1.5} aria-hidden="true" />
+                                    <span>{label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    ))}
+                </aside>
+
+                <main className="hof-view">
+                    {view === 'dashboard' && (
+                        <Dashboard
                             facets={facets}
-                            selectedIdx={selectedIdx}
-                            onSelect={setSelectedIdx}
-                            onAdd={addFacet}
+                            productsIndexed={bootstrap.productsIndexed}
+                            onCreateFacet={addFacet}
+                            onOpenBlueprint={() => setView('blueprint')}
                         />
-                        <section className="hof-content">
-                            {selected ? (
-                                <FacetEditor
-                                    facet={selected}
-                                    onChange={updateSelected}
-                                    onDelete={deleteSelected}
-                                />
-                            ) : (
-                                <div className="hof-empty">
-                                    <p>No facet selected.</p>
-                                    <button className="hof-btn" onClick={addFacet} type="button">
-                                        Create your first facet
+                    )}
+
+                    {view === 'facets' && (
+                        <div className="hof-view-facets">
+                            <div className="hof-view-header">
+                                <h2 className="hof-view-title">Facets</h2>
+                                <div className="hof-view-actions">
+                                    {error && <span className="hof-error" role="alert">{error}</span>}
+                                    <button
+                                        className="hof-btn hof-btn-primary"
+                                        disabled={!dirty || saving}
+                                        onClick={save}
+                                        type="button"
+                                    >
+                                        {saving ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
                                     </button>
                                 </div>
-                            )}
-                        </section>
-                    </>
-                ) : (
-                    <TokensPanel tokens={bootstrap.tokens || {}} />
-                )}
-            </main>
+                            </div>
+                            <div className="hof-facets-pane">
+                                <Sidebar
+                                    facets={facets}
+                                    selectedIdx={selectedIdx}
+                                    onSelect={setSelectedIdx}
+                                    onAdd={addFacet}
+                                />
+                                <section className="hof-facets-content">
+                                    {selected ? (
+                                        <FacetEditor
+                                            facet={selected}
+                                            onChange={updateSelected}
+                                            onDelete={deleteSelected}
+                                        />
+                                    ) : (
+                                        <div className="hof-empty">
+                                            <p>No facet selected.</p>
+                                            <button className="hof-btn" onClick={addFacet} type="button">
+                                                Create your first facet
+                                            </button>
+                                        </div>
+                                    )}
+                                </section>
+                            </div>
+                        </div>
+                    )}
+
+                    {view === 'tokens' && <TokensPanel tokens={bootstrap.tokens || {}} />}
+
+                    {(view === 'queryloops' || view === 'indexer' || view === 'blueprint' || view === 'settings') && (
+                        <StubView label={currentView.label} />
+                    )}
+                </main>
+            </div>
+        </div>
+    );
+}
+
+function StubView({ label }) {
+    return (
+        <div className="hof-stub">
+            <h2 className="hof-stub-title">{label}</h2>
+            <p className="hof-stub-body">
+                Coming in a future build. Reach out if you want this prioritized.
+            </p>
         </div>
     );
 }
