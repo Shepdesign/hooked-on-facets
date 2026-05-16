@@ -1,14 +1,22 @@
 @import './tokens.css';
 
-/* Sit inside WP's .wrap so the SPA gets natural admin-chrome breathing room
-   on three sides. The 2px left gap inside .wrap is WP's quirk; we offset it
-   so we line up with the admin sidebar instead of looking pinched. */
+/* Charcoal "stage" behind the SPA so the whole interface reads as a floating
+   card. Scoped to the HOF admin page so we don't touch any other admin
+   screens. WP's #wpcontent/.wrap have their own backgrounds we have to neutralise. */
+body.toplevel_page_hooked-on-facets,
+body.toplevel_page_hooked-on-facets #wpwrap,
+body.toplevel_page_hooked-on-facets #wpcontent,
+body.toplevel_page_hooked-on-facets #wpbody-content,
+body.toplevel_page_hooked-on-facets .wrap {
+    background: #1A1A19;
+}
+
 #hof-admin-root {
     background: var(--hof-bg);
     color: var(--hof-text);
     font-family: var(--hof-font-sans);
     font-feature-settings: 'ss01', 'cv11';
-    margin: 12px 0 16px -2px;
+    margin: 14px 18px 18px -2px;
     border-radius: var(--hof-radius-md);
     overflow: hidden;
     min-height: calc(100vh - 90px);

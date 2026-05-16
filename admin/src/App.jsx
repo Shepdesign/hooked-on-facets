@@ -107,7 +107,7 @@ export default function App({ bootstrap }) {
             <div className="hof-layout">
                 <aside className="hof-nav">
                     <div className="hof-nav-brand">
-                        <svg width="22" height="22" viewBox="0 0 72 72" aria-label="Hooked on Facets">
+                        <svg width="30" height="30" viewBox="0 0 72 72" aria-label="Hooked on Facets">
                             <path d="M36 6 L62 21 L36 36 L10 21 Z" fill="#7F77DD" />
                             <path d="M10 21 L10 51 L36 66 L36 36 Z" fill="#3C3489" />
                             <path d="M62 21 L62 51 L36 66 L36 36 Z" fill="#534AB7" />
