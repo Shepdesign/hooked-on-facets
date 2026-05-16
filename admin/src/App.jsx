@@ -14,6 +14,7 @@ import Sidebar from './components/Sidebar.jsx';
 import FacetEditor from './components/FacetEditor.jsx';
 import TokensPanel from './components/TokensPanel.jsx';
 import Dashboard from './components/Dashboard.jsx';
+import Blueprint from './components/Blueprint.jsx';
 
 const VIEWS = [
     { id: 'dashboard',  label: 'Dashboard',     section: 'Main',   Icon: IconLayoutGrid },
@@ -189,7 +190,11 @@ export default function App({ bootstrap }) {
 
                     {view === 'tokens' && <TokensPanel tokens={bootstrap.tokens || {}} />}
 
-                    {(view === 'queryloops' || view === 'indexer' || view === 'blueprint' || view === 'settings') && (
+                    {view === 'blueprint' && (
+                        <Blueprint facets={facets} onBack={() => setView('dashboard')} />
+                    )}
+
+                    {(view === 'queryloops' || view === 'indexer' || view === 'settings') && (
                         <StubView label={currentView.label} />
                     )}
                 </main>
