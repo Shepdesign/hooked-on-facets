@@ -422,9 +422,11 @@ body.toplevel_page_hooked-on-facets .wrap {
     margin-top: calc(var(--hof-space) * 2);
 }
 
+/* Canvas-tone preview pane — matches the brand "sandbox" surface tone so
+   the preview reads as a stage rather than competing with the form column. */
 .hof-editor-preview {
-    background: var(--hof-color-purple-50);
-    border: 0.5px solid var(--hof-color-purple-200);
+    background: var(--hof-color-ink-100);
+    border: 0.5px solid var(--hof-color-ink-300);
     border-radius: var(--hof-radius-lg);
     padding: calc(var(--hof-space) * 2.5);
     position: sticky;
@@ -432,11 +434,17 @@ body.toplevel_page_hooked-on-facets .wrap {
 }
 
 .hof-editor-preview .hof-editor-subtitle {
-    color: var(--hof-color-facet-coral);
+    display: inline-flex;
+    align-items: center;
+    color: var(--hof-color-ink-700);
     font-family: var(--hof-font-mono);
     font-size: 10px;
-    letter-spacing: 0.14em;
-    margin-bottom: calc(var(--hof-space) * 1.5);
+    letter-spacing: 0.1em;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 5px 11px;
+    border-radius: var(--hof-radius-pill);
+    border: 0.5px solid var(--hof-color-ink-300);
+    margin-bottom: calc(var(--hof-space) * 2);
 }
 
 /* ── Form fields ──────────────────────────────────────────────────────── */
