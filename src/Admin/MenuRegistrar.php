@@ -248,17 +248,17 @@ final class MenuRegistrar implements Bootable {
          * @param array<string, string> $tokens
          */
         return apply_filters( 'hof_admin_css_tokens', [
-            '--hof-primary'    => '#5b6cff',
-            '--hof-on-primary' => '#ffffff',
-            '--hof-surface'    => '#ffffff',
-            '--hof-bg'         => '#f4f5fb',
-            '--hof-border'     => '#e3e4ec',
-            '--hof-text'       => '#1a1c2c',
-            '--hof-muted'      => '#6b6e7f',
-            '--hof-danger'     => '#e0364f',
+            '--hof-primary'    => '#534AB7',
+            '--hof-on-primary' => '#F1EFE8',
+            '--hof-surface'    => '#FFFFFF',
+            '--hof-bg'         => '#E6E3D9',
+            '--hof-border'     => '#D3D1C7',
+            '--hof-text'       => '#2C2C2A',
+            '--hof-muted'      => '#5F5E5A',
+            '--hof-danger'     => '#D85A30',
             '--hof-radius-ui'  => '8px',
             '--hof-space'      => '8px',
-            '--hof-font'       => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            '--hof-font'       => "'Geist', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
         ] );
     }
 
