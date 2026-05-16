@@ -1,13 +1,17 @@
 @import './tokens.css';
 
-/* Break out of the default WP admin content padding so the SPA fills the screen. */
+/* Sit inside WP's .wrap so the SPA gets natural admin-chrome breathing room
+   on three sides. The 2px left gap inside .wrap is WP's quirk; we offset it
+   so we line up with the admin sidebar instead of looking pinched. */
 #hof-admin-root {
     background: var(--hof-bg);
     color: var(--hof-text);
     font-family: var(--hof-font-sans);
     font-feature-settings: 'ss01', 'cv11';
-    margin: -10px -20px -10px -22px;
-    min-height: calc(100vh - 32px);
+    margin: 0 0 0 -2px;
+    border-radius: var(--hof-radius-md);
+    overflow: hidden;
+    min-height: calc(100vh - 60px);
 }
 
 #hof-admin-root *,
@@ -171,7 +175,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: calc(var(--hof-space) * 2);
+    padding: calc(var(--hof-space) * 2.5) calc(var(--hof-space) * 3);
     border-bottom: 0.5px solid var(--hof-border);
 }
 
@@ -184,7 +188,7 @@
 }
 
 .hof-sidebar-empty {
-    padding: calc(var(--hof-space) * 2);
+    padding: calc(var(--hof-space) * 3);
     color: var(--hof-muted);
     font-size: 0.875rem;
 }
@@ -203,7 +207,7 @@
     text-align: left;
     background: transparent;
     border: 0;
-    padding: calc(var(--hof-space) * 1.5) calc(var(--hof-space) * 2);
+    padding: calc(var(--hof-space) * 2) calc(var(--hof-space) * 3);
     cursor: pointer;
     border-left: 2px solid transparent;
     color: var(--hof-text);
