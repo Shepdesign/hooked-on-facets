@@ -320,17 +320,44 @@
 .hof-input {
     background: var(--hof-surface);
     border: 0.5px solid var(--hof-border);
-    border-radius: var(--hof-radius-ui);
-    padding: 8px 12px;
+    border-radius: var(--hof-radius-md);
+    padding: 12px 16px;
     color: var(--hof-text);
     font: inherit;
+    font-size: 0.9375rem;
+    line-height: 1.4;
     width: 100%;
+    transition: border-color 140ms ease, outline-color 140ms ease;
+}
+
+.hof-input:hover:not(:focus) {
+    border-color: var(--hof-color-ink-300);
 }
 
 .hof-input:focus {
-    outline: 2px solid var(--hof-primary);
-    outline-offset: 1px;
+    outline: 2px solid var(--hof-color-facet-coral);
+    outline-offset: 2px;
     border-color: transparent;
+}
+
+select.hof-input {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--hof-color-ink-500) 50%),
+        linear-gradient(135deg, var(--hof-color-ink-500) 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) 50%,
+        calc(100% - 13px) 50%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 36px;
+}
+
+select.hof-input:focus {
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--hof-color-facet-coral) 50%),
+        linear-gradient(135deg, var(--hof-color-facet-coral) 50%, transparent 50%);
 }
 
 /* ── Preview ──────────────────────────────────────────────────────────── */

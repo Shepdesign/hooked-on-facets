@@ -81,7 +81,7 @@ export default function App({ bootstrap }) {
                         <path d="M36 6 L62 21 L36 36 L10 21 Z" fill="#7F77DD" />
                         <path d="M10 21 L10 51 L36 66 L36 36 Z" fill="#3C3489" />
                         <path d="M62 21 L62 51 L36 66 L36 36 Z" fill="#534AB7" />
-                        <circle cx="36" cy="14" r="14" fill="#D85A30" stroke="#F1EFE8" strokeWidth="1.5" />
+                        <circle cx="36" cy="11" r="11" fill="#D85A30" stroke="#F1EFE8" strokeWidth="1.5" />
                     </svg>
                     <span className="hof-wordmark">hooked on facets</span>
                 </h1>
