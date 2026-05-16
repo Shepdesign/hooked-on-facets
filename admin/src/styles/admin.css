@@ -1050,17 +1050,18 @@ body.toplevel_page_hooked-on-facets .wrap {
 }
 
 .hof-bp-deploy {
-    background: transparent;
-    border-color: var(--hof-color-facet-coral);
-    color: var(--hof-color-facet-coral);
+    background: var(--hof-color-deep-ink);
+    border-color: var(--hof-color-ink-500);
+    color: var(--hof-color-warm-cream);
     font-family: var(--hof-font-sans);
     font-weight: 500;
     padding: 6px 12px;
 }
 
 .hof-bp-deploy:hover {
-    background: var(--hof-color-facet-coral);
-    color: var(--hof-color-coral-50);
+    background: var(--hof-color-ink-900);
+    border-color: var(--hof-color-warm-cream);
+    color: var(--hof-color-warm-cream);
 }
 
 .hof-bp-grid {
