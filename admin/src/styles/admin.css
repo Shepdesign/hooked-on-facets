@@ -317,7 +317,10 @@
     color: var(--hof-danger);
 }
 
-.hof-input {
+/* All field rules are scoped to #hof-admin-root so they beat WP's
+   wp-admin/css/forms.css — `.wp-admin select` is (0,1,1) and would
+   override an unscoped `.hof-input`. */
+#hof-admin-root .hof-input {
     background: var(--hof-surface);
     border: 0.5px solid var(--hof-border);
     border-radius: var(--hof-radius-md);
@@ -327,20 +330,24 @@
     font-size: 0.9375rem;
     line-height: 1.4;
     width: 100%;
+    max-width: none;
+    min-height: 0;
+    box-shadow: none;
     transition: border-color 140ms ease, outline-color 140ms ease;
 }
 
-.hof-input:hover:not(:focus) {
+#hof-admin-root .hof-input:hover:not(:focus) {
     border-color: var(--hof-color-ink-300);
 }
 
-.hof-input:focus {
-    outline: 2px solid var(--hof-color-facet-coral);
+#hof-admin-root .hof-input:focus {
+    outline: 2px solid var(--hof-color-hook-purple);
     outline-offset: 2px;
     border-color: transparent;
+    box-shadow: none;
 }
 
-select.hof-input {
+#hof-admin-root select.hof-input {
     appearance: none;
     -webkit-appearance: none;
     background-image:
@@ -349,15 +356,16 @@ select.hof-input {
     background-position:
         calc(100% - 18px) 50%,
         calc(100% - 13px) 50%;
-    background-size: 5px 5px, 5px 5px;
+    background-size: 6px 6px, 6px 6px;
     background-repeat: no-repeat;
-    padding-right: 36px;
+    padding-right: 40px;
+    cursor: pointer;
 }
 
-select.hof-input:focus {
+#hof-admin-root select.hof-input:focus {
     background-image:
-        linear-gradient(45deg, transparent 50%, var(--hof-color-facet-coral) 50%),
-        linear-gradient(135deg, var(--hof-color-facet-coral) 50%, transparent 50%);
+        linear-gradient(45deg, transparent 50%, var(--hof-color-hook-purple) 50%),
+        linear-gradient(135deg, var(--hof-color-hook-purple) 50%, transparent 50%);
 }
 
 /* ── Preview ──────────────────────────────────────────────────────────── */
