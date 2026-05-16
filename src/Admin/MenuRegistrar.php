@@ -41,13 +41,22 @@ final class MenuRegistrar implements Bootable {
     }
 
     public function register_menu(): void {
+        // Brand mark — three-plane isometric hexagon with a coral spark.
+        // See BRAND.md (brand kit repo) for the canonical SVG.
+        $icon_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">'
+            . '<path d="M36 6L62 21L36 36L10 21Z" fill="#7F77DD"/>'
+            . '<path d="M10 21L10 51L36 66L36 36Z" fill="#3C3489"/>'
+            . '<path d="M62 21L62 51L36 66L36 36Z" fill="#534AB7"/>'
+            . '<circle cx="36" cy="6" r="3.5" fill="#D85A30"/>'
+            . '</svg>';
+
         add_menu_page(
             __( 'Hooked on Facets', 'hooked-on-facets' ),
             __( 'Facets', 'hooked-on-facets' ),
             'manage_options',
             self::PAGE_SLUG,
             [ $this, 'render_page' ],
-            'dashicons-filter',
+            'data:image/svg+xml;base64,' . base64_encode( $icon_svg ),
             58
         );
     }
