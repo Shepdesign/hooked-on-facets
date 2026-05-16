@@ -82,11 +82,11 @@ export default function Blueprint({ facets, onBack }) {
                     <div className="hof-bp-response">
                         <p className="hof-eyebrow hof-bp-response-label">Products responding live</p>
                         <div className="hof-bp-response-bars">
-                            <span className="hof-bp-bar" style={{ opacity: 1 }}></span>
-                            <span className="hof-bp-bar" style={{ opacity: 0.7 }}></span>
-                            <span className="hof-bp-bar" style={{ opacity: 0.5 }}></span>
-                            <span className="hof-bp-bar hof-bp-bar-muted"></span>
-                            <span className="hof-bp-bar hof-bp-bar-muted"></span>
+                            <span className="hof-bp-response-bar" style={{ opacity: 1 }}></span>
+                            <span className="hof-bp-response-bar" style={{ opacity: 0.7 }}></span>
+                            <span className="hof-bp-response-bar" style={{ opacity: 0.5 }}></span>
+                            <span className="hof-bp-response-bar hof-bp-response-bar-muted"></span>
+                            <span className="hof-bp-response-bar hof-bp-response-bar-muted"></span>
                         </div>
                     </div>
                 </section>

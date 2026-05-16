@@ -1221,14 +1221,14 @@ body.toplevel_page_hooked-on-facets .wrap {
     gap: 6px;
 }
 
-.hof-bp-bar {
+.hof-bp-response-bar {
     flex: 1;
     height: 56px;
     background: var(--hof-color-facet-coral);
     border-radius: var(--hof-radius-md);
 }
 
-.hof-bp-bar-muted {
+.hof-bp-response-bar-muted {
     background: var(--hof-color-ink-300);
     opacity: 0.3;
 }
