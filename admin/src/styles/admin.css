@@ -533,20 +533,34 @@ body.toplevel_page_hooked-on-facets .wrap {
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
 }
 
 .hof-preview-list label {
     display: flex;
-    gap: var(--hof-space);
+    gap: 10px;
     align-items: center;
     cursor: not-allowed;
-    color: var(--hof-muted);
+    color: var(--hof-text);
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-color-ink-200);
+    border-radius: var(--hof-radius-md);
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.hof-preview-list label input[type="checkbox"] {
+    accent-color: var(--hof-color-hook-purple);
+    width: 14px;
+    height: 14px;
+    margin: 0;
 }
 
 .hof-preview-count {
     margin-left: auto;
     font-size: 0.75rem;
+    color: var(--hof-color-ink-500);
+    font-variant-numeric: tabular-nums;
 }
 
 .hof-preview-note {
@@ -558,14 +572,49 @@ body.toplevel_page_hooked-on-facets .wrap {
 .hof-preview-range {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 10px;
+    padding: 8px 4px;
+}
+
+.hof-preview-range input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-color-ink-300);
+    border-radius: var(--hof-radius-pill);
+    outline: none;
+    margin: 0;
+}
+
+.hof-preview-range input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--hof-color-hook-purple);
+    border-radius: 50%;
+    cursor: not-allowed;
+    border: 0;
+}
+
+.hof-preview-range input[type='range']::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--hof-color-hook-purple);
+    border-radius: 50%;
+    cursor: not-allowed;
+    border: 0;
 }
 
 .hof-preview-range-bounds {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
-    color: var(--hof-muted);
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    color: var(--hof-color-ink-500);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
 .hof-preview-swatches {
@@ -591,58 +640,94 @@ body.toplevel_page_hooked-on-facets .wrap {
 
 .hof-preview-swiper {
     position: relative;
-    width: 140px;
-    height: 180px;
-    margin: 0 auto var(--hof-space);
+    width: 168px;
+    height: 220px;
+    margin: 8px auto 14px;
 }
 
 .hof-preview-swiper-card {
     position: absolute;
     inset: 0;
-    border-radius: calc(var(--hof-radius-ui) * 2);
-    border: 0.5px solid var(--hof-border);
-    background: var(--hof-color-purple-50);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
+    border-radius: var(--hof-radius-lg);
+    border: 0.5px solid var(--hof-color-ink-300);
+    background: var(--hof-surface);
     padding: 12px;
+    box-sizing: border-box;
 }
 
 .hof-preview-swiper-card-back-1 {
-    transform: translateY(6px) scale(0.96);
+    background: var(--hof-color-ink-300);
+    transform: translate(4px, 4px);
     z-index: 1;
 }
 
 .hof-preview-swiper-card-back-2 {
-    transform: translateY(12px) scale(0.92);
+    background: var(--hof-color-ink-200);
+    transform: translate(8px, 8px);
     z-index: 0;
 }
 
+/* Top card gets a coral border + a coral content block — pulls focus on the
+   canvas the same way the blueprint sandbox's editing card does. */
+.hof-preview-swiper-card:not(.hof-preview-swiper-card-back) {
+    border-color: var(--hof-color-facet-coral);
+    z-index: 2;
+}
+
+.hof-preview-swiper-card:not(.hof-preview-swiper-card-back)::before {
+    content: '';
+    display: block;
+    height: 124px;
+    background: var(--hof-color-facet-coral);
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.hof-preview-swiper-card-meta {
+    display: block;
+    font-family: var(--hof-font-mono);
+    font-size: 9px;
+    color: var(--hof-color-ink-500);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0;
+}
+
 .hof-preview-swiper-card-label {
-    font-size: 0.75rem;
-    color: var(--hof-muted);
+    display: block;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--hof-color-deep-ink);
+    letter-spacing: -0.01em;
+    margin: 3px 0 0;
 }
 
 .hof-preview-swiper-controls {
     display: flex;
     justify-content: center;
-    gap: var(--hof-space);
+    gap: 14px;
+    margin-top: 4px;
 }
 
 .hof-preview-swiper-btn {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: var(--hof-surface);
-    border: 0.5px solid var(--hof-border);
+    border: 0.5px solid var(--hof-color-ink-300);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
 }
 
-.hof-preview-swiper-btn-skip    { color: var(--hof-color-ink-500); }
-.hof-preview-swiper-btn-include { color: var(--hof-color-facet-coral); }
+.hof-preview-swiper-btn-skip { color: var(--hof-color-ink-500); }
+
+.hof-preview-swiper-btn-include {
+    background: var(--hof-color-facet-coral);
+    border-color: var(--hof-color-facet-coral);
+    color: var(--hof-color-coral-50);
+}
 
 /* Venn preview */
 .hof-preview-venn {

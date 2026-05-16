@@ -175,7 +175,8 @@ function FacetPreview({ facet }) {
                     <div className="hof-preview-swiper-card hof-preview-swiper-card-back hof-preview-swiper-card-back-2"></div>
                     <div className="hof-preview-swiper-card hof-preview-swiper-card-back hof-preview-swiper-card-back-1"></div>
                     <div className="hof-preview-swiper-card">
-                        <span className="hof-preview-swiper-card-label">Top card</span>
+                        <p className="hof-preview-swiper-card-meta">{label} · 1 of 12</p>
+                        <p className="hof-preview-swiper-card-label">Top card</p>
                     </div>
                 </div>
                 <div className="hof-preview-swiper-controls">
