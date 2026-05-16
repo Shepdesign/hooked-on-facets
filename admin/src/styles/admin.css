@@ -4,7 +4,8 @@
 #hof-admin-root {
     background: var(--hof-bg);
     color: var(--hof-text);
-    font-family: var(--hof-font);
+    font-family: var(--hof-font-sans);
+    font-feature-settings: 'ss01', 'cv11';
     margin: -10px -20px -10px -22px;
     min-height: calc(100vh - 32px);
 }
@@ -29,13 +30,26 @@
     gap: calc(var(--hof-space) * 2);
     padding: calc(var(--hof-space) * 2) calc(var(--hof-space) * 3);
     background: var(--hof-surface);
-    border-bottom: 1px solid var(--hof-border);
+    border-bottom: 0.5px solid var(--hof-border);
 }
 
 .hof-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: 500;
+    letter-spacing: -0.02em;
     margin: 0;
+}
+
+.hof-logo-mark {
+    flex-shrink: 0;
+    display: block;
+}
+
+.hof-wordmark {
+    line-height: 1;
 }
 
 .hof-tabs {
@@ -80,7 +94,7 @@
 
 .hof-btn {
     background: var(--hof-surface);
-    border: 1px solid var(--hof-border);
+    border: 0.5px solid var(--hof-border);
     color: var(--hof-text);
     padding: 6px 14px;
     border-radius: var(--hof-radius-ui);
@@ -147,7 +161,7 @@
     width: 260px;
     flex-shrink: 0;
     background: var(--hof-surface);
-    border-right: 1px solid var(--hof-border);
+    border-right: 0.5px solid var(--hof-border);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -158,7 +172,7 @@
     align-items: center;
     justify-content: space-between;
     padding: calc(var(--hof-space) * 2);
-    border-bottom: 1px solid var(--hof-border);
+    border-bottom: 0.5px solid var(--hof-border);
 }
 
 .hof-sidebar-title {
@@ -270,7 +284,7 @@
 
 .hof-editor-preview {
     background: var(--hof-surface);
-    border: 1px solid var(--hof-border);
+    border: 0.5px solid var(--hof-border);
     border-radius: var(--hof-radius-ui);
     padding: calc(var(--hof-space) * 2);
     position: sticky;
@@ -301,7 +315,7 @@
 
 .hof-input {
     background: var(--hof-surface);
-    border: 1px solid var(--hof-border);
+    border: 0.5px solid var(--hof-border);
     border-radius: var(--hof-radius-ui);
     padding: 8px 12px;
     color: var(--hof-text);
@@ -381,7 +395,7 @@
 
 .hof-preview-swatch-visual {
     border-radius: var(--hof-radius-ui);
-    border: 1px solid var(--hof-border);
+    border: 0.5px solid var(--hof-border);
 }
 
 .hof-preview-swiper {
@@ -395,9 +409,8 @@
     position: absolute;
     inset: 0;
     border-radius: calc(var(--hof-radius-ui) * 2);
-    border: 1px solid var(--hof-border);
-    background: linear-gradient(135deg, var(--hof-bg) 0%, var(--hof-surface) 100%);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    border: 0.5px solid var(--hof-border);
+    background: var(--hof-color-purple-50);
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -430,15 +443,15 @@
     height: 28px;
     border-radius: 50%;
     background: var(--hof-surface);
-    border: 1px solid var(--hof-border);
+    border: 0.5px solid var(--hof-border);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font-size: 0.875rem;
 }
 
-.hof-preview-swiper-btn-skip    { color: var(--hof-danger); }
-.hof-preview-swiper-btn-include { color: #16a34a; }
+.hof-preview-swiper-btn-skip    { color: var(--hof-color-ink-500); }
+.hof-preview-swiper-btn-include { color: var(--hof-color-facet-coral); }
 
 /* ── Tokens panel ─────────────────────────────────────────────────────── */
 
@@ -475,7 +488,7 @@
     align-items: center;
     gap: var(--hof-space);
     background: var(--hof-surface);
-    border: 1px solid var(--hof-border);
+    border: 0.5px solid var(--hof-border);
     border-radius: var(--hof-radius-ui);
     padding: calc(var(--hof-space) * 1.5);
 }

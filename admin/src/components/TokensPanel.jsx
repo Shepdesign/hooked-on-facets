@@ -32,7 +32,7 @@ export default function TokensPanel({ tokens }) {
 function swatchStyle(value) {
     const v = String(value);
     if (v.startsWith('#') || v.startsWith('rgb') || v.startsWith('hsl')) {
-        return { backgroundColor: v, border: '1px solid var(--hof-border)' };
+        return { backgroundColor: v, border: '0.5px solid var(--hof-border)' };
     }
     return {
         background:

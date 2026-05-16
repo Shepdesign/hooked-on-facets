@@ -1,26 +1,30 @@
 /* Public-runtime facet styles. Uses the same --hof-* tokens the admin uses;
    PHP prints a <style id="hof-tokens"> block in <head> that overrides these
-   defaults from the hof_public_css_tokens filter. */
+   defaults from the hof_public_css_tokens filter.
+
+   Values mirror BRAND.md (Hook purple #534AB7, Facet coral #D85A30,
+   warm-ink neutrals). The frontend inherits the theme's font — no Geist
+   load on public pages so we don't drag Google Fonts onto every shop. */
 
 .hof-facet,
 .hof-results {
-    --hof-primary: #5b6cff;
-    --hof-on-primary: #ffffff;
-    --hof-surface: #ffffff;
-    --hof-bg: #f4f5fb;
-    --hof-border: #e3e4ec;
-    --hof-text: #1a1c2c;
-    --hof-muted: #6b6e7f;
-    --hof-danger: #e0364f;
-    --hof-radius-ui: 8px;
-    --hof-space: 8px;
+    --hof-primary:    #534AB7;
+    --hof-on-primary: #F1EFE8;
+    --hof-surface:    #FFFFFF;
+    --hof-bg:         #E6E3D9;
+    --hof-border:     #D3D1C7;
+    --hof-text:       #2C2C2A;
+    --hof-muted:      #5F5E5A;
+    --hof-danger:     #D85A30;
+    --hof-radius-ui:  8px;
+    --hof-space:      8px;
     --hof-swatch-min: 36px;
     --hof-swatch-max: 96px;
 }
 
 .hof-facet {
     background: var(--hof-surface);
-    border: 1px solid var(--hof-border);
+    border: 0.5px solid var(--hof-border);
     border-radius: var(--hof-radius-ui);
     padding: calc(var(--hof-space) * 2);
     margin: 0 0 calc(var(--hof-space) * 2) 0;
@@ -102,7 +106,7 @@
     flex: 1;
     min-width: 0;
     background: var(--hof-surface);
-    border: 1px solid var(--hof-border);
+    border: 0.5px solid var(--hof-border);
     border-radius: var(--hof-radius-ui);
     padding: 6px 10px;
     color: var(--hof-text);
@@ -129,7 +133,7 @@
 .hof-facet-search input[type='search'] {
     width: 100%;
     background: var(--hof-surface);
-    border: 1px solid var(--hof-border);
+    border: 0.5px solid var(--hof-border);
     border-radius: var(--hof-radius-ui);
     padding: 8px 12px;
     color: var(--hof-text);
@@ -185,7 +189,7 @@
     background-size: cover;
     background-position: center;
     border-radius: var(--hof-radius-ui);
-    border: 1px solid var(--hof-border);
+    border: 0.5px solid var(--hof-border);
     box-shadow: inset 0 0 0 0 var(--hof-primary);
     transition:
         width 320ms cubic-bezier(0.2, 0.7, 0.2, 1),
@@ -264,13 +268,12 @@
 .hof-swiper-card {
     position: absolute;
     inset: 0;
-    background: var(--hof-swiper-color, var(--hof-surface));
+    background: var(--hof-swiper-color, var(--hof-color-purple-50, #EEEDFE));
     background-image: var(--hof-swiper-image, none);
     background-size: cover;
     background-position: center;
     border-radius: calc(var(--hof-radius-ui) * 2);
-    border: 1px solid var(--hof-border);
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+    border: 0.5px solid var(--hof-border);
     overflow: hidden;
     cursor: grab;
     transform:
@@ -296,21 +299,24 @@
 .hof-swiper-card-visual {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, var(--hof-bg) 0%, var(--hof-surface) 100%);
+    background: var(--hof-color-purple-50, #EEEDFE);
     z-index: -1;
 }
 
+/* Brand bans decorative gradients, but this scrim is functional: it keeps
+   the label legible when the card has a background image. Solid would
+   blot out the image; this is the minimal compromise. */
 .hof-swiper-card-text {
     position: absolute;
     inset: auto 0 0 0;
     padding: 12px 14px;
-    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.55) 100%);
+    background: linear-gradient(180deg, transparent 0%, rgba(26, 26, 25, 0.6) 100%);
     color: #fff;
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     gap: var(--hof-space);
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .hof-swiper-card-text .hof-facet-count {
@@ -334,14 +340,14 @@
 
 .hof-swiper-stamp-right {
     right: 16px;
-    color: #16a34a;
+    color: var(--hof-color-facet-coral, #D85A30);
     transform: rotate(12deg);
     opacity: clamp(0, calc(var(--hof-swipe-x, 0) / 80), 1);
 }
 
 .hof-swiper-stamp-left {
     left: 16px;
-    color: var(--hof-danger);
+    color: var(--hof-color-ink-500, #888780);
     transform: rotate(-12deg);
     opacity: clamp(0, calc(var(--hof-swipe-x, 0) * -1 / 80), 1);
 }
@@ -356,7 +362,7 @@
     justify-content: center;
     gap: var(--hof-space);
     background: var(--hof-surface);
-    border: 1px dashed var(--hof-border);
+    border: 0.5px dashed var(--hof-border);
     border-radius: calc(var(--hof-radius-ui) * 2);
     color: var(--hof-muted);
     text-align: center;
@@ -375,13 +381,12 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    border: 1px solid var(--hof-border);
+    border: 0.5px solid var(--hof-border);
     background: var(--hof-surface);
     color: var(--hof-text);
     font-size: 1.25rem;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transition: transform 120ms;
+    transition: transform 120ms, border-color 120ms, color 120ms;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -402,8 +407,8 @@
     transform: none;
 }
 
-.hof-swiper-include { color: #16a34a; }
-.hof-swiper-skip    { color: var(--hof-danger); }
+.hof-swiper-include { color: var(--hof-color-facet-coral, #D85A30); }
+.hof-swiper-skip    { color: var(--hof-color-ink-500, #888780); }
 
 .hof-swiper-reset {
     width: auto;

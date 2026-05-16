@@ -75,7 +75,16 @@ export default function App({ bootstrap }) {
     return (
         <div className="hof">
             <header className="hof-header">
-                <h1 className="hof-title">Hooked on Facets</h1>
+                <h1 className="hof-title">
+                    <svg className="hof-logo-mark" width="28" height="28" viewBox="0 0 72 72" role="img" aria-label="Hooked on Facets">
+                        <title>Hooked on Facets</title>
+                        <path d="M36 6 L62 21 L36 36 L10 21 Z" fill="#7F77DD" />
+                        <path d="M10 21 L10 51 L36 66 L36 36 Z" fill="#3C3489" />
+                        <path d="M62 21 L62 51 L36 66 L36 36 Z" fill="#534AB7" />
+                        <circle cx="36" cy="6" r="3.5" fill="#D85A30" />
+                    </svg>
+                    <span className="hof-wordmark">hooked on facets</span>
+                </h1>
                 <nav className="hof-tabs">
                     {TABS.map((t) => (
                         <button
