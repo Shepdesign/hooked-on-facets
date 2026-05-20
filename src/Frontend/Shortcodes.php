@@ -2,9 +2,10 @@
 /**
  * Shortcodes — frontend embedding surface.
  *
- *   [hof_facet name="brand"]            single facet
- *   [hof_results]...loop...[/hof_results] swappable results region
- *   [hof_reset label="Clear all"]        deselect-all link
+ *   [hof_facet name="brand"]              single facet
+ *   [hof_results]...loop...[/hof_results]  swappable results region
+ *   [hof_reset label="Clear all"]          deselect-all link
+ *   [hof_active_filters]                   chip strip + match count
  *
  * @package HookedOnFacets
  */
@@ -23,9 +24,10 @@ final class Shortcodes implements Bootable {
     public function __construct( private readonly Renderer $renderer ) {}
 
     public function register_hooks(): void {
-        add_shortcode( 'hof_facet',   [ $this, 'shortcode_facet' ] );
-        add_shortcode( 'hof_results', [ $this, 'shortcode_results' ] );
-        add_shortcode( 'hof_reset',   [ $this, 'shortcode_reset' ] );
+        add_shortcode( 'hof_facet',          [ $this, 'shortcode_facet' ] );
+        add_shortcode( 'hof_results',        [ $this, 'shortcode_results' ] );
+        add_shortcode( 'hof_reset',          [ $this, 'shortcode_reset' ] );
+        add_shortcode( 'hof_active_filters', [ $this, 'shortcode_active_filters' ] );
     }
 
     /**
@@ -48,6 +50,10 @@ final class Shortcodes implements Bootable {
             '<div class="hof-results" data-hof-results>%s</div>',
             do_shortcode( (string) $content )
         );
+    }
+
+    public function shortcode_active_filters( $atts ): string {
+        return $this->renderer->render_active_filters();
     }
 
     /**

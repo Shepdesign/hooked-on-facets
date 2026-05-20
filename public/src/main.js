@@ -140,6 +140,28 @@ document.addEventListener('click', (e) => {
         return;
     }
 
+    // Active-filters chip ✕ — remove a single filter (one value, or whole
+    // range/search facet when value is empty).
+    const chip = e.target.closest('[data-hof-active-chip]');
+    if (chip) {
+        e.preventDefault();
+        const facet = chip.getAttribute('data-hof-active-facet');
+        const value = chip.getAttribute('data-hof-active-value') || '';
+        if (!facet) return;
+
+        const current = store.get()[facet];
+        if (value === '') {
+            // Range / search / whole-facet removal.
+            store.set(facet, null);
+        } else if (Array.isArray(current)) {
+            store.set(facet, current.filter((v) => String(v) !== value));
+        } else {
+            // Scalar value — same as a whole-facet removal.
+            store.set(facet, null);
+        }
+        return;
+    }
+
     // UpSet column: toggle ALL terms in this pattern as a group. Same
     // OR-within-facet semantic as the Venn overlap regions — clicking one
     // adds the comma-separated terms; clicking again removes them.

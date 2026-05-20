@@ -741,6 +741,105 @@
     .hof-upset-rowlabel { transition: none; }
 }
 
+/* ── Active filters bar — the "what's filtered right now" feedback layer
+   that makes every other facet comprehensible. Drop [hof_active_filters]
+   above your facets to show selected terms as removable chips plus a live
+   "N of M products match" count. ─────────────────────────────────────── */
+
+.hof-active-filters {
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-ui);
+    padding: calc(var(--hof-space) * 1.5) calc(var(--hof-space) * 2);
+    margin: 0 0 calc(var(--hof-space) * 2);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hof-active-filters[hidden] {
+    display: none !important;
+}
+
+.hof-active-filters-count {
+    margin: 0;
+    font-size: 14px;
+    color: var(--hof-text);
+}
+
+.hof-active-filters-count strong {
+    color: var(--hof-color-facet-coral, #D85A30);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.hof-active-filters-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.hof-active-filters-eyebrow {
+    font-family: var(--hof-font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--hof-muted, #888780);
+    margin-right: 4px;
+}
+
+.hof-active-filters-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 6px 5px 10px;
+    background: rgba(216, 90, 48, 0.08);
+    border: 0.5px solid var(--hof-color-facet-coral, #D85A30);
+    border-radius: 999px;
+    font-size: 12.5px;
+    color: var(--hof-text);
+    cursor: pointer;
+    transition: background 140ms ease, border-color 140ms ease;
+}
+
+.hof-active-filters-chip:hover {
+    background: rgba(216, 90, 48, 0.16);
+}
+
+.hof-active-filters-chip-label strong {
+    font-weight: 600;
+}
+
+.hof-active-filters-chip-x {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--hof-color-facet-coral, #D85A30);
+    color: #fff;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.hof-active-filters-clear {
+    background: transparent;
+    border: none;
+    color: var(--hof-primary, #534AB7);
+    font-size: 12.5px;
+    cursor: pointer;
+    padding: 5px 10px;
+    margin-left: auto;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.hof-active-filters-clear:hover {
+    color: var(--hof-color-facet-coral, #D85A30);
+}
+
 /* Reset link */
 .hof-reset {
     display: inline-block;

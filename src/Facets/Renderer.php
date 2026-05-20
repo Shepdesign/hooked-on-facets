@@ -60,6 +60,178 @@ final class Renderer {
         };
     }
 
+    /**
+     * Render the "active filters" summary bar — one chip per applied filter,
+     * a Clear-all link, and a live "N of M products match" count.
+     *
+     * The single feedback layer that makes the matrix facets (Venn, UpSet)
+     * comprehensible: even when the dot-and-line visual is hard to read, the
+     * chip strip tells the user exactly which terms are filtering the result
+     * and the count tells them how many products match.
+     *
+     * Returns '' when no filters are active (the bar hides itself rather
+     * than showing an empty card).
+     */
+    public function render_active_filters(): string {
+        $state  = Resolver::parse_request_filters();
+        $facets = $this->configured_facets();
+        $defs   = [];
+        foreach ( $facets as $f ) {
+            if ( isset( $f['name'] ) ) {
+                $defs[ (string) $f['name'] ] = $f;
+            }
+        }
+
+        // Build chip rows from the active filter state.
+        $chips = [];
+        foreach ( $state as $facet_name => $value ) {
+            if ( ! isset( $defs[ $facet_name ] ) ) {
+                continue;
+            }
+            $facet = $defs[ $facet_name ];
+            $label = (string) ( $facet['label'] ?? $facet_name );
+
+            // Range: one chip with min – max.
+            if ( is_array( $value ) && ( isset( $value['min'] ) || isset( $value['max'] ) ) ) {
+                $fmt  = static function ( $n ) {
+                    // Trim trailing zeros only AFTER a decimal point, then
+                    // the dot if nothing's left. "10.000" → "10", "10.50" → "10.5".
+                    $s = (string) (float) $n;
+                    return strpos( $s, '.' ) !== false
+                        ? rtrim( rtrim( $s, '0' ), '.' )
+                        : $s;
+                };
+                $min  = isset( $value['min'] ) ? $fmt( $value['min'] ) : '';
+                $max  = isset( $value['max'] ) ? $fmt( $value['max'] ) : '';
+                $body = $min !== '' && $max !== '' ? "{$min} – {$max}" : ( $min !== '' ? ">= {$min}" : "<= {$max}" );
+                $chips[] = [
+                    'facet'        => $facet_name,
+                    'facet_label'  => $label,
+                    'value'        => '',           // empty means "remove the whole facet"
+                    'value_label'  => $body,
+                    'kind'         => 'range',
+                ];
+                continue;
+            }
+
+            // Multi-value: one chip per value. Look up display names from
+            // the index in one batched query per facet.
+            $values = is_array( $value ) ? $value : [ $value ];
+            $values = array_values( array_filter(
+                array_map( static fn( $v ) => is_scalar( $v ) ? (string) $v : null, $values ),
+                static fn( $v ) => $v !== null && $v !== ''
+            ) );
+            if ( empty( $values ) ) {
+                continue;
+            }
+
+            $displays = $this->display_names_for( $facet_name, $values );
+            foreach ( $values as $v ) {
+                $chips[] = [
+                    'facet'       => $facet_name,
+                    'facet_label' => $label,
+                    'value'       => $v,
+                    'value_label' => $displays[ $v ] ?? $v,
+                    'kind'        => 'value',
+                ];
+            }
+        }
+
+        // Always render the wrapper so the refresh swap can find it. Inner
+        // content is empty when no filters are active.
+        $matched_count = null;
+        $total_count   = null;
+        if ( ! empty( $chips ) ) {
+            $ids = $this->resolver->resolve_ids( $state );
+            if ( is_array( $ids ) ) {
+                $matched_count = count( $ids );
+            }
+            // Total = unfiltered catalog count over the indexed post types.
+            global $wpdb;
+            $table = $wpdb->prefix . \HookedOnFacets\Activator::TABLE;
+            $total_count = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT object_id) FROM {$table}" );
+        }
+
+        ob_start();
+        ?>
+        <div class="hof-active-filters"
+             data-hof-active-filters
+             <?php if ( empty( $chips ) ) echo 'hidden'; ?>>
+            <?php if ( ! empty( $chips ) ) : ?>
+                <p class="hof-active-filters-count">
+                    <?php if ( $matched_count !== null && $total_count !== null ) : ?>
+                        <strong><?php echo number_format( $matched_count ); ?></strong>
+                        of <?php echo number_format( $total_count ); ?> products match.
+                    <?php else : ?>
+                        Active filters applied.
+                    <?php endif; ?>
+                </p>
+                <div class="hof-active-filters-chips" role="list">
+                    <span class="hof-active-filters-eyebrow">Filtering by</span>
+                    <?php foreach ( $chips as $chip ) : ?>
+                        <button type="button"
+                                role="listitem"
+                                class="hof-active-filters-chip"
+                                data-hof-active-chip
+                                data-hof-active-facet="<?php echo esc_attr( $chip['facet'] ); ?>"
+                                data-hof-active-value="<?php echo esc_attr( $chip['value'] ); ?>"
+                                aria-label="<?php echo esc_attr( sprintf( 'Remove %s filter: %s', $chip['facet_label'], $chip['value_label'] ) ); ?>">
+                            <span class="hof-active-filters-chip-label">
+                                <?php echo esc_html( $chip['facet_label'] ); ?>:
+                                <strong><?php echo esc_html( $chip['value_label'] ); ?></strong>
+                            </span>
+                            <span class="hof-active-filters-chip-x" aria-hidden="true">×</span>
+                        </button>
+                    <?php endforeach; ?>
+                    <button type="button"
+                            class="hof-active-filters-clear"
+                            data-hof-reset>
+                        Clear all
+                    </button>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Batched lookup: facet_value → facet_display for one facet.
+     *
+     * @param array<int, string> $values
+     * @return array<string, string>
+     */
+    private function display_names_for( string $facet_name, array $values ): array {
+        if ( empty( $values ) ) {
+            return [];
+        }
+        global $wpdb;
+        $table = $wpdb->prefix . \HookedOnFacets\Activator::TABLE;
+
+        $placeholders = implode( ', ', array_fill( 0, count( $values ), '%s' ) );
+        $rows = $wpdb->get_results( $wpdb->prepare(
+            "SELECT DISTINCT facet_value, facet_display
+             FROM {$table} USE INDEX (facet_lookup)
+             WHERE facet_name = %s
+             AND facet_value IN ({$placeholders})",
+            array_merge( [ $facet_name ], $values )
+        ), ARRAY_A );
+
+        $out = [];
+        foreach ( (array) $rows as $r ) {
+            $out[ (string) $r['facet_value'] ] = (string) $r['facet_display'];
+        }
+        return $out;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function configured_facets(): array {
+        $raw = get_option( Indexer::OPTION_FACETS, [] );
+        return is_array( $raw ) ? $raw : [];
+    }
+
     // ── Per-display renderers ───────────────────────────────────────────────
 
     /**

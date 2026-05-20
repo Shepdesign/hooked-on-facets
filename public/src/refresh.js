@@ -62,8 +62,21 @@ async function fetchHtml(url, signal) {
 function applyHtml(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
 
+    swapActiveFilters(doc);
     swapFacets(doc);
     swapResults(doc);
+}
+
+function swapActiveFilters(doc) {
+    const incoming = doc.querySelector('[data-hof-active-filters]');
+    const current = document.querySelector('[data-hof-active-filters]');
+    if (!incoming || !current) return;
+
+    // Replace innerHTML AND mirror the `hidden` attribute so the block
+    // collapses when no filters are active.
+    current.innerHTML = incoming.innerHTML;
+    if (incoming.hasAttribute('hidden')) current.setAttribute('hidden', '');
+    else                                  current.removeAttribute('hidden');
 }
 
 function swapFacets(doc) {
