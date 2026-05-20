@@ -42,6 +42,8 @@ export const saveFacets = (facets) =>
 
 export const reindex = () => request('reindex', { method: 'POST' });
 
+export const getReindexStatus = () => request('reindex/status');
+
 export const applyFilter = (filters, page = 1, perPage = 20) =>
     request('filter', {
         method: 'POST',

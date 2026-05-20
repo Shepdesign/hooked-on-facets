@@ -1441,3 +1441,80 @@ body.toplevel_page_hooked-on-facets .wrap {
     font-size: 14px;
     line-height: 1.55;
 }
+
+/* ── Indexer view ─────────────────────────────────────────────────────── */
+
+.hof-indexer {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.hof-indexer-blurb {
+    margin: 0;
+    color: var(--hof-color-ink-700);
+    font-size: 13.5px;
+    line-height: 1.6;
+    max-width: 720px;
+}
+
+.hof-indexer-blurb code {
+    background: var(--hof-color-ink-100);
+    border: 0.5px solid var(--hof-color-ink-200);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: var(--hof-font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+    font-size: 12.5px;
+    color: var(--hof-color-deep-ink);
+}
+
+.hof-indexer-toast,
+.hof-indexer-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: var(--hof-radius-md, 6px);
+    font-size: 13px;
+    border: 0.5px solid;
+}
+
+.hof-indexer-toast {
+    background: rgba(83, 74, 183, 0.06);
+    border-color: rgba(83, 74, 183, 0.35);
+    color: var(--hof-color-deep-ink);
+}
+
+.hof-indexer-toast svg {
+    color: var(--hof-color-hook-purple);
+    flex-shrink: 0;
+}
+
+.hof-indexer-error {
+    background: rgba(216, 90, 48, 0.06);
+    border-color: rgba(216, 90, 48, 0.45);
+    color: var(--hof-color-deep-ink);
+}
+
+.hof-indexer-error svg {
+    color: var(--hof-color-facet-coral);
+    flex-shrink: 0;
+}
+
+.hof-indexer-facets {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Rotating refresh icon while a reindex is in flight. */
+@keyframes hof-spin {
+    to { transform: rotate(360deg); }
+}
+
+.hof-spin {
+    animation: hof-spin 0.9s linear infinite;
+}

@@ -6,6 +6,7 @@
  *   GET  /facets              → list configured facet definitions
  *   POST /filter              → resolve filter state to IDs + drill-down counts
  *   POST /reindex (admin)     → trigger full reindex
+ *   GET  /reindex/status (admin) → current index stats (rows, objects, per-facet)
  *
  * @package HookedOnFacets
  */
@@ -79,6 +80,12 @@ final class RestController implements Bootable {
         register_rest_route( self::NAMESPACE_V1, '/reindex', [
             'methods'             => \WP_REST_Server::CREATABLE,
             'callback'            => [ $this, 'reindex' ],
+            'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+        ] );
+
+        register_rest_route( self::NAMESPACE_V1, '/reindex/status', [
+            'methods'             => \WP_REST_Server::READABLE,
+            'callback'            => [ $this, 'reindex_status' ],
             'permission_callback' => static fn() => current_user_can( 'manage_options' ),
         ] );
     }
@@ -176,13 +183,65 @@ final class RestController implements Bootable {
     }
 
     public function reindex( \WP_REST_Request $request ): \WP_REST_Response {
+        // Large catalogs can exceed PHP's default 30s ceiling. The indexer's
+        // bulk path is fast (~20s/100k) but a 500k site would still trip the
+        // limit. Disable the wall clock for this endpoint only.
+        if ( function_exists( 'set_time_limit' ) ) {
+            @set_time_limit( 0 );
+        }
+        ignore_user_abort( true );
+
         $started = microtime( true );
         $count   = $this->indexer->reindex_all();
         $elapsed = microtime( true ) - $started;
 
-        return new \WP_REST_Response( [
+        $stats = $this->collect_index_stats();
+
+        return new \WP_REST_Response( array_merge( [
             'indexed' => $count,
             'elapsed' => round( $elapsed, 3 ),
-        ], 200 );
+        ], $stats ), 200 );
+    }
+
+    public function reindex_status( \WP_REST_Request $request ): \WP_REST_Response {
+        return new \WP_REST_Response( $this->collect_index_stats(), 200 );
+    }
+
+    /**
+     * Snapshot of the index table for the admin Indexer view.
+     *
+     * @return array{rows: int, objects: int, by_facet: array<int, array{name: string, rows: int, objects: int}>}
+     */
+    private function collect_index_stats(): array {
+        global $wpdb;
+        $table = $wpdb->prefix . \HookedOnFacets\Activator::TABLE;
+
+        $rows    = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+        $objects = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT object_id) FROM {$table}" );
+
+        $by_facet_raw = $wpdb->get_results(
+            "SELECT facet_name AS name,
+                    COUNT(*) AS rows_n,
+                    COUNT(DISTINCT object_id) AS objects_n
+             FROM {$table}
+             GROUP BY facet_name
+             ORDER BY facet_name",
+            ARRAY_A
+        );
+
+        $by_facet = [];
+        foreach ( (array) $by_facet_raw as $r ) {
+            $by_facet[] = [
+                'name'    => (string) $r['name'],
+                'rows'    => (int) $r['rows_n'],
+                'objects' => (int) $r['objects_n'],
+            ];
+        }
+
+        return [
+            'rows'     => $rows,
+            'objects'  => $objects,
+            'by_facet' => $by_facet,
+        ];
     }
 }

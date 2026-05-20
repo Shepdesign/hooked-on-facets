@@ -15,6 +15,7 @@ import FacetEditor from './components/FacetEditor.jsx';
 import TokensPanel from './components/TokensPanel.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import Blueprint from './components/Blueprint.jsx';
+import Indexer from './components/Indexer.jsx';
 
 const VIEWS = [
     { id: 'dashboard',  label: 'Dashboard',     section: 'Main',   Icon: IconLayoutGrid },
@@ -194,7 +195,9 @@ export default function App({ bootstrap }) {
                         <Blueprint facets={facets} onBack={() => setView('dashboard')} />
                     )}
 
-                    {(view === 'queryloops' || view === 'indexer' || view === 'settings') && (
+                    {view === 'indexer' && <Indexer />}
+
+                    {(view === 'queryloops' || view === 'settings') && (
                         <StubView label={currentView.label} />
                     )}
                 </main>
