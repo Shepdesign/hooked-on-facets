@@ -8,6 +8,7 @@
  *   POST /reindex (admin)     → trigger full reindex
  *   GET  /reindex/status (admin) → current index stats (rows, objects, per-facet)
  *   GET  /telemetry (admin)   → resolver timings + hooked-loop counts
+ *   DELETE /telemetry (admin) → reset all telemetry counters
  *
  * @package HookedOnFacets
  */
@@ -93,9 +94,16 @@ final class RestController implements Bootable {
         ] );
 
         register_rest_route( self::NAMESPACE_V1, '/telemetry', [
-            'methods'             => \WP_REST_Server::READABLE,
-            'callback'            => [ $this, 'telemetry' ],
-            'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+            [
+                'methods'             => \WP_REST_Server::READABLE,
+                'callback'            => [ $this, 'telemetry' ],
+                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+            ],
+            [
+                'methods'             => \WP_REST_Server::DELETABLE,
+                'callback'            => [ $this, 'reset_telemetry' ],
+                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+            ],
         ] );
     }
 
@@ -103,10 +111,15 @@ final class RestController implements Bootable {
         if ( ! $this->recorder ) {
             return new \WP_REST_Response( [
                 'resolver' => [ 'avg_ms' => null, 'p95_ms' => null, 'sample_size' => 0, 'total_calls' => 0 ],
-                'loops'    => [ 'count' => 0, 'total_hits' => 0, 'top' => [] ],
+                'loops'    => [ 'count' => 0, 'total_hits' => 0, 'top' => [], 'signatures' => [] ],
             ], 200 );
         }
         return new \WP_REST_Response( $this->recorder->snapshot(), 200 );
+    }
+
+    public function reset_telemetry( \WP_REST_Request $request ): \WP_REST_Response {
+        $this->recorder?->reset();
+        return new \WP_REST_Response( $this->recorder ? $this->recorder->snapshot() : [], 200 );
     }
 
     public function list_facets( \WP_REST_Request $request ): \WP_REST_Response {

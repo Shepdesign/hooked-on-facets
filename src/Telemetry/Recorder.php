@@ -114,9 +114,19 @@ final class Recorder implements Bootable {
     /**
      * Read-only snapshot for the admin (REST + bootstrap).
      *
+     * Returns BOTH a `top` (capped, ordered by count) for the Dashboard hero
+     * AND a `signatures` (all, sorted by last-seen) for the Query Loops view.
+     * Distinct signature cardinality is inherently small on a real site —
+     * post-type × intercept-type-set — so returning all of them is cheap.
+     *
      * @return array{
      *   resolver: array{ avg_ms: ?float, p95_ms: ?float, sample_size: int, total_calls: int },
-     *   loops:    array{ count: int, total_hits: int, top: array<int, array{signature: string, count: int, last: int}> }
+     *   loops:    array{
+     *     count: int,
+     *     total_hits: int,
+     *     top:        array<int, array{signature: string, count: int, last: int}>,
+     *     signatures: array<int, array{signature: string, type: string, post_type: string, count: int, first: int, last: int}>,
+     *   }
      * }
      */
     public function snapshot(): array {
@@ -134,15 +144,35 @@ final class Recorder implements Bootable {
         }
 
         $sigs = $state['loops']['signatures'];
-        uasort( $sigs, static fn( $a, $b ) => ( $b['count'] ?? 0 ) <=> ( $a['count'] ?? 0 ) );
+
+        // Top — by count, for the Dashboard hero (capped).
+        $by_count = $sigs;
+        uasort( $by_count, static fn( $a, $b ) => ( $b['count'] ?? 0 ) <=> ( $a['count'] ?? 0 ) );
         $top = [];
-        foreach ( array_slice( $sigs, 0, 8, true ) as $signature => $row ) {
+        foreach ( array_slice( $by_count, 0, 8, true ) as $signature => $row ) {
             $top[] = [
                 'signature' => (string) $signature,
                 'count'     => (int) ( $row['count'] ?? 0 ),
                 'last'      => (int) ( $row['last']  ?? 0 ),
             ];
         }
+
+        // Signatures — full list with parsed parts, sorted most-recent-first.
+        $by_recent = $sigs;
+        uasort( $by_recent, static fn( $a, $b ) => ( $b['last'] ?? 0 ) <=> ( $a['last'] ?? 0 ) );
+        $signatures = [];
+        foreach ( $by_recent as $signature => $row ) {
+            [ $type, $post_type ] = self::parse_signature( (string) $signature );
+            $signatures[] = [
+                'signature' => (string) $signature,
+                'type'      => $type,
+                'post_type' => $post_type,
+                'count'     => (int) ( $row['count'] ?? 0 ),
+                'first'     => (int) ( $row['first'] ?? 0 ),
+                'last'      => (int) ( $row['last']  ?? 0 ),
+            ];
+        }
+
         $total_hits = 0;
         foreach ( $sigs as $row ) {
             $total_hits += (int) ( $row['count'] ?? 0 );
@@ -159,7 +189,21 @@ final class Recorder implements Bootable {
                 'count'      => count( $sigs ),
                 'total_hits' => $total_hits,
                 'top'        => $top,
+                'signatures' => $signatures,
             ],
+        ];
+    }
+
+    /**
+     * Split "archive:product" → ["archive", "product"].
+     *
+     * @return array{0: string, 1: string}
+     */
+    private static function parse_signature( string $signature ): array {
+        $parts = explode( ':', $signature, 2 );
+        return [
+            $parts[0] ?? 'unknown',
+            $parts[1] ?? 'unknown',
         ];
     }
 

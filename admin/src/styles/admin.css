@@ -1523,6 +1523,31 @@ body.toplevel_page_hooked-on-facets .wrap {
     animation: hof-spin 0.9s linear infinite;
 }
 
+/* ── Query loops view ─────────────────────────────────────────────────── */
+
+.hof-loops {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.hof-loops-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hof-loops-sig {
+    font-family: var(--hof-font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+    font-size: 13px;
+    color: var(--hof-color-deep-ink);
+    background: transparent;
+    padding: 0;
+}
+
 /* ── Blueprint sandbox — facet picker, grid variant, toast ────────────── */
 
 .hof-bp-facet-picker {
