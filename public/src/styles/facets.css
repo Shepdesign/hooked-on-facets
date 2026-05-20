@@ -614,6 +614,133 @@
     margin-left: auto;
 }
 
+/* ── UpSet matrix — denser alternative to the Venn for N > 3 terms ─────── */
+
+.hof-facet-upset .hof-upset-scroll {
+    overflow-x: auto;
+    margin: var(--hof-space) 0;
+}
+
+.hof-upset-svg {
+    display: block;
+    width: 100%;
+    max-width: 480px;
+    height: auto;
+    min-width: 320px;
+}
+
+/* Row labels — clickable to toggle a single term. */
+.hof-upset-rowlabel {
+    fill: var(--hof-text);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: fill 140ms ease;
+}
+
+.hof-upset-rowlabel:hover {
+    fill: var(--hof-primary, #534AB7);
+}
+
+.hof-upset-rowlabel.is-selected {
+    fill: var(--hof-color-facet-coral, #D85A30);
+    font-weight: 600;
+}
+
+.hof-upset-rowcount {
+    fill: var(--hof-muted, #888780);
+    font-size: 9px;
+    font-family: var(--hof-font-mono);
+    pointer-events: none;
+}
+
+/* Column-wide hit target — invisible by default, hooks pointer events. */
+.hof-upset-col-hit {
+    fill: transparent;
+    cursor: pointer;
+    transition: fill 140ms ease;
+}
+
+.hof-upset-col:hover .hof-upset-col-hit {
+    fill: rgba(83, 74, 183, 0.06);
+}
+
+.hof-upset-col.is-active .hof-upset-col-hit {
+    fill: rgba(216, 90, 48, 0.10);
+}
+
+/* Bar above each column. */
+.hof-upset-bar {
+    fill: var(--hof-primary, #534AB7);
+    opacity: 0.85;
+    pointer-events: none;
+}
+
+.hof-upset-col.is-active .hof-upset-bar {
+    fill: var(--hof-color-facet-coral, #D85A30);
+}
+
+.hof-upset-bar-label {
+    fill: var(--hof-text);
+    font-size: 9px;
+    font-family: var(--hof-font-mono);
+    pointer-events: none;
+}
+
+/* Dots — filled = term in this combination, hollow = not. */
+.hof-upset-dot {
+    pointer-events: none;
+    transition: fill 140ms ease, stroke 140ms ease;
+}
+
+.hof-upset-dot.is-on {
+    fill: var(--hof-primary, #534AB7);
+    stroke: none;
+}
+
+.hof-upset-col.is-active .hof-upset-dot.is-on {
+    fill: var(--hof-color-facet-coral, #D85A30);
+}
+
+.hof-upset-dot.is-off {
+    fill: var(--hof-color-ink-200, #D3D1C7);
+    stroke: none;
+}
+
+/* Connector line between the topmost and bottommost on-dot in a column. */
+.hof-upset-link {
+    stroke: var(--hof-primary, #534AB7);
+    stroke-width: 2;
+    pointer-events: none;
+}
+
+.hof-upset-col.is-active .hof-upset-link {
+    stroke: var(--hof-color-facet-coral, #D85A30);
+}
+
+/* Tip strip below the SVG — same idiom as the Venn. */
+.hof-upset-tip {
+    margin: 8px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--hof-muted, #5F5E5A);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.hof-upset-tip-meta {
+    opacity: 0.75;
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hof-upset-dot,
+    .hof-upset-col-hit,
+    .hof-upset-rowlabel { transition: none; }
+}
+
 /* Reset link */
 .hof-reset {
     display: inline-block;

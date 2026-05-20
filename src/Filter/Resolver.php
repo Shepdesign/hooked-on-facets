@@ -186,6 +186,65 @@ final class Resolver {
     }
 
     /**
+     * Membership patterns across a set of facet values — for the UpSet view.
+     *
+     * Returns each distinct combination of values that co-occurs on at least
+     * one object, with the count of objects matching that exact combination.
+     * For 5 input values, possible patterns range from singletons (5) up to
+     * the full set (1) — typically far fewer non-empty patterns in practice.
+     *
+     * Single SQL query: GROUP_CONCAT inside a derived table builds the
+     * per-object value-set, the outer GROUP groups identical sets.
+     *
+     * @param string             $facet_name
+     * @param array<int, string> $values  The terms to consider (typically top-N by count).
+     * @param int                $limit   Max patterns to return.
+     * @return array<int, array{terms: array<int, string>, count: int}>
+     */
+    public function membership_patterns( string $facet_name, array $values, int $limit = 12 ): array {
+        if ( empty( $values ) ) {
+            return [];
+        }
+        global $wpdb;
+        $table = $wpdb->prefix . Activator::TABLE;
+
+        $placeholders = implode( ', ', array_fill( 0, count( $values ), '%s' ) );
+        $params       = array_merge( [ $facet_name ], $values, [ $limit ] );
+
+        // SEPARATOR uses U+001F (Unit Separator) — guaranteed never to appear
+        // inside a sanitized slug, so the explode on the PHP side is safe.
+        $sql = "
+            SELECT pattern, COUNT(*) AS n
+            FROM (
+                SELECT object_id,
+                       GROUP_CONCAT(facet_value ORDER BY facet_value SEPARATOR 0x1F) AS pattern
+                FROM {$table} USE INDEX (facet_lookup)
+                WHERE facet_name = %s
+                AND facet_value IN ({$placeholders})
+                GROUP BY object_id
+            ) per_obj
+            GROUP BY pattern
+            ORDER BY n DESC
+            LIMIT %d
+        ";
+
+        $rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ), ARRAY_A );
+        if ( empty( $rows ) ) {
+            return [];
+        }
+
+        $out = [];
+        foreach ( $rows as $r ) {
+            $terms = $r['pattern'] !== '' ? explode( "\x1F", (string) $r['pattern'] ) : [];
+            $out[] = [
+                'terms' => $terms,
+                'count' => (int) $r['n'],
+            ];
+        }
+        return $out;
+    }
+
+    /**
      * Build the core filter subquery: IDs matching all configured facets in
      * the state. Returns null when state is empty / unrecognized.
      *

@@ -90,6 +90,11 @@ document.addEventListener('change', (e) => {
         return;
     }
 
+    if (display === 'upset') {
+        store.set(name, Array.from(readUpsetSelected(facetEl)));
+        return;
+    }
+
     if (display === 'range') {
         const min = facetEl.querySelector('[data-hof-input="min"]')?.value ?? '';
         const max = facetEl.querySelector('[data-hof-input="max"]')?.value ?? '';
@@ -135,6 +140,42 @@ document.addEventListener('click', (e) => {
         return;
     }
 
+    // UpSet column: toggle ALL terms in this pattern as a group. Same
+    // OR-within-facet semantic as the Venn overlap regions — clicking one
+    // adds the comma-separated terms; clicking again removes them.
+    const upsetCol = e.target.closest('.hof-upset-col');
+    if (upsetCol) {
+        const facetEl = upsetCol.closest('[data-hof-facet]');
+        const name    = facetEl?.getAttribute('data-hof-facet');
+        const raw     = upsetCol.getAttribute('data-hof-upset-values') || '';
+        const values  = raw.split(',').map((v) => v.trim()).filter(Boolean);
+        if (!facetEl || !name || values.length === 0) return;
+
+        const selected = readUpsetSelected(facetEl);
+        const allActive = values.every((v) => selected.has(v));
+        if (allActive) values.forEach((v) => selected.delete(v));
+        else           values.forEach((v) => selected.add(v));
+
+        store.set(name, Array.from(selected));
+        return;
+    }
+
+    // UpSet row label: toggle one term.
+    const upsetRow = e.target.closest('.hof-upset-rowlabel');
+    if (upsetRow) {
+        const facetEl = upsetRow.closest('[data-hof-facet]');
+        const name    = facetEl?.getAttribute('data-hof-facet');
+        const value   = upsetRow.getAttribute('data-hof-upset-row');
+        if (!facetEl || !name || !value) return;
+
+        const selected = readUpsetSelected(facetEl);
+        if (selected.has(value)) selected.delete(value);
+        else                     selected.add(value);
+
+        store.set(name, Array.from(selected));
+        return;
+    }
+
     // Venn overlap region: toggle the comma-separated values as a group.
     // The data attribute carries 2 or 3 term slugs (e.g. "apparel,footwear");
     // clicking sets all of them; clicking again clears all of them.
@@ -176,6 +217,20 @@ document.addEventListener('click', (e) => {
         store.set(name, Array.from(selected));
     }
 });
+
+function readUpsetSelected(facetEl) {
+    // The "currently selected" set for an UpSet facet is the union of
+    // row-labels carrying is-selected and overflow checkboxes that are
+    // checked. The rendered classes are the source of truth between clicks
+    // until the server refresh reconciles.
+    const fromRows = Array.from(
+        facetEl.querySelectorAll('.hof-upset-rowlabel.is-selected')
+    ).map((t) => t.getAttribute('data-hof-upset-row')).filter(Boolean);
+    const fromOverflow = Array.from(
+        facetEl.querySelectorAll('.hof-venn-more-list input[type="checkbox"]:checked')
+    ).map((cb) => cb.value);
+    return new Set([...fromRows, ...fromOverflow]);
+}
 
 function readVennSelected(circles) {
     const set = new Set();

@@ -55,6 +55,7 @@ final class Renderer {
             'swatch' => $this->render_swatch( $facet, (array) $current_value, $counts ),
             'swiper' => $this->render_swiper( $facet, (array) $current_value, $counts ),
             'venn'   => $this->render_venn( $facet, (array) $current_value, $counts ),
+            'upset'  => $this->render_upset( $facet, (array) $current_value, $counts ),
             default  => $this->render_checkbox( $facet, (array) $current_value, $counts ),
         };
     }
@@ -590,6 +591,207 @@ final class Renderer {
 
             <?php // Hidden inputs carry the OR-list URL shape used by checkbox/swatch. ?>
             <?php foreach ( $values as $v ) :
+                if ( isset( $selected_lookup[ $v ] ) ) : ?>
+                    <input type="hidden" name="hof[<?php echo esc_attr( $name ); ?>][]" value="<?php echo esc_attr( $v ); ?>">
+                <?php endif;
+            endforeach; ?>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * UpSet matrix — scales past the 3-set Venn ceiling. Renders the top N
+     * terms as rows and every non-empty term-combination as a column with a
+     * bar chart of intersection counts above and a dot grid below.
+     *
+     * Falls back to checkbox when the source isn't a taxonomy or fewer than
+     * 2 buckets are available (degenerate).
+     *
+     * @param array<string, mixed>  $facet
+     * @param array<int, string>    $selected_values
+     * @param array<string, mixed>  $counts
+     */
+    private function render_upset( array $facet, array $selected_values, array $counts ): string {
+        if ( ( $facet['kind'] ?? '' ) !== 'taxonomy' ) {
+            return $this->render_checkbox( $facet, $selected_values, $counts );
+        }
+
+        $name    = $facet['name'];
+        $label   = $facet['label'] ?: $name;
+        $buckets = ( $counts['type'] ?? '' ) === 'values' ? $counts['buckets'] : [];
+
+        if ( count( $buckets ) < 2 ) {
+            return $this->render_checkbox( $facet, $selected_values, $counts );
+        }
+
+        // Top-N rows. 5 is dense-but-readable in a sidebar; bigger taxonomies
+        // overflow to the +N more list below, same affordance as Venn.
+        $row_count = 5;
+        $rows      = array_slice( $buckets, 0, $row_count );
+        $row_count = count( $rows ); // in case there were fewer.
+        $row_values = array_map( static fn( $b ) => (string) $b['value'], $rows );
+        $row_labels = array_map( static fn( $b ) => (string) $b['display'], $rows );
+        $row_total  = array_map( static fn( $b ) => (int) $b['count'], $rows );
+
+        $patterns = $this->resolver->membership_patterns( $name, $row_values, 12 );
+        if ( empty( $patterns ) ) {
+            // No rows in the index for these terms at all — degenerate.
+            return $this->render_checkbox( $facet, $selected_values, $counts );
+        }
+
+        $max_count       = max( array_map( static fn( $p ) => $p['count'], $patterns ) );
+        $selected_lookup = array_fill_keys( array_map( 'strval', $selected_values ), true );
+
+        // SVG geometry (viewBox units; CSS scales the actual width).
+        $row_h      = 22;
+        $col_w      = 28;
+        $bar_h      = 70;
+        $left_pad   = 80;            // room for row labels.
+        $top_pad    = 16;            // room above the tallest bar for the count label.
+        $grid_y     = $top_pad + $bar_h + 12;
+        $col_count  = count( $patterns );
+        $svg_w      = $left_pad + $col_count * $col_w + 8;
+        $svg_h      = $grid_y + $row_count * $row_h + 12;
+
+        $overflow = array_slice( $buckets, $row_count );
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-upset"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="upset">
+            <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
+
+            <div class="hof-upset-scroll">
+                <svg class="hof-upset-svg"
+                     viewBox="0 0 <?php echo (int) $svg_w; ?> <?php echo (int) $svg_h; ?>"
+                     xmlns="http://www.w3.org/2000/svg"
+                     role="img"
+                     aria-label="<?php echo esc_attr( sprintf( 'Intersection matrix for %s', $label ) ); ?>">
+
+                    <?php // ── Row labels ─────────────────────────────────────── ?>
+                    <?php foreach ( $row_labels as $i => $rl ) :
+                        $y        = $grid_y + $i * $row_h + $row_h / 2 + 4;
+                        $selected = isset( $selected_lookup[ $row_values[ $i ] ] ); ?>
+                        <text class="hof-upset-rowlabel <?php echo $selected ? 'is-selected' : ''; ?>"
+                              data-hof-upset-row="<?php echo esc_attr( $row_values[ $i ] ); ?>"
+                              x="<?php echo (int) ( $left_pad - 6 ); ?>"
+                              y="<?php echo (int) $y; ?>"
+                              text-anchor="end">
+                            <?php echo esc_html( $rl ); ?>
+                        </text>
+                        <text class="hof-upset-rowcount"
+                              x="<?php echo (int) ( $left_pad - 6 ); ?>"
+                              y="<?php echo (int) ( $y + 9 ); ?>"
+                              text-anchor="end">
+                            <?php echo (int) $row_total[ $i ]; ?>
+                        </text>
+                    <?php endforeach; ?>
+
+                    <?php // ── Columns: bar + dot grid ──────────────────────────── ?>
+                    <?php foreach ( $patterns as $col_idx => $p ) :
+                        $col_x      = $left_pad + $col_idx * $col_w + $col_w / 2;
+                        $bar_height = $max_count > 0 ? round( $bar_h * ( $p['count'] / $max_count ) ) : 0;
+                        $bar_y      = $top_pad + $bar_h - $bar_height;
+                        $set        = array_fill_keys( $p['terms'], true );
+
+                        // Comma-separated list of terms in this column (drives the click handler).
+                        $col_values = implode( ',', $p['terms'] );
+
+                        // A column is "active" if every term it represents is currently selected.
+                        $col_active = ! empty( $p['terms'] );
+                        foreach ( $p['terms'] as $t ) {
+                            if ( ! isset( $selected_lookup[ $t ] ) ) { $col_active = false; break; }
+                        }
+                        ?>
+                        <g class="hof-upset-col <?php echo $col_active ? 'is-active' : ''; ?>"
+                           data-hof-upset-values="<?php echo esc_attr( $col_values ); ?>">
+
+                            <?php // Full-height click target — slightly wider than the dots / bar. ?>
+                            <rect class="hof-upset-col-hit"
+                                  x="<?php echo (int) ( $col_x - $col_w / 2 + 1 ); ?>"
+                                  y="<?php echo (int) $top_pad; ?>"
+                                  width="<?php echo (int) ( $col_w - 2 ); ?>"
+                                  height="<?php echo (int) ( $svg_h - $top_pad - 6 ); ?>"
+                                  rx="3" />
+
+                            <?php // Bar ?>
+                            <rect class="hof-upset-bar"
+                                  x="<?php echo (int) ( $col_x - 8 ); ?>"
+                                  y="<?php echo (int) $bar_y; ?>"
+                                  width="16"
+                                  height="<?php echo (int) max( 2, $bar_height ); ?>"
+                                  rx="2" />
+                            <text class="hof-upset-bar-label"
+                                  x="<?php echo (int) $col_x; ?>"
+                                  y="<?php echo (int) ( $bar_y - 3 ); ?>"
+                                  text-anchor="middle">
+                                <?php echo (int) $p['count']; ?>
+                            </text>
+
+                            <?php // Connector line between the topmost and bottommost filled dot. ?>
+                            <?php
+                            $filled_indices = [];
+                            foreach ( $row_values as $i => $rv ) {
+                                if ( isset( $set[ $rv ] ) ) { $filled_indices[] = $i; }
+                            }
+                            if ( count( $filled_indices ) >= 2 ) :
+                                $first = $filled_indices[0];
+                                $last  = $filled_indices[ count( $filled_indices ) - 1 ]; ?>
+                                <line class="hof-upset-link"
+                                      x1="<?php echo (int) $col_x; ?>"
+                                      y1="<?php echo (int) ( $grid_y + $first * $row_h + $row_h / 2 ); ?>"
+                                      x2="<?php echo (int) $col_x; ?>"
+                                      y2="<?php echo (int) ( $grid_y + $last  * $row_h + $row_h / 2 ); ?>" />
+                            <?php endif; ?>
+
+                            <?php // Dots — filled if the row's term is in this column's pattern. ?>
+                            <?php foreach ( $row_values as $i => $rv ) :
+                                $is_on = isset( $set[ $rv ] );
+                                $cy    = $grid_y + $i * $row_h + $row_h / 2; ?>
+                                <circle class="hof-upset-dot <?php echo $is_on ? 'is-on' : 'is-off'; ?>"
+                                        cx="<?php echo (int) $col_x; ?>"
+                                        cy="<?php echo (int) $cy; ?>"
+                                        r="4.5" />
+                            <?php endforeach; ?>
+                        </g>
+                    <?php endforeach; ?>
+                </svg>
+            </div>
+
+            <p class="hof-upset-tip">
+                <span>Click a column to include all categories in that combination.</span>
+                <span>Click a row label to include just that category.</span>
+                <span class="hof-upset-tip-meta">Bar height = intersection count.</span>
+            </p>
+
+            <?php if ( ! empty( $overflow ) ) : ?>
+                <details class="hof-venn-more">
+                    <summary class="hof-venn-more-toggle">
+                        + <?php echo (int) count( $overflow ); ?> more <?php echo esc_html( count( $overflow ) === 1 ? 'category' : 'categories' ); ?>
+                    </summary>
+                    <ul class="hof-venn-more-list">
+                        <?php foreach ( $overflow as $bucket ) :
+                            $v       = (string) $bucket['value'];
+                            $checked = isset( $selected_lookup[ $v ] ); ?>
+                            <li>
+                                <label>
+                                    <input type="checkbox"
+                                           name="hof[<?php echo esc_attr( $name ); ?>][]"
+                                           value="<?php echo esc_attr( $v ); ?>"
+                                           <?php checked( $checked ); ?>>
+                                    <span><?php echo esc_html( $bucket['display'] ); ?></span>
+                                    <span class="hof-facet-count">(<?php echo (int) $bucket['count']; ?>)</span>
+                                </label>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </details>
+            <?php endif; ?>
+
+            <?php // Hidden inputs carry the OR-list URL shape. ?>
+            <?php foreach ( $row_values as $v ) :
                 if ( isset( $selected_lookup[ $v ] ) ) : ?>
                     <input type="hidden" name="hof[<?php echo esc_attr( $name ); ?>][]" value="<?php echo esc_attr( $v ); ?>">
                 <?php endif;
