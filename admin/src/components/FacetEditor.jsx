@@ -200,7 +200,9 @@ function FacetPreview({ facet }) {
                     <circle className="hof-preview-venn-circle" cx="120" cy="147" r="60" />
                 </svg>
                 <p className="hof-preview-note">
-                    Top 3 terms render as overlapping circles with real intersection counts.
+                    Top 3 terms by count render as circles; overlap regions show real intersection counts
+                    and are click-targets that include all categories in that region at once.
+                    Terms beyond the top 3 appear as a collapsible checkbox list below.
                 </p>
             </div>
         );

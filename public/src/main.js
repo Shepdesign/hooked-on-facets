@@ -120,6 +120,28 @@ document.addEventListener('click', (e) => {
         return;
     }
 
+    // Venn overlap region: toggle the comma-separated values as a group.
+    // The data attribute carries 2 or 3 term slugs (e.g. "apparel,footwear");
+    // clicking sets all of them; clicking again clears all of them.
+    const vennRegion = e.target.closest('.hof-venn-region');
+    if (vennRegion) {
+        const facetEl = vennRegion.closest('[data-hof-facet]');
+        const name    = facetEl?.getAttribute('data-hof-facet');
+        const raw     = vennRegion.getAttribute('data-hof-venn-values') || '';
+        const values  = raw.split(',').map((v) => v.trim()).filter(Boolean);
+        if (!facetEl || !name || values.length === 0) return;
+
+        const circles  = facetEl.querySelectorAll('.hof-venn-circle');
+        const selected = readVennSelected(circles);
+        const allActive = values.every((v) => selected.has(v));
+        if (allActive) values.forEach((v) => selected.delete(v));
+        else           values.forEach((v) => selected.add(v));
+
+        applyVennSelected(circles, selected);
+        store.set(name, Array.from(selected));
+        return;
+    }
+
     // Venn circle: toggle that term in the facet's selection. Hidden inputs
     // get regenerated on refresh; we use the data-hof-selected attribute on
     // the circles themselves as the source of truth between clicks.
@@ -131,25 +153,33 @@ document.addEventListener('click', (e) => {
         if (!facetEl || !name || !value) return;
 
         const circles  = facetEl.querySelectorAll('.hof-venn-circle');
-        const selected = new Set();
-        circles.forEach((c) => {
-            if (c.hasAttribute('data-hof-selected')) {
-                selected.add(c.getAttribute('data-hof-venn-value'));
-            }
-        });
+        const selected = readVennSelected(circles);
         if (selected.has(value)) selected.delete(value);
         else selected.add(value);
 
-        // Optimistic flip so the coral stroke shows before the round-trip.
-        circles.forEach((c) => {
-            const v = c.getAttribute('data-hof-venn-value');
-            if (selected.has(v)) c.setAttribute('data-hof-selected', '1');
-            else c.removeAttribute('data-hof-selected');
-        });
-
+        applyVennSelected(circles, selected);
         store.set(name, Array.from(selected));
     }
 });
+
+function readVennSelected(circles) {
+    const set = new Set();
+    circles.forEach((c) => {
+        if (c.hasAttribute('data-hof-selected')) {
+            set.add(c.getAttribute('data-hof-venn-value'));
+        }
+    });
+    return set;
+}
+
+function applyVennSelected(circles, selected) {
+    // Optimistic flip so the coral stroke shows before the round-trip.
+    circles.forEach((c) => {
+        const v = c.getAttribute('data-hof-venn-value');
+        if (selected.has(v)) c.setAttribute('data-hof-selected', '1');
+        else c.removeAttribute('data-hof-selected');
+    });
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 

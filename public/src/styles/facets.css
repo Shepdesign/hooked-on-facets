@@ -483,6 +483,82 @@
     .hof-venn-circle { transition: none; }
 }
 
+/* Overlap-region click targets — invisible by default; glow on hover so
+   users can tell they're hittable. Coral matches the selected-circle stroke. */
+.hof-venn-region {
+    fill: transparent;
+    cursor: pointer;
+    transition: fill 140ms ease;
+}
+
+.hof-venn-region:hover {
+    fill: rgba(216, 90, 48, 0.18);
+}
+
+/* Instruction strip below the SVG — explains the unusual interaction. */
+.hof-venn-tip {
+    margin: 8px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--hof-muted, #5F5E5A);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.hof-venn-tip-meta {
+    opacity: 0.75;
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+/* Overflow list — terms beyond the top 3 surface as a collapsible checkbox
+   list so the long tail isn't invisible. */
+.hof-venn-more {
+    margin-top: 12px;
+    border-top: 0.5px solid var(--hof-border, #D3D1C7);
+    padding-top: 10px;
+}
+
+.hof-venn-more-toggle {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--hof-primary, #534AB7);
+    list-style: none;
+    user-select: none;
+}
+
+.hof-venn-more-toggle::-webkit-details-marker { display: none; }
+
+.hof-venn-more-toggle:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.hof-venn-more-list {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hof-venn-more-list label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--hof-text);
+    cursor: pointer;
+}
+
+.hof-venn-more-list .hof-facet-count {
+    color: var(--hof-muted, #888);
+    font-size: 11.5px;
+    margin-left: auto;
+}
+
 /* Reset link */
 .hof-reset {
     display: inline-block;

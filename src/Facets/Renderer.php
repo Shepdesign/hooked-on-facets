@@ -468,6 +468,11 @@ final class Renderer {
             ];
         }
 
+        // Terms beyond the top 3 still need to be reachable — surface as a
+        // collapsible checkbox list below the Venn so the long tail isn't
+        // invisible to users.
+        $overflow = array_slice( $buckets, 3 );
+
         ob_start();
         ?>
         <div class="hof-facet hof-facet-venn hof-facet-venn-<?php echo (int) $n; ?>"
@@ -489,6 +494,12 @@ final class Renderer {
                     <text class="hof-venn-count"          x="40"  y="95" text-anchor="middle"><?php echo (int) $regions['a_only']; ?></text>
                     <text class="hof-venn-count"          x="200" y="95" text-anchor="middle"><?php echo (int) $regions['b_only']; ?></text>
                     <text class="hof-venn-count hof-venn-count-overlap" x="120" y="95" text-anchor="middle"><?php echo (int) $regions['ab']; ?></text>
+
+                    <?php // Invisible click target over the overlap; bundles both terms into the selection. ?>
+                    <rect class="hof-venn-region"
+                          data-hof-venn-values="<?php echo esc_attr( $values[0] . ',' . $values[1] ); ?>"
+                          x="105" y="80" width="30" height="28"
+                          aria-label="Include both <?php echo esc_attr( $top[0]['display'] . ' and ' . $top[1]['display'] ); ?>" />
                 </svg>
             <?php else : ?>
                 <svg class="hof-venn-svg" viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg"
@@ -512,10 +523,58 @@ final class Renderer {
                     <text class="hof-venn-count hof-venn-count-overlap" x="88"  y="140" text-anchor="middle"><?php echo (int) $regions['ac_only']; ?></text>
                     <text class="hof-venn-count hof-venn-count-overlap" x="152" y="140" text-anchor="middle"><?php echo (int) $regions['bc_only']; ?></text>
                     <text class="hof-venn-count hof-venn-count-center"  x="120" y="120" text-anchor="middle"><?php echo (int) $regions['abc']; ?></text>
+
+                    <?php // Invisible click targets over each overlap region. ?>
+                    <rect class="hof-venn-region"
+                          data-hof-venn-values="<?php echo esc_attr( $values[0] . ',' . $values[1] ); ?>"
+                          x="105" y="66" width="30" height="22" />
+                    <rect class="hof-venn-region"
+                          data-hof-venn-values="<?php echo esc_attr( $values[0] . ',' . $values[2] ); ?>"
+                          x="73"  y="126" width="30" height="22" />
+                    <rect class="hof-venn-region"
+                          data-hof-venn-values="<?php echo esc_attr( $values[1] . ',' . $values[2] ); ?>"
+                          x="137" y="126" width="30" height="22" />
+                    <rect class="hof-venn-region"
+                          data-hof-venn-values="<?php echo esc_attr( implode( ',', $values ) ); ?>"
+                          x="105" y="106" width="30" height="22" />
                 </svg>
             <?php endif; ?>
 
-            <?php // Hidden inputs carry the same OR-list URL shape as checkbox/swatch. ?>
+            <p class="hof-venn-tip">
+                <span>Click a circle to include that <?php echo esc_html( strtolower( $label ) ); ?>.</span>
+                <?php if ( $n === 3 ) : ?>
+                    <span>Click an overlap to include all categories in that region.</span>
+                <?php else : ?>
+                    <span>Click the overlap to include both at once.</span>
+                <?php endif; ?>
+                <span class="hof-venn-tip-meta">Numbers show how many products fall in each region.</span>
+            </p>
+
+            <?php if ( ! empty( $overflow ) ) : ?>
+                <details class="hof-venn-more">
+                    <summary class="hof-venn-more-toggle">
+                        + <?php echo (int) count( $overflow ); ?> more <?php echo esc_html( count( $overflow ) === 1 ? 'category' : 'categories' ); ?>
+                    </summary>
+                    <ul class="hof-venn-more-list">
+                        <?php foreach ( $overflow as $bucket ) :
+                            $v       = (string) $bucket['value'];
+                            $checked = isset( $selected_lookup[ $v ] ); ?>
+                            <li>
+                                <label>
+                                    <input type="checkbox"
+                                           name="hof[<?php echo esc_attr( $name ); ?>][]"
+                                           value="<?php echo esc_attr( $v ); ?>"
+                                           <?php checked( $checked ); ?>>
+                                    <span><?php echo esc_html( $bucket['display'] ); ?></span>
+                                    <span class="hof-facet-count">(<?php echo (int) $bucket['count']; ?>)</span>
+                                </label>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </details>
+            <?php endif; ?>
+
+            <?php // Hidden inputs carry the OR-list URL shape used by checkbox/swatch. ?>
             <?php foreach ( $values as $v ) :
                 if ( isset( $selected_lookup[ $v ] ) ) : ?>
                     <input type="hidden" name="hof[<?php echo esc_attr( $name ); ?>][]" value="<?php echo esc_attr( $v ); ?>">
