@@ -148,11 +148,24 @@ function getTopCard(facet) {
 }
 
 function updateDeckPositions(facet) {
+    // Blueprint sandbox: deck depth caps how many stacked cards are visible
+    // in Card / Swipe mode. Grid variant ignores this — the grid shows all.
+    const variant  = facet.getAttribute('data-hof-swiper-variant') || 'Card';
+    const rawDepth = parseInt(facet.getAttribute('data-hof-swiper-depth') || '3', 10);
+    const depth    = (variant === 'Grid' || !Number.isFinite(rawDepth) || rawDepth <= 0)
+        ? Infinity
+        : rawDepth;
+
     const remaining = facet.querySelectorAll(
         '[data-hof-swiper-card]:not([hidden]):not([data-hof-swiped])'
     );
     remaining.forEach((card, idx) => {
         card.style.setProperty('--hof-swiper-pos', String(idx));
+        // Cards beyond the visible deck depth get pushed off-screen via
+        // display:none rather than the `hidden` attribute — `hidden` would
+        // exclude them from getTopCard() and the swipe progression.
+        if (idx >= depth) card.style.display = 'none';
+        else              card.style.display = '';
     });
     const done = facet.querySelector('[data-hof-swiper-done]');
     if (done) done.hidden = remaining.length > 0;

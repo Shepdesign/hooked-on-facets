@@ -297,11 +297,25 @@ final class Renderer {
         $label   = $facet['label'] ?: $name;
         $buckets = ( $counts['type'] ?? '' ) === 'values' ? $counts['buckets'] : [];
 
+        // Blueprint sandbox settings — read with defaults that match the
+        // admin's DEFAULTS so an unconfigured facet looks the same as the
+        // original Phase 2 ship. sanitize_facets allowlists these values, so
+        // anything we receive here is already trusted.
+        $settings   = is_array( $facet['settings'] ?? null ) ? $facet['settings'] : [];
+        $variant    = (string) ( $settings['variant']   ?? 'Card' );
+        $card_size  = (string) ( $settings['cardSize']  ?? 'Medium' );
+        $deck_depth = (int)    ( $settings['deckDepth'] ?? 3 );
+        $animation  = (string) ( $settings['animation'] ?? 'Spring' );
+
         ob_start();
         ?>
         <div class="hof-facet hof-facet-swiper"
              data-hof-facet="<?php echo esc_attr( $name ); ?>"
-             data-hof-display="swiper">
+             data-hof-display="swiper"
+             data-hof-swiper-variant="<?php echo esc_attr( $variant ); ?>"
+             data-hof-swiper-size="<?php echo esc_attr( $card_size ); ?>"
+             data-hof-swiper-depth="<?php echo (int) $deck_depth; ?>"
+             data-hof-swiper-anim="<?php echo esc_attr( $animation ); ?>">
             <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
             <?php if ( empty( $buckets ) ) : ?>
                 <p class="hof-facet-empty"><?php esc_html_e( 'No options available.', 'hooked-on-facets' ); ?></p>

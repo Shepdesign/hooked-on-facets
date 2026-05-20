@@ -426,6 +426,61 @@
     }
 }
 
+/* ── Blueprint sandbox settings: drive card size, variant, and animation ── */
+
+/* Card size — overrides the default 240x300 via CSS custom properties. */
+.hof-facet-swiper[data-hof-swiper-size="Small"]  { --hof-swiper-card-w: 200px; --hof-swiper-card-h: 250px; }
+.hof-facet-swiper[data-hof-swiper-size="Medium"] { --hof-swiper-card-w: 240px; --hof-swiper-card-h: 300px; }
+.hof-facet-swiper[data-hof-swiper-size="Large"]  { --hof-swiper-card-w: 280px; --hof-swiper-card-h: 360px; }
+
+/* Variant — Swipe is the default-but-tilted look. Same deck mechanics as
+   Card; the top card just sits at -3° so the stack reads as 'swipeable'. */
+.hof-facet-swiper[data-hof-swiper-variant="Swipe"] .hof-swiper-card[style*="--hof-swiper-pos: 0"],
+.hof-facet-swiper[data-hof-swiper-variant="Swipe"] .hof-swiper-deck > .hof-swiper-card:not([data-hof-swiped]):first-of-type {
+    transform:
+        translateX(calc(var(--hof-swipe-x, 0) * 1px))
+        rotate(calc(-3deg + var(--hof-swipe-x, 0) * 0.05deg));
+}
+
+/* Variant — Grid drops the absolute-positioned stack and tiles cards in a
+   3-column grid. The swiper.js drag/swipe handlers still attach but the
+   cards no longer overlap, so click-to-toggle is the practical interaction. */
+.hof-facet-swiper[data-hof-swiper-variant="Grid"] .hof-swiper-deck {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--hof-swiper-card-w), 1fr));
+    gap: var(--hof-space);
+    width: auto;
+    height: auto;
+    max-width: calc(var(--hof-swiper-card-w) * 3 + var(--hof-space) * 2);
+}
+
+.hof-facet-swiper[data-hof-swiper-variant="Grid"] .hof-swiper-card {
+    position: relative;
+    inset: auto;
+    transform: none;
+    height: var(--hof-swiper-card-h);
+    z-index: 1;
+}
+
+.hof-facet-swiper[data-hof-swiper-variant="Grid"] .hof-swiper-card[data-hof-swiped] {
+    opacity: 0.35;
+    transform: none;
+}
+
+/* Grid mode hides the swipe deck controls — they don't apply to a static grid. */
+.hof-facet-swiper[data-hof-swiper-variant="Grid"] .hof-swiper-controls {
+    display: none;
+}
+
+/* Animation — Spring uses an overshoot easing curve; Linear is straight. */
+.hof-facet-swiper[data-hof-swiper-anim="Linear"] .hof-swiper-card {
+    transition-timing-function: linear;
+}
+
+.hof-facet-swiper[data-hof-swiper-anim="Linear"] .hof-swiper-card[data-hof-swiped] {
+    transition-timing-function: linear;
+}
+
 /* Venn matrix — overlapping circles, region counts via SVG <text>. */
 .hof-facet-venn .hof-venn-svg {
     display: block;
