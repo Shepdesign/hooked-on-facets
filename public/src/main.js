@@ -75,6 +75,21 @@ document.addEventListener('change', (e) => {
         return;
     }
 
+    if (display === 'venn') {
+        // Combine both selection surfaces: circles flagged with
+        // data-hof-selected (the visual Venn) and checked overflow
+        // checkboxes (terms beyond the top 3). Either or both can change.
+        const fromCircles = Array.from(
+            facetEl.querySelectorAll('.hof-venn-circle[data-hof-selected]')
+        ).map((c) => c.getAttribute('data-hof-venn-value'));
+        const fromOverflow = Array.from(
+            facetEl.querySelectorAll('.hof-venn-more-list input[type="checkbox"]:checked')
+        ).map((cb) => cb.value);
+        const values = Array.from(new Set([...fromCircles, ...fromOverflow]));
+        store.set(name, values);
+        return;
+    }
+
     if (display === 'range') {
         const min = facetEl.querySelector('[data-hof-input="min"]')?.value ?? '';
         const max = facetEl.querySelector('[data-hof-input="max"]')?.value ?? '';
