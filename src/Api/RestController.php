@@ -151,7 +151,7 @@ final class RestController implements Bootable {
      */
     private function sanitize_facets( array $raw ): array {
         $allowed_kinds    = [ 'taxonomy', 'meta', 'field' ];
-        $allowed_displays = [ 'checkbox', 'range', 'search', 'swatch', 'swiper', 'venn', 'upset' ];
+        $allowed_displays = [ 'checkbox', 'range', 'search', 'swatch', 'swiper' ];
 
         $clean = [];
         $seen  = [];

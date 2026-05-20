@@ -75,26 +75,6 @@ document.addEventListener('change', (e) => {
         return;
     }
 
-    if (display === 'venn') {
-        // Combine both selection surfaces: circles flagged with
-        // data-hof-selected (the visual Venn) and checked overflow
-        // checkboxes (terms beyond the top 3). Either or both can change.
-        const fromCircles = Array.from(
-            facetEl.querySelectorAll('.hof-venn-circle[data-hof-selected]')
-        ).map((c) => c.getAttribute('data-hof-venn-value'));
-        const fromOverflow = Array.from(
-            facetEl.querySelectorAll('.hof-venn-more-list input[type="checkbox"]:checked')
-        ).map((cb) => cb.value);
-        const values = Array.from(new Set([...fromCircles, ...fromOverflow]));
-        store.set(name, values);
-        return;
-    }
-
-    if (display === 'upset') {
-        store.set(name, Array.from(readUpsetSelected(facetEl)));
-        return;
-    }
-
     if (display === 'range') {
         const min = facetEl.querySelector('[data-hof-input="min"]')?.value ?? '';
         const max = facetEl.querySelector('[data-hof-input="max"]')?.value ?? '';
@@ -162,116 +142,7 @@ document.addEventListener('click', (e) => {
         return;
     }
 
-    // UpSet column: toggle ALL terms in this pattern as a group. Same
-    // OR-within-facet semantic as the Venn overlap regions — clicking one
-    // adds the comma-separated terms; clicking again removes them.
-    const upsetCol = e.target.closest('.hof-upset-col');
-    if (upsetCol) {
-        const facetEl = upsetCol.closest('[data-hof-facet]');
-        const name    = facetEl?.getAttribute('data-hof-facet');
-        const raw     = upsetCol.getAttribute('data-hof-upset-values') || '';
-        const values  = raw.split(',').map((v) => v.trim()).filter(Boolean);
-        if (!facetEl || !name || values.length === 0) return;
-
-        const selected = readUpsetSelected(facetEl);
-        const allActive = values.every((v) => selected.has(v));
-        if (allActive) values.forEach((v) => selected.delete(v));
-        else           values.forEach((v) => selected.add(v));
-
-        store.set(name, Array.from(selected));
-        return;
-    }
-
-    // UpSet row label: toggle one term.
-    const upsetRow = e.target.closest('.hof-upset-rowlabel');
-    if (upsetRow) {
-        const facetEl = upsetRow.closest('[data-hof-facet]');
-        const name    = facetEl?.getAttribute('data-hof-facet');
-        const value   = upsetRow.getAttribute('data-hof-upset-row');
-        if (!facetEl || !name || !value) return;
-
-        const selected = readUpsetSelected(facetEl);
-        if (selected.has(value)) selected.delete(value);
-        else                     selected.add(value);
-
-        store.set(name, Array.from(selected));
-        return;
-    }
-
-    // Venn overlap region: toggle the comma-separated values as a group.
-    // The data attribute carries 2 or 3 term slugs (e.g. "apparel,footwear");
-    // clicking sets all of them; clicking again clears all of them.
-    const vennRegion = e.target.closest('.hof-venn-region');
-    if (vennRegion) {
-        const facetEl = vennRegion.closest('[data-hof-facet]');
-        const name    = facetEl?.getAttribute('data-hof-facet');
-        const raw     = vennRegion.getAttribute('data-hof-venn-values') || '';
-        const values  = raw.split(',').map((v) => v.trim()).filter(Boolean);
-        if (!facetEl || !name || values.length === 0) return;
-
-        const circles  = facetEl.querySelectorAll('.hof-venn-circle');
-        const selected = readVennSelected(circles);
-        const allActive = values.every((v) => selected.has(v));
-        if (allActive) values.forEach((v) => selected.delete(v));
-        else           values.forEach((v) => selected.add(v));
-
-        applyVennSelected(circles, selected);
-        store.set(name, Array.from(selected));
-        return;
-    }
-
-    // Venn circle: toggle that term in the facet's selection. Hidden inputs
-    // get regenerated on refresh; we use the data-hof-selected attribute on
-    // the circles themselves as the source of truth between clicks.
-    const vennCircle = e.target.closest('.hof-venn-circle');
-    if (vennCircle) {
-        const facetEl = vennCircle.closest('[data-hof-facet]');
-        const name    = facetEl?.getAttribute('data-hof-facet');
-        const value   = vennCircle.getAttribute('data-hof-venn-value');
-        if (!facetEl || !name || !value) return;
-
-        const circles  = facetEl.querySelectorAll('.hof-venn-circle');
-        const selected = readVennSelected(circles);
-        if (selected.has(value)) selected.delete(value);
-        else selected.add(value);
-
-        applyVennSelected(circles, selected);
-        store.set(name, Array.from(selected));
-    }
 });
-
-function readUpsetSelected(facetEl) {
-    // The "currently selected" set for an UpSet facet is the union of
-    // row-labels carrying is-selected and overflow checkboxes that are
-    // checked. The rendered classes are the source of truth between clicks
-    // until the server refresh reconciles.
-    const fromRows = Array.from(
-        facetEl.querySelectorAll('.hof-upset-rowlabel.is-selected')
-    ).map((t) => t.getAttribute('data-hof-upset-row')).filter(Boolean);
-    const fromOverflow = Array.from(
-        facetEl.querySelectorAll('.hof-venn-more-list input[type="checkbox"]:checked')
-    ).map((cb) => cb.value);
-    return new Set([...fromRows, ...fromOverflow]);
-}
-
-function readVennSelected(circles) {
-    const set = new Set();
-    circles.forEach((c) => {
-        if (c.hasAttribute('data-hof-selected')) {
-            set.add(c.getAttribute('data-hof-venn-value'));
-        }
-    });
-    return set;
-}
-
-function applyVennSelected(circles, selected) {
-    // Optimistic flip so the coral stroke shows before the round-trip.
-    circles.forEach((c) => {
-        const v = c.getAttribute('data-hof-venn-value');
-        if (selected.has(v)) c.setAttribute('data-hof-selected', '1');
-        else c.removeAttribute('data-hof-selected');
-    });
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 

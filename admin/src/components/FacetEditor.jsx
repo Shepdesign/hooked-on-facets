@@ -10,8 +10,6 @@ const DISPLAYS = [
     { value: 'search',   label: 'Search box' },
     { value: 'swatch',   label: 'Fluid swatches' },
     { value: 'swiper',   label: 'Swipe deck' },
-    { value: 'venn',     label: 'Venn matrix' },
-    { value: 'upset',    label: 'UpSet matrix' },
 ];
 
 const sanitizeSlug = (raw) =>
@@ -110,28 +108,6 @@ export default function FacetEditor({ facet, onChange, onDelete }) {
                                 Non-taxonomy sources still work but cards will be label-only.
                             </span>
                         )}
-                        {facet.display === 'venn' && facet.kind === 'taxonomy' && (
-                            <span className="hof-field-help">
-                                Auto-picks the top 3 terms by count and renders overlapping circles
-                                with real intersection counts. Click any circle to toggle that term.
-                            </span>
-                        )}
-                        {facet.display === 'venn' && facet.kind !== 'taxonomy' && (
-                            <span className="hof-field-help hof-field-warn">
-                                Venn requires a taxonomy source. Falls back to a checkbox list at runtime.
-                            </span>
-                        )}
-                        {facet.display === 'upset' && facet.kind === 'taxonomy' && (
-                            <span className="hof-field-help">
-                                UpSet matrix — scales past 3 terms where the Venn breaks down. Shows the top 5 terms
-                                as rows and every non-empty term-combination as a column with its intersection count.
-                            </span>
-                        )}
-                        {facet.display === 'upset' && facet.kind !== 'taxonomy' && (
-                            <span className="hof-field-help hof-field-warn">
-                                UpSet requires a taxonomy source. Falls back to a checkbox list at runtime.
-                            </span>
-                        )}
                     </label>
 
                     <div className="hof-editor-actions">
@@ -197,69 +173,6 @@ function FacetPreview({ facet }) {
                 </div>
                 <p className="hof-preview-note">
                     Right = include, left = skip. Cards reuse the term's swatch image/color.
-                </p>
-            </div>
-        );
-    }
-
-    if (facet.display === 'venn') {
-        return (
-            <div className="hof-preview">
-                <div className="hof-preview-label">{label}</div>
-                <svg viewBox="0 0 240 220" className="hof-preview-venn">
-                    <circle className="hof-preview-venn-circle" cx="90"  cy="95"  r="60" />
-                    <circle className="hof-preview-venn-circle" cx="150" cy="95"  r="60" />
-                    <circle className="hof-preview-venn-circle" cx="120" cy="147" r="60" />
-                </svg>
-                <p className="hof-preview-note">
-                    Top 3 terms by count render as circles; overlap regions show real intersection counts
-                    and are click-targets that include all categories in that region at once.
-                    Terms beyond the top 3 appear as a collapsible checkbox list below.
-                </p>
-            </div>
-        );
-    }
-
-    if (facet.display === 'upset') {
-        // Schematic mock of the matrix layout. Real version is server-rendered SVG.
-        const ROWS = ['Apparel', 'Auto', 'Baby', 'Beauty', 'Books'];
-        const COLS = [
-            { pattern: [true, false, false, false, false], count: 4550 },
-            { pattern: [false, true, false, false, false], count: 4850 },
-            { pattern: [false, false, true, false, false], count: 5000 },
-            { pattern: [true, true, false, false, false], count: 175 },
-            { pattern: [true, false, true, false, false], count: 200 },
-            { pattern: [true, true, true, false, false], count: 75 },
-        ];
-        const maxCount = Math.max(...COLS.map((c) => c.count));
-        return (
-            <div className="hof-preview">
-                <div className="hof-preview-label">{label}</div>
-                <div className="hof-preview-upset">
-                    <div className="hof-preview-upset-rows">
-                        {ROWS.map((r) => <span key={r}>{r}</span>)}
-                    </div>
-                    <div className="hof-preview-upset-grid">
-                        <div className="hof-preview-upset-bars">
-                            {COLS.map((c, i) => (
-                                <span key={i} style={{ height: `${(c.count / maxCount) * 100}%` }} title={c.count}></span>
-                            ))}
-                        </div>
-                        <div className="hof-preview-upset-dots">
-                            {COLS.map((c, i) => (
-                                <div key={i} className="hof-preview-upset-col">
-                                    {c.pattern.map((on, j) => (
-                                        <span key={j} className={on ? 'on' : 'off'}></span>
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-                <p className="hof-preview-note">
-                    Top 5 terms in rows. Each column = a term-combination that exists in the data, sorted by
-                    intersection count desc, capped at the top 12. Click a column to include all terms in that pattern;
-                    click a row label to toggle a single term.
                 </p>
             </div>
         );
