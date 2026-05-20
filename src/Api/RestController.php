@@ -7,6 +7,7 @@
  *   POST /filter              → resolve filter state to IDs + drill-down counts
  *   POST /reindex (admin)     → trigger full reindex
  *   GET  /reindex/status (admin) → current index stats (rows, objects, per-facet)
+ *   GET  /telemetry (admin)   → resolver timings + hooked-loop counts
  *
  * @package HookedOnFacets
  */
@@ -18,6 +19,7 @@ namespace HookedOnFacets\Api;
 use HookedOnFacets\Contracts\Bootable;
 use HookedOnFacets\Filter\Resolver;
 use HookedOnFacets\Indexer;
+use HookedOnFacets\Telemetry\Recorder;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -28,6 +30,7 @@ final class RestController implements Bootable {
     public function __construct(
         private readonly Resolver $resolver,
         private readonly Indexer $indexer,
+        private readonly ?Recorder $recorder = null,
     ) {}
 
     public function register_hooks(): void {
@@ -88,6 +91,22 @@ final class RestController implements Bootable {
             'callback'            => [ $this, 'reindex_status' ],
             'permission_callback' => static fn() => current_user_can( 'manage_options' ),
         ] );
+
+        register_rest_route( self::NAMESPACE_V1, '/telemetry', [
+            'methods'             => \WP_REST_Server::READABLE,
+            'callback'            => [ $this, 'telemetry' ],
+            'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+        ] );
+    }
+
+    public function telemetry( \WP_REST_Request $request ): \WP_REST_Response {
+        if ( ! $this->recorder ) {
+            return new \WP_REST_Response( [
+                'resolver' => [ 'avg_ms' => null, 'p95_ms' => null, 'sample_size' => 0, 'total_calls' => 0 ],
+                'loops'    => [ 'count' => 0, 'total_hits' => 0, 'top' => [] ],
+            ], 200 );
+        }
+        return new \WP_REST_Response( $this->recorder->snapshot(), 200 );
     }
 
     public function list_facets( \WP_REST_Request $request ): \WP_REST_Response {

@@ -27,10 +27,12 @@ const FACET_ICONS = {
     venn:     IconCirclesRelation,
 };
 
-export default function Dashboard({ facets, productsIndexed, onCreateFacet, onOpenBlueprint }) {
+export default function Dashboard({ facets, productsIndexed, telemetry, onCreateFacet, onOpenBlueprint }) {
     const active = facets.length;
-    // Placeholder — real query-loop detection lives in QueryHook; not surfaced yet.
-    const hookedLoops = 0;
+    const hookedLoops = telemetry?.loops?.count ?? 0;
+    const totalHits   = telemetry?.loops?.total_hits ?? 0;
+    const avgMs       = telemetry?.resolver?.avg_ms;
+    const sampleSize  = telemetry?.resolver?.sample_size ?? 0;
 
     return (
         <div className="hof-dash">
@@ -45,12 +47,21 @@ export default function Dashboard({ facets, productsIndexed, onCreateFacet, onOp
                         : 'Ready to hook query loops the moment you drop a facet.'}
                 </h1>
                 <p className="hof-dash-sub">
-                    No shortcodes. No template rewrites. We detect your loops on activation and bind the facets you configure.
+                    {hookedLoops > 0
+                        ? `${fmtNumber(totalHits)} intercept${totalHits === 1 ? '' : 's'} captured so far across ${hookedLoops} loop${hookedLoops === 1 ? '' : 's'}.`
+                        : 'No shortcodes. No template rewrites. We detect your loops on activation and bind the facets you configure.'}
                 </p>
             </section>
 
             <div className="hof-dash-stats">
-                <Stat label="Avg query time" value={<><span>—</span><span className="hof-stat-unit">ms</span></>} />
+                <Stat
+                    label={sampleSize > 0 ? `Avg query time · last ${sampleSize}` : 'Avg query time'}
+                    value={
+                        avgMs !== null && avgMs !== undefined
+                            ? <><span>{avgMs.toFixed(1)}</span><span className="hof-stat-unit">ms</span></>
+                            : <><span>—</span><span className="hof-stat-unit">ms</span></>
+                    }
+                />
                 <Stat label="Products indexed" value={fmtNumber(productsIndexed)} />
                 <Stat label="Active facets" value={<><span>{active}</span><span className="hof-stat-unit"> of {active}</span></>} />
             </div>

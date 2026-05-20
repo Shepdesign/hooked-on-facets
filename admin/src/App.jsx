@@ -153,6 +153,7 @@ export default function App({ bootstrap }) {
                         <Dashboard
                             facets={facets}
                             productsIndexed={bootstrap.productsIndexed}
+                            telemetry={bootstrap.telemetry}
                             onCreateFacet={addFacet}
                             onOpenBlueprint={() => setView('blueprint')}
                         />

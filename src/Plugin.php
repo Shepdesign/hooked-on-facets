@@ -114,13 +114,19 @@ final class Plugin {
      * wires those deps via the container.
      */
     private function register_bindings(): void {
+        $this->bind( \HookedOnFacets\Filter\Resolver::class, static fn( self $c ) => new \HookedOnFacets\Filter\Resolver(
+            $c->make( \HookedOnFacets\Telemetry\Recorder::class )
+        ) );
+
         $this->bind( QueryHook::class, static fn( self $c ) => new QueryHook(
-            $c->make( \HookedOnFacets\Filter\Resolver::class )
+            $c->make( \HookedOnFacets\Filter\Resolver::class ),
+            $c->make( \HookedOnFacets\Telemetry\Recorder::class )
         ) );
 
         $this->bind( \HookedOnFacets\Api\RestController::class, static fn( self $c ) => new \HookedOnFacets\Api\RestController(
             $c->make( \HookedOnFacets\Filter\Resolver::class ),
-            $c->make( Indexer::class )
+            $c->make( Indexer::class ),
+            $c->make( \HookedOnFacets\Telemetry\Recorder::class )
         ) );
 
         $this->bind( \HookedOnFacets\Facets\Renderer::class, static fn( self $c ) => new \HookedOnFacets\Facets\Renderer(
@@ -146,6 +152,7 @@ final class Plugin {
      */
     private function core_services(): array {
         return [
+            \HookedOnFacets\Telemetry\Recorder::class,
             Indexer::class,
             QueryHook::class,
             \HookedOnFacets\Api\RestController::class,

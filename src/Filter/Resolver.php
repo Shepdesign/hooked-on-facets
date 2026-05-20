@@ -24,6 +24,7 @@ namespace HookedOnFacets\Filter;
 
 use HookedOnFacets\Activator;
 use HookedOnFacets\Indexer;
+use HookedOnFacets\Telemetry\Recorder;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -31,6 +32,8 @@ final class Resolver {
 
     /** Per-request cache of normalized facet definitions, keyed by name. */
     private ?array $defs_by_name_cache = null;
+
+    public function __construct( private readonly ?Recorder $recorder = null ) {}
 
     // ── Public API ──────────────────────────────────────────────────────────
 
@@ -70,7 +73,10 @@ final class Resolver {
             return null;
         }
 
-        $rows = $wpdb->get_col( $wpdb->prepare( $parts['sql'], $parts['params'] ) );
+        $started = microtime( true );
+        $rows    = $wpdb->get_col( $wpdb->prepare( $parts['sql'], $parts['params'] ) );
+        $this->recorder?->record_resolver_ms( ( microtime( true ) - $started ) * 1000 );
+
         return array_map( 'intval', $rows );
     }
 

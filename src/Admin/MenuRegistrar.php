@@ -85,6 +85,7 @@ final class MenuRegistrar implements Bootable {
                 'facets'          => array_values( (array) get_option( Indexer::OPTION_FACETS, [] ) ),
                 'tokens'          => $tokens,
                 'productsIndexed' => $this->count_indexed_products(),
+                'telemetry'       => $this->load_telemetry_snapshot(),
                 'version'         => HOF_VERSION,
             ] )
         );
@@ -232,6 +233,17 @@ final class MenuRegistrar implements Bootable {
         $table = $wpdb->prefix . Activator::TABLE;
         $sql   = "SELECT COUNT(DISTINCT object_id) FROM {$table}";
         return (int) $wpdb->get_var( $sql );
+    }
+
+    /**
+     * Telemetry snapshot for the initial Dashboard render — saves the SPA a
+     * round trip on first paint.
+     *
+     * @return array<string, mixed>
+     */
+    private function load_telemetry_snapshot(): array {
+        $recorder = \HookedOnFacets\Plugin::instance()->make( \HookedOnFacets\Telemetry\Recorder::class );
+        return $recorder->snapshot();
     }
 
     /**

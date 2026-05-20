@@ -22,12 +22,16 @@ namespace HookedOnFacets;
 
 use HookedOnFacets\Contracts\Bootable;
 use HookedOnFacets\Filter\Resolver;
+use HookedOnFacets\Telemetry\Recorder;
 
 defined( 'ABSPATH' ) || exit;
 
 final class QueryHook implements Bootable {
 
-    public function __construct( private readonly Resolver $resolver ) {}
+    public function __construct(
+        private readonly Resolver $resolver,
+        private readonly ?Recorder $recorder = null,
+    ) {}
 
     public function register_hooks(): void {
         // Priority 9 → run before WC's own pre_get_posts at 10, so our post__in
@@ -59,6 +63,38 @@ final class QueryHook implements Bootable {
         // Stash the resolved state so other layers (e.g. result-region JSON
         // payload, block render callbacks) can read what was applied.
         $query->set( 'hof_applied_state', $filter_state );
+
+        $this->recorder?->record_loop_hook( $this->loop_signature( $query ) );
+    }
+
+    /**
+     * Build a stable, low-cardinality signature for the loop we just hooked,
+     * for the admin telemetry counter.
+     *
+     * Format: <intercept_type>:<post_type>
+     *   intercept_type ∈ { archive, tax, search, home, opt_in }
+     *   post_type      ∈ first detected post type, or 'unknown'
+     */
+    private function loop_signature( \WP_Query $query ): string {
+        $post_type = (array) ( $query->get( 'post_type' ) ?: $this->guess_post_type_from_query( $query ) );
+        $pt        = $post_type[0] ?? 'unknown';
+
+        if ( $query->get( 'hof_facet_target' ) ) {
+            return "opt_in:{$pt}";
+        }
+        if ( $query->is_post_type_archive() ) {
+            return "archive:{$pt}";
+        }
+        if ( $query->is_tax() ) {
+            return "tax:{$pt}";
+        }
+        if ( $query->is_search() ) {
+            return "search:{$pt}";
+        }
+        if ( $query->is_home() ) {
+            return "home:{$pt}";
+        }
+        return "main:{$pt}";
     }
 
     /**
