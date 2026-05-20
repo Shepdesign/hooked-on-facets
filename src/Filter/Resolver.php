@@ -223,8 +223,15 @@ final class Resolver {
             }
 
             $index   = $clause['index'] ?? 'facet_lookup';
-            $legs[]  = "SELECT object_id FROM {$table} USE INDEX ({$index}) WHERE {$clause['sql']}";
-            $params  = array_merge( $params, $clause['params'] );
+            // DISTINCT only when the leg can emit the same object_id more
+            // than once — multi-value taxonomy IN-lists. INTERSECT dedupes
+            // across legs, but a single-facet filter is a degenerate
+            // INTERSECT (one leg, no operator), so the leg has to dedupe
+            // itself in that case. Single-value / range / meta legs don't
+            // pay the cost so the covering-index streaming win stays intact.
+            $distinct = ! empty( $clause['needs_distinct'] ) ? 'DISTINCT ' : '';
+            $legs[]   = "SELECT {$distinct}object_id FROM {$table} USE INDEX ({$index}) WHERE {$clause['sql']}";
+            $params   = array_merge( $params, $clause['params'] );
         }
 
         if ( empty( $legs ) ) {
@@ -287,10 +294,22 @@ final class Resolver {
         }
 
         $placeholders = implode( ', ', array_fill( 0, count( $values ), '%s' ) );
+
+        // Per-leg dedup is only required when a single object can have more
+        // than one matching row in this leg. That happens when the source is
+        // a taxonomy (an object can carry multiple terms) AND the IN-list
+        // has >1 value, so the same object_id could match multiple legs of
+        // the OR. Meta and post-field facets are single-row-per-object by
+        // construction; range legs are single-value. Skipping DISTINCT on
+        // those preserves the covering-index streaming win.
+        $kind          = $facet_def['kind'] ?? 'taxonomy';
+        $needs_distinct = ( $kind === 'taxonomy' && count( $values ) > 1 );
+
         return [
-            'sql'    => "facet_name = %s AND facet_value IN ({$placeholders})",
-            'params' => array_merge( [ $facet_name ], $values ),
-            'index'  => 'facet_lookup',
+            'sql'           => "facet_name = %s AND facet_value IN ({$placeholders})",
+            'params'        => array_merge( [ $facet_name ], $values ),
+            'index'         => 'facet_lookup',
+            'needs_distinct' => $needs_distinct,
         ];
     }
 
