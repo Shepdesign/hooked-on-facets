@@ -93,6 +93,18 @@ export default function App({ bootstrap }) {
         }
     };
 
+    // Sync from the Blueprint sandbox: PUT a settings patch onto one facet
+    // without going through the dirty-flag flow that the Facets editor uses.
+    const saveFacetSettings = async (facetName, settings) => {
+        const next = facets.map((f) =>
+            f.name === facetName ? { ...f, settings: { ...settings } } : f
+        );
+        const result = await saveFacets(next);
+        const canonical = Array.isArray(result.facets) ? result.facets : next;
+        setFacets(canonical);
+        return canonical.find((f) => f.name === facetName) || null;
+    };
+
     const currentView = VIEWS.find((v) => v.id === view) || VIEWS[0];
 
     return (
@@ -192,7 +204,11 @@ export default function App({ bootstrap }) {
                     {view === 'tokens' && <TokensPanel tokens={bootstrap.tokens || {}} />}
 
                     {view === 'blueprint' && (
-                        <Blueprint facets={facets} onBack={() => setView('dashboard')} />
+                        <Blueprint
+                            facets={facets}
+                            onBack={() => setView('dashboard')}
+                            onSaveSettings={saveFacetSettings}
+                        />
                     )}
 
                     {view === 'indexer' && <Indexer />}

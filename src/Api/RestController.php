@@ -115,11 +115,11 @@ final class RestController implements Bootable {
 
     /**
      * @param array<int, mixed> $raw
-     * @return array<int, array<string, string>>
+     * @return array<int, array<string, mixed>>
      */
     private function sanitize_facets( array $raw ): array {
         $allowed_kinds    = [ 'taxonomy', 'meta', 'field' ];
-        $allowed_displays = [ 'checkbox', 'range', 'search' ];
+        $allowed_displays = [ 'checkbox', 'range', 'search', 'swatch', 'swiper', 'venn' ];
 
         $clean = [];
         $seen  = [];
@@ -143,17 +143,49 @@ final class RestController implements Bootable {
                 $display = 'checkbox';
             }
 
-            $clean[]      = [
-                'name'    => $name,
-                'label'   => isset( $def['label'] ) ? sanitize_text_field( (string) $def['label'] ) : $name,
-                'source'  => isset( $def['source'] ) ? sanitize_text_field( (string) $def['source'] ) : '',
-                'kind'    => $kind,
-                'display' => $display,
+            $clean[]       = [
+                'name'     => $name,
+                'label'    => isset( $def['label'] ) ? sanitize_text_field( (string) $def['label'] ) : $name,
+                'source'   => isset( $def['source'] ) ? sanitize_text_field( (string) $def['source'] ) : '',
+                'kind'     => $kind,
+                'display'  => $display,
+                'settings' => $this->sanitize_settings( $def['settings'] ?? null ),
             ];
             $seen[ $name ] = true;
         }
 
         return $clean;
+    }
+
+    /**
+     * Sanitize per-facet display settings written by the Blueprint sandbox.
+     *
+     * Unknown keys are dropped; missing keys default to null so the runtime
+     * can fall back to its own defaults without checking for existence.
+     *
+     * @param mixed $raw
+     * @return array<string, mixed>
+     */
+    private function sanitize_settings( $raw ): array {
+        if ( ! is_array( $raw ) ) {
+            return [];
+        }
+
+        $allowed_variants   = [ 'Card', 'Grid', 'Swipe' ];
+        $allowed_card_sizes = [ 'Small', 'Medium', 'Large' ];
+        $allowed_animations = [ 'Spring', 'Linear' ];
+
+        $variant    = isset( $raw['variant'] )   && in_array( (string) $raw['variant'],   $allowed_variants,   true ) ? (string) $raw['variant']   : null;
+        $card_size  = isset( $raw['cardSize'] )  && in_array( (string) $raw['cardSize'],  $allowed_card_sizes, true ) ? (string) $raw['cardSize']  : null;
+        $animation  = isset( $raw['animation'] ) && in_array( (string) $raw['animation'], $allowed_animations, true ) ? (string) $raw['animation'] : null;
+        $deck_depth = isset( $raw['deckDepth'] ) ? max( 1, min( 10, (int) $raw['deckDepth'] ) ) : null;
+
+        return array_filter( [
+            'variant'   => $variant,
+            'cardSize'  => $card_size,
+            'deckDepth' => $deck_depth,
+            'animation' => $animation,
+        ], static fn( $v ) => $v !== null );
     }
 
     public function apply_filter( \WP_REST_Request $request ): \WP_REST_Response {

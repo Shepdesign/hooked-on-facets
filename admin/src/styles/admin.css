@@ -1136,28 +1136,31 @@ body.toplevel_page_hooked-on-facets .wrap {
 
 .hof-bp-deck {
     position: relative;
-    width: 160px;
-    height: 198px;
+    width: var(--hof-bp-card-w, 160px);
+    height: calc(var(--hof-bp-card-h, 190px) + 8px);
+    transition: width 180ms ease, height 180ms ease;
+}
+
+.hof-bp-deck.is-swipe .hof-bp-deck-top {
+    transform: rotate(-3deg);
+    transition: transform 220ms ease;
 }
 
 .hof-bp-deck-card {
     position: absolute;
-    width: 160px;
-    height: 190px;
+    width: var(--hof-bp-card-w, 160px);
+    height: var(--hof-bp-card-h, 190px);
     border-radius: var(--hof-radius-md);
     box-sizing: border-box;
+    transition: width 180ms ease, height 180ms ease;
 }
 
-.hof-bp-deck-back-2 {
-    top: 8px;
-    left: 8px;
-    background: var(--hof-color-ink-300);
-}
-
-.hof-bp-deck-back-1 {
-    top: 4px;
-    left: 4px;
-    background: var(--hof-color-ink-500);
+/* Generic back-card surface — JS provides the per-card offset/opacity
+   so deck depth can scale beyond 2. */
+.hof-bp-deck-back {
+    top: 0;
+    left: 0;
+    background: var(--hof-color-ink-400, var(--hof-color-ink-500));
 }
 
 .hof-bp-deck-top {
@@ -1183,10 +1186,11 @@ body.toplevel_page_hooked-on-facets .wrap {
 }
 
 .hof-bp-card-visual {
-    height: 96px;
+    height: calc(var(--hof-bp-card-h, 190px) * 0.5);
     background: var(--hof-color-facet-coral);
     border-radius: 6px;
     margin-bottom: 10px;
+    transition: height 180ms ease;
 }
 
 .hof-bp-card-meta {
@@ -1517,4 +1521,106 @@ body.toplevel_page_hooked-on-facets .wrap {
 
 .hof-spin {
     animation: hof-spin 0.9s linear infinite;
+}
+
+/* ── Blueprint sandbox — facet picker, grid variant, toast ────────────── */
+
+.hof-bp-facet-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 4px 0 14px;
+}
+
+.hof-bp-facet-chip {
+    appearance: none;
+    background: var(--hof-color-ink-100);
+    border: 0.5px solid var(--hof-color-ink-300);
+    color: var(--hof-color-ink-700);
+    border-radius: var(--hof-radius-pill, 999px);
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: var(--hof-font-mono);
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.hof-bp-facet-chip:hover {
+    color: var(--hof-color-deep-ink);
+    border-color: var(--hof-color-ink-500);
+}
+
+.hof-bp-facet-chip.is-active {
+    background: var(--hof-color-hook-purple);
+    border-color: var(--hof-color-hook-purple);
+    color: var(--hof-color-purple-50, #EEEDFE);
+}
+
+/* Grid variant — 2×3 mini-card matrix to preview the non-deck layout. */
+.hof-bp-grid-stage {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 360px;
+    padding: 4px;
+}
+
+.hof-bp-grid-card {
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-color-ink-200);
+    border-radius: var(--hof-radius-md);
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.hof-bp-grid-card .hof-bp-card-visual {
+    height: 64px;
+    margin-bottom: 8px;
+}
+
+.hof-bp-grid-card .hof-bp-card-title {
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.hof-bp-grid-card .hof-bp-card-meta {
+    font-size: 8.5px;
+}
+
+.hof-bp-toast {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    margin-top: 8px;
+    border-radius: var(--hof-radius-md, 6px);
+    font-size: 11.5px;
+    border: 0.5px solid;
+}
+
+.hof-bp-toast-ok {
+    background: rgba(83, 74, 183, 0.08);
+    border-color: rgba(83, 74, 183, 0.4);
+    color: var(--hof-color-deep-ink);
+}
+
+.hof-bp-toast-ok svg {
+    color: var(--hof-color-hook-purple);
+}
+
+.hof-bp-toast-err {
+    background: rgba(216, 90, 48, 0.08);
+    border-color: rgba(216, 90, 48, 0.5);
+    color: var(--hof-color-deep-ink);
+}
+
+.hof-bp-toast-err svg {
+    color: var(--hof-color-facet-coral);
+}
+
+.hof-bp-sync:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
