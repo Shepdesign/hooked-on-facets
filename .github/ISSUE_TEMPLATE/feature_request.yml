@@ -1,0 +1,69 @@
+name: 💡 Feature Request
+description: Got an idea for HOF? Tell us what problem it solves.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for thinking about HOF's future.
+
+        Before filing:
+        - **Check the [Roadmap](https://github.com/Shepdesign/hooked-on-facets/wiki/Roadmap)** — it might already be planned
+        - **Check existing feature requests** — give a 👍 instead of duplicating
+        - **Read the [Comparison](https://github.com/Shepdesign/hooked-on-facets/wiki/Comparison)** — we're explicit about what we're NOT building
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Start with the *why*, not the *what*. A feature without a problem is a solution looking for one.
+      placeholder: "When I'm trying to..., I can't... because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Your proposed solution
+      description: How do you think it should work? Be specific — API shape, UI behavior, config.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else did you think about? Any existing workarounds?
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: What kind of feature?
+      multiple: true
+      options:
+        - New facet type
+        - Admin UI improvement
+        - Frontend / display improvement
+        - Performance / indexing
+        - Integration with other plugin/builder
+        - Developer API (hook, filter, REST endpoint)
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Mockups, examples from other plugins, related issues, anything else
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      options:
+        - label: I have read and agree to the [Code of Conduct](https://github.com/Shepdesign/hooked-on-facets/blob/main/CODE_OF_CONDUCT.md)
+          required: true

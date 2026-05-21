@@ -1,0 +1,64 @@
+# CodeQL — security & quality static analysis.
+# https://github.com/github/codeql-action
+#
+# Path filters mean this only runs when relevant source files change.
+# Before the plugin scaffold lands, CodeQL stays dormant. After it lands, it
+# auto-activates on PHP / JS / TS file changes.
+
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.php'
+      - '**.js'
+      - '**.jsx'
+      - '**.ts'
+      - '**.tsx'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**.php'
+      - '**.js'
+      - '**.jsx'
+      - '**.ts'
+      - '**.tsx'
+  schedule:
+    # Weekly scan, Mondays 06:00 UTC
+    - cron: '0 6 * * 1'
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript-typescript']
+        # PHP will be added once the scaffold lands. CodeQL supports PHP via
+        # the 'php' language string but autobuild needs a project structure.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

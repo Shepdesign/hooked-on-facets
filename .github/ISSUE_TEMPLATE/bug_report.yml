@@ -1,0 +1,93 @@
+name: 🐛 Bug Report
+description: Something's broken? Tell us how to reproduce it.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug — a clean repro saves us hours.
+
+        Before filing:
+        - **Check existing issues** to see if it's already reported
+        - **Make sure you're on the latest version** of HOF
+        - **Test in a clean environment** if possible (no other plugins, default theme) to isolate the cause
+
+  - type: input
+    id: hof-version
+    attributes:
+      label: HOF version
+      placeholder: "e.g. 0.1.0 or main@<sha>"
+    validations:
+      required: true
+
+  - type: input
+    id: wp-version
+    attributes:
+      label: WordPress version
+      placeholder: "e.g. 6.4.2"
+    validations:
+      required: true
+
+  - type: input
+    id: php-version
+    attributes:
+      label: PHP version
+      placeholder: "e.g. 8.2.10"
+    validations:
+      required: true
+
+  - type: input
+    id: woo-version
+    attributes:
+      label: WooCommerce version (if applicable)
+      placeholder: "e.g. 8.5.0 — leave blank if not using Woo"
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect to happen, and what actually happened?
+      placeholder: |
+        I expected... but instead...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps. The more specific, the faster we fix.
+      placeholder: |
+        1. Go to...
+        2. Click...
+        3. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment details
+      description: Active theme, other plugins that might be relevant, hosting type
+      placeholder: |
+        - Theme: Storefront 4.5
+        - Other plugins active: ...
+        - Hosting: SiteGround / WP Engine / local
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error logs or screenshots
+      description: Paste relevant errors from `wp-content/debug.log` or browser console. Drag screenshots in.
+      render: shell
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct.
+      options:
+        - label: I have read and agree to the [Code of Conduct](https://github.com/Shepdesign/hooked-on-facets/blob/main/CODE_OF_CONDUCT.md)
+          required: true

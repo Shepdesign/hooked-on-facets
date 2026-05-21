@@ -1,15 +1,41 @@
+# EditorConfig — https://editorconfig.org
+# Enforces consistent coding style across editors and IDEs.
+
 root = true
 
 [*]
 charset = utf-8
 end_of_line = lf
+indent_style = tab
+indent_size = 4
 insert_final_newline = true
 trim_trailing_whitespace = true
+max_line_length = 100
+
+# JavaScript / TypeScript / JSON / YAML — 2-space convention
+[*.{js,jsx,ts,tsx,vue,json,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# CSS / SCSS — 2-space convention
+[*.{css,scss,sass,less}]
+indent_style = space
+indent_size = 2
+
+# Markdown — preserve trailing whitespace (line breaks)
+[*.md]
+trim_trailing_whitespace = false
+
+# Makefiles MUST use tabs
+[Makefile]
+indent_style = tab
+
+# Composer files
+[composer.{json,lock}]
 indent_style = space
 indent_size = 4
 
-[*.{js,jsx,ts,tsx,json,yml,yaml,md,css,scss}]
-indent_size = 2
-
-[*.md]
-trim_trailing_whitespace = false
+# WordPress-style PHP — tabs (4 visual)
+[*.php]
+indent_style = tab
+indent_size = 4

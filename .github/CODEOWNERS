@@ -1,0 +1,22 @@
+# CODEOWNERS — review automation
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Lines later in the file take precedence over earlier ones.
+# When a PR is opened, the listed owners are automatically requested for review.
+
+# Default owner for everything in the repo
+*                       @Shepdesign
+
+# Brand and marketing assets
+/brand/                 @Shepdesign
+/marketing/             @Shepdesign
+/BRAND.md               @Shepdesign
+
+# Security-sensitive surfaces
+/SECURITY.md            @Shepdesign
+/.github/workflows/     @Shepdesign
+/.github/dependabot.yml @Shepdesign
+
+# Documentation
+/docs/                  @Shepdesign
+*.md                    @Shepdesign
