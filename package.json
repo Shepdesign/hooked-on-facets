@@ -1,7 +1,7 @@
 {
     "name": "hooked-on-facets",
     "private": true,
-    "version": "0.5.0-alpha",
+    "version": "0.6.0-alpha",
     "type": "module",
     "description": "Ultra-modern faceted search and filtering for WordPress + WooCommerce.",
     "scripts": {
