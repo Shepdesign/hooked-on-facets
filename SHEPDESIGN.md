@@ -1,6 +1,6 @@
 # SHEPDESIGN.md
 
-This file provides guidance to Shepdesign Code (shepdesign.ai/code) when working with code in this repository.
+This file provides guidance to shepdesign code (shepdesign.ai/code) when working with code in this repository.
 
 ## What this is
 
