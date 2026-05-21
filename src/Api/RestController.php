@@ -264,7 +264,7 @@ final class RestController implements Bootable {
                 'source'   => isset( $def['source'] ) ? sanitize_text_field( (string) $def['source'] ) : '',
                 'kind'     => $kind,
                 'display'  => $display,
-                'settings' => $this->sanitize_settings( $def['settings'] ?? null ),
+                'settings' => $this->sanitize_settings( $def['settings'] ?? null, $display ),
             ];
             $seen[ $name ] = true;
         }
@@ -281,11 +281,34 @@ final class RestController implements Bootable {
      * @param mixed $raw
      * @return array<string, mixed>
      */
-    private function sanitize_settings( $raw ): array {
+    private function sanitize_settings( $raw, string $display = '' ): array {
         if ( ! is_array( $raw ) ) {
             return [];
         }
 
+        // View facets carry display-specific orchestration settings, not the
+        // swiper sandbox knobs. Dispatch on display so each shape gets its
+        // own allowlist.
+        if ( $display === 'two_d_slider' ) {
+            $out = [];
+            if ( isset( $raw['x_facet'] ) && is_scalar( $raw['x_facet'] ) ) {
+                $out['x_facet'] = sanitize_key( (string) $raw['x_facet'] );
+            }
+            if ( isset( $raw['y_facet'] ) && is_scalar( $raw['y_facet'] ) ) {
+                $out['y_facet'] = sanitize_key( (string) $raw['y_facet'] );
+            }
+            return array_filter( $out, static fn( $v ) => $v !== '' );
+        }
+
+        if ( $display === 'ai_search' ) {
+            $out = [];
+            if ( isset( $raw['placeholder'] ) && is_scalar( $raw['placeholder'] ) ) {
+                $out['placeholder'] = sanitize_text_field( (string) $raw['placeholder'] );
+            }
+            return array_filter( $out, static fn( $v ) => $v !== '' );
+        }
+
+        // Default path — swiper sandbox knobs from the Blueprint UI.
         $allowed_variants   = [ 'Card', 'Grid', 'Swipe' ];
         $allowed_card_sizes = [ 'Small', 'Medium', 'Large' ];
         $allowed_animations = [ 'Spring', 'Linear' ];

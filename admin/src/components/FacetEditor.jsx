@@ -2,21 +2,36 @@ const KINDS = [
     { value: 'taxonomy', label: 'Taxonomy',  hint: 'e.g. product_cat, category, product_tag' },
     { value: 'meta',     label: 'Post meta', hint: 'e.g. _price, _stock_status' },
     { value: 'field',    label: 'Post field', hint: 'e.g. post_title, post_author' },
+    { value: 'view',     label: 'View (no source)', hint: 'Orchestrates other facets — no source needed.' },
 ];
 
 const DISPLAYS = [
-    { value: 'checkbox', label: 'Checkbox list' },
-    { value: 'range',    label: 'Range slider' },
-    { value: 'search',   label: 'Search box' },
-    { value: 'swatch',   label: 'Fluid swatches' },
-    { value: 'swiper',   label: 'Swipe deck' },
+    { value: 'checkbox',     label: 'Checkbox list' },
+    { value: 'range',        label: 'Range slider' },
+    { value: 'search',       label: 'Search box' },
+    { value: 'swatch',       label: 'Fluid swatches' },
+    { value: 'swiper',       label: 'Swipe deck' },
+    { value: 'two_d_slider', label: '2D slider' },
+    { value: 'ai_search',    label: 'AI search' },
 ];
+
+// Displays that don't have a source — they orchestrate other facets.
+const VIEW_DISPLAYS = new Set(['two_d_slider', 'ai_search']);
 
 const sanitizeSlug = (raw) =>
     String(raw || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
-export default function FacetEditor({ facet, onChange, onDelete }) {
+export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] }) {
     const kindDef = KINDS.find((k) => k.value === facet.kind) || KINDS[0];
+    const isView  = VIEW_DISPLAYS.has(facet.display);
+    const rangeFacets = allFacets.filter((f) => f.display === 'range' && f.name !== facet.name);
+    const settings = (facet.settings && typeof facet.settings === 'object' && !Array.isArray(facet.settings))
+        ? facet.settings
+        : {};
+
+    const updateSettings = (patch) => {
+        onChange({ settings: { ...settings, ...patch } });
+    };
 
     return (
         <div className="hof-editor">
@@ -49,37 +64,54 @@ export default function FacetEditor({ facet, onChange, onDelete }) {
                         />
                     </label>
 
-                    <label className="hof-field">
-                        <span className="hof-field-label">Source kind</span>
-                        <select
-                            className="hof-input"
-                            value={facet.kind}
-                            onChange={(e) => onChange({ kind: e.target.value })}
-                        >
-                            {KINDS.map((k) => (
-                                <option key={k.value} value={k.value}>{k.label}</option>
-                            ))}
-                        </select>
-                    </label>
+                    {!isView && (
+                        <>
+                            <label className="hof-field">
+                                <span className="hof-field-label">Source kind</span>
+                                <select
+                                    className="hof-input"
+                                    value={facet.kind === 'view' ? 'taxonomy' : facet.kind}
+                                    onChange={(e) => onChange({ kind: e.target.value })}
+                                >
+                                    {KINDS.filter((k) => k.value !== 'view').map((k) => (
+                                        <option key={k.value} value={k.value}>{k.label}</option>
+                                    ))}
+                                </select>
+                            </label>
 
-                    <label className="hof-field">
-                        <span className="hof-field-label">Source</span>
-                        <input
-                            className="hof-input"
-                            type="text"
-                            value={facet.source}
-                            onChange={(e) => onChange({ source: e.target.value })}
-                            placeholder={kindDef.hint}
-                        />
-                        <span className="hof-field-help">{kindDef.hint}</span>
-                    </label>
+                            <label className="hof-field">
+                                <span className="hof-field-label">Source</span>
+                                <input
+                                    className="hof-input"
+                                    type="text"
+                                    value={facet.source || ''}
+                                    onChange={(e) => onChange({ source: e.target.value })}
+                                    placeholder={kindDef.hint}
+                                />
+                                <span className="hof-field-help">{kindDef.hint}</span>
+                            </label>
+                        </>
+                    )}
 
                     <label className="hof-field">
                         <span className="hof-field-label">Display</span>
                         <select
                             className="hof-input"
                             value={facet.display}
-                            onChange={(e) => onChange({ display: e.target.value })}
+                            onChange={(e) => {
+                                const next = e.target.value;
+                                const patch = { display: next };
+                                // Switching to/from a view display auto-syncs
+                                // the kind and clears irrelevant fields so
+                                // the option saves cleanly.
+                                if (VIEW_DISPLAYS.has(next)) {
+                                    patch.kind = 'view';
+                                    patch.source = '';
+                                } else if (facet.kind === 'view') {
+                                    patch.kind = 'taxonomy';
+                                }
+                                onChange(patch);
+                            }}
                         >
                             {DISPLAYS.map((d) => (
                                 <option key={d.value} value={d.value}>{d.label}</option>
@@ -108,7 +140,85 @@ export default function FacetEditor({ facet, onChange, onDelete }) {
                                 Non-taxonomy sources still work but cards will be label-only.
                             </span>
                         )}
+                        {facet.display === 'two_d_slider' && (
+                            <span className="hof-field-help">
+                                Drag a rectangle on a 2D plane to range-filter two numeric facets at once.
+                                Pick the x and y axes below.
+                            </span>
+                        )}
+                        {facet.display === 'ai_search' && (
+                            <span className="hof-field-help">
+                                Natural-language search box. Each query calls the configured Anthropic
+                                API endpoint — set the key in <em>Settings → AI search</em>.
+                            </span>
+                        )}
                     </label>
+
+                    {facet.display === 'two_d_slider' && (
+                        <>
+                            <label className="hof-field">
+                                <span className="hof-field-label">X axis (range facet)</span>
+                                <select
+                                    className="hof-input"
+                                    value={settings.x_facet || ''}
+                                    onChange={(e) => updateSettings({ x_facet: e.target.value })}
+                                >
+                                    <option value="">— pick a facet —</option>
+                                    {rangeFacets.map((f) => (
+                                        <option key={f.name} value={f.name}>
+                                            {f.label || f.name}{' '}
+                                            <code>({f.name})</code>
+                                        </option>
+                                    ))}
+                                </select>
+                                {rangeFacets.length === 0 && (
+                                    <span className="hof-field-help hof-field-warn">
+                                        No range-display facets configured. Create at least two range
+                                        facets first, then come back here.
+                                    </span>
+                                )}
+                            </label>
+
+                            <label className="hof-field">
+                                <span className="hof-field-label">Y axis (range facet)</span>
+                                <select
+                                    className="hof-input"
+                                    value={settings.y_facet || ''}
+                                    onChange={(e) => updateSettings({ y_facet: e.target.value })}
+                                >
+                                    <option value="">— pick a facet —</option>
+                                    {rangeFacets.map((f) => (
+                                        <option key={f.name} value={f.name}>
+                                            {f.label || f.name}{' '}
+                                            <code>({f.name})</code>
+                                        </option>
+                                    ))}
+                                </select>
+                                {settings.x_facet && settings.y_facet && settings.x_facet === settings.y_facet && (
+                                    <span className="hof-field-help hof-field-warn">
+                                        X and Y must reference different facets.
+                                    </span>
+                                )}
+                            </label>
+                        </>
+                    )}
+
+                    {facet.display === 'ai_search' && (
+                        <label className="hof-field">
+                            <span className="hof-field-label">Placeholder text</span>
+                            <input
+                                className="hof-input"
+                                type="text"
+                                value={settings.placeholder || ''}
+                                onChange={(e) => updateSettings({ placeholder: e.target.value })}
+                                placeholder="Try: comfy red shoes under $50"
+                            />
+                            <span className="hof-field-help">
+                                Shown in the search input before the shopper types. Use it as a one-line hint
+                                of what kinds of queries work — e.g. "Find me a gift under $100".
+                            </span>
+                        </label>
+                    )}
 
                     <div className="hof-editor-actions">
                         <button className="hof-btn hof-btn-danger" onClick={onDelete} type="button">
@@ -206,6 +316,49 @@ function FacetPreview({ facet }) {
                 </div>
                 <p className="hof-preview-note">
                     Tile size morphs by count; image/color comes from per-term meta.
+                </p>
+            </div>
+        );
+    }
+
+    if (facet.display === 'two_d_slider') {
+        const settings = (facet.settings && typeof facet.settings === 'object') ? facet.settings : {};
+        const ready = !!settings.x_facet && !!settings.y_facet && settings.x_facet !== settings.y_facet;
+        return (
+            <div className="hof-preview">
+                <div className="hof-preview-label">{label}</div>
+                <div className="hof-preview-2d">
+                    <div className="hof-preview-2d-plane">
+                        <div className="hof-preview-2d-rect" />
+                    </div>
+                    <p className="hof-preview-2d-axes">
+                        <span>x: <code>{settings.x_facet || '—'}</code></span>
+                        <span>y: <code>{settings.y_facet || '—'}</code></span>
+                    </p>
+                </div>
+                <p className="hof-preview-note">
+                    {ready
+                        ? 'Shoppers drag a rectangle on this plane; both axes update at once.'
+                        : 'Pick the x and y range facets to wire this up.'}
+                </p>
+            </div>
+        );
+    }
+
+    if (facet.display === 'ai_search') {
+        const settings = (facet.settings && typeof facet.settings === 'object') ? facet.settings : {};
+        return (
+            <div className="hof-preview">
+                <div className="hof-preview-label">{label}</div>
+                <div className="hof-preview-ai">
+                    <span className="hof-preview-ai-icon" aria-hidden="true">✦</span>
+                    <span className="hof-preview-ai-placeholder">
+                        {settings.placeholder || 'Try: comfy red shoes under $50'}
+                    </span>
+                </div>
+                <p className="hof-preview-note">
+                    Natural-language search. Each query calls the Anthropic API; configure the key in
+                    Settings → AI search.
                 </p>
             </div>
         );

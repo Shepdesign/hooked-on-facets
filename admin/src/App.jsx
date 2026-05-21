@@ -190,6 +190,7 @@ export default function App({ bootstrap }) {
                                             facet={selected}
                                             onChange={updateSelected}
                                             onDelete={deleteSelected}
+                                            allFacets={facets}
                                         />
                                     ) : (
                                         <div className="hof-empty">

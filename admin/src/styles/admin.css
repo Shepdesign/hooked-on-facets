@@ -1861,3 +1861,74 @@ body.toplevel_page_hooked-on-facets .wrap {
     color: var(--hof-muted, #5F5E5A);
     font-size: 0.9375rem;
 }
+
+/* ── FacetEditor previews for view facets ───────────────────────────────── */
+
+.hof-preview-2d {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+.hof-preview-2d-plane {
+    position: relative;
+    width: 140px;
+    height: 100px;
+    background:
+        linear-gradient(to right, #D3D1C7 0.5px, transparent 0.5px) 0 0 / 25% 100%,
+        linear-gradient(to top,   #D3D1C7 0.5px, transparent 0.5px) 0 0 / 100% 25%,
+        #FFFFFF;
+    border: 0.5px solid #D3D1C7;
+    border-radius: 6px;
+}
+
+.hof-preview-2d-rect {
+    position: absolute;
+    left: 25%;
+    right: 25%;
+    top: 20%;
+    bottom: 30%;
+    background: rgba(83, 74, 183, 0.18);
+    border: 1.5px solid #534AB7;
+    border-radius: 3px;
+}
+
+.hof-preview-2d-axes {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #5F5E5A;
+    display: flex;
+    gap: 12px;
+}
+
+.hof-preview-2d-axes code {
+    background: rgba(28, 26, 22, 0.05);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.875em;
+}
+
+.hof-preview-ai {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: #FFFFFF;
+    border: 0.5px solid #D3D1C7;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #888780;
+}
+
+.hof-preview-ai-icon {
+    color: #534AB7;
+    line-height: 1;
+}
+
+.hof-preview-ai-placeholder {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
