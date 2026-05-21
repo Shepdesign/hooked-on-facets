@@ -135,6 +135,7 @@ final class Plugin {
             $c->make( Indexer::class ),
             $c->make( \HookedOnFacets\Telemetry\Recorder::class ),
             $c->make( \HookedOnFacets\Ai\NlFilter::class ),
+            $c->make( \HookedOnFacets\Ai\Settings::class ),
         ) );
 
         $this->bind( \HookedOnFacets\Facets\Renderer::class, static fn( self $c ) => new \HookedOnFacets\Facets\Renderer(

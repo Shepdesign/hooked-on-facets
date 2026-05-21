@@ -17,6 +17,7 @@ import Dashboard from './components/Dashboard.jsx';
 import Blueprint from './components/Blueprint.jsx';
 import Indexer from './components/Indexer.jsx';
 import QueryLoops from './components/QueryLoops.jsx';
+import AiSettings from './components/AiSettings.jsx';
 
 const VIEWS = [
     { id: 'dashboard',  label: 'Dashboard',     section: 'Main',   Icon: IconLayoutGrid },
@@ -218,7 +219,7 @@ export default function App({ bootstrap }) {
                     {view === 'queryloops' && <QueryLoops />}
 
                     {view === 'settings' && (
-                        <StubView label={currentView.label} />
+                        <AiSettings bootstrap={bootstrap} />
                     )}
                 </main>
             </div>

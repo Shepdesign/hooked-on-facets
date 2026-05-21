@@ -18,6 +18,7 @@ declare(strict_types=1);
 namespace HookedOnFacets\Api;
 
 use HookedOnFacets\Ai\NlFilter;
+use HookedOnFacets\Ai\Settings as AiSettings;
 use HookedOnFacets\Contracts\Bootable;
 use HookedOnFacets\Filter\Resolver;
 use HookedOnFacets\Indexer;
@@ -34,6 +35,7 @@ final class RestController implements Bootable {
         private readonly Indexer $indexer,
         private readonly ?Recorder $recorder = null,
         private readonly ?NlFilter $nl_filter = null,
+        private readonly ?AiSettings $ai_settings = null,
     ) {}
 
     public function register_hooks(): void {
@@ -119,6 +121,48 @@ final class RestController implements Bootable {
                 ],
             ],
         ] );
+
+        register_rest_route( self::NAMESPACE_V1, '/ai-settings', [
+            [
+                'methods'             => \WP_REST_Server::READABLE,
+                'callback'            => [ $this, 'get_ai_settings' ],
+                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+            ],
+            [
+                'methods'             => \WP_REST_Server::EDITABLE,
+                'callback'            => [ $this, 'save_ai_settings' ],
+                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+                'args'                => [
+                    'api_key' => [
+                        'type'     => 'string',
+                        'required' => false,
+                    ],
+                ],
+            ],
+        ] );
+    }
+
+    public function get_ai_settings( \WP_REST_Request $request ): \WP_REST_Response {
+        if ( ! $this->ai_settings ) {
+            return new \WP_REST_Response( [ 'configured' => false ], 200 );
+        }
+        $key = $this->ai_settings->api_key();
+        return new \WP_REST_Response( [
+            'configured' => $key !== '',
+            'fingerprint' => $key !== '' ? substr( $key, 0, 14 ) . '…' . substr( $key, -6 ) : '',
+            'model'       => apply_filters( 'hof_ai_model', NlFilter::MODEL_HAIKU ),
+        ], 200 );
+    }
+
+    public function save_ai_settings( \WP_REST_Request $request ): \WP_REST_Response {
+        if ( ! $this->ai_settings ) {
+            return new \WP_REST_Response( [ 'ok' => false, 'error' => 'AI settings unavailable' ], 503 );
+        }
+        // Accept null/empty to clear. Trim whitespace from paste.
+        $raw = $request->get_param( 'api_key' );
+        $key = is_string( $raw ) ? trim( $raw ) : '';
+        $this->ai_settings->set_api_key( $key );
+        return $this->get_ai_settings( $request );
     }
 
     public function ai_search( \WP_REST_Request $request ): \WP_REST_Response {
