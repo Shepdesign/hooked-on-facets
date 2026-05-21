@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 namespace HookedOnFacets\Api;
 
+use HookedOnFacets\Ai\NlFilter;
 use HookedOnFacets\Contracts\Bootable;
 use HookedOnFacets\Filter\Resolver;
 use HookedOnFacets\Indexer;
@@ -32,6 +33,7 @@ final class RestController implements Bootable {
         private readonly Resolver $resolver,
         private readonly Indexer $indexer,
         private readonly ?Recorder $recorder = null,
+        private readonly ?NlFilter $nl_filter = null,
     ) {}
 
     public function register_hooks(): void {
@@ -105,6 +107,43 @@ final class RestController implements Bootable {
                 'permission_callback' => static fn() => current_user_can( 'manage_options' ),
             ],
         ] );
+
+        register_rest_route( self::NAMESPACE_V1, '/ai-search', [
+            'methods'             => \WP_REST_Server::CREATABLE,
+            'callback'            => [ $this, 'ai_search' ],
+            'permission_callback' => '__return_true',
+            'args'                => [
+                'query' => [
+                    'type'     => 'string',
+                    'required' => true,
+                ],
+            ],
+        ] );
+    }
+
+    public function ai_search( \WP_REST_Request $request ): \WP_REST_Response {
+        if ( ! $this->nl_filter ) {
+            return new \WP_REST_Response(
+                [ 'ok' => false, 'error' => 'AI search not available', 'error_code' => 'unavailable' ],
+                503
+            );
+        }
+
+        $query  = (string) $request->get_param( 'query' );
+        $result = $this->nl_filter->translate( $query );
+
+        if ( ! $result['ok'] ) {
+            $status = match ( $result['error_code'] ?? '' ) {
+                'empty_query'      => 400,
+                'no_api_key'       => 503,
+                'no_facets'        => 503,
+                'authentication_error' => 503,
+                default            => 502,
+            };
+            return new \WP_REST_Response( $result, $status );
+        }
+
+        return new \WP_REST_Response( $result, 200 );
     }
 
     public function telemetry( \WP_REST_Request $request ): \WP_REST_Response {

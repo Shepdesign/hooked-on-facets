@@ -123,10 +123,18 @@ final class Plugin {
             $c->make( \HookedOnFacets\Telemetry\Recorder::class )
         ) );
 
+        $this->bind( \HookedOnFacets\Ai\Settings::class, static fn() => new \HookedOnFacets\Ai\Settings() );
+
+        $this->bind( \HookedOnFacets\Ai\NlFilter::class, static fn( self $c ) => new \HookedOnFacets\Ai\NlFilter(
+            $c->make( \HookedOnFacets\Filter\Resolver::class ),
+            $c->make( \HookedOnFacets\Ai\Settings::class ),
+        ) );
+
         $this->bind( \HookedOnFacets\Api\RestController::class, static fn( self $c ) => new \HookedOnFacets\Api\RestController(
             $c->make( \HookedOnFacets\Filter\Resolver::class ),
             $c->make( Indexer::class ),
-            $c->make( \HookedOnFacets\Telemetry\Recorder::class )
+            $c->make( \HookedOnFacets\Telemetry\Recorder::class ),
+            $c->make( \HookedOnFacets\Ai\NlFilter::class ),
         ) );
 
         $this->bind( \HookedOnFacets\Facets\Renderer::class, static fn( self $c ) => new \HookedOnFacets\Facets\Renderer(
