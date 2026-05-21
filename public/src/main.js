@@ -60,7 +60,7 @@ document.addEventListener('change', (e) => {
     const display = facetEl.getAttribute('data-hof-display');
     if (!name) return;
 
-    if (display === 'checkbox' || display === 'swatch' || display === 'swiper') {
+    if (display === 'checkbox' || display === 'swatch' || display === 'swiper' || display === 'hierarchy') {
         const values = Array.from(
             facetEl.querySelectorAll('input[type="checkbox"]:checked')
         ).map((cb) => cb.value);
@@ -79,10 +79,39 @@ document.addEventListener('change', (e) => {
         return;
     }
 
+    if (display === 'radio') {
+        const v = facetEl.querySelector('input[type="radio"]:checked')?.value ?? '';
+        store.set(name, v === '' ? [] : [v]);
+        return;
+    }
+
+    if (display === 'dropdown') {
+        const v = facetEl.querySelector('[data-hof-select]')?.value ?? '';
+        store.set(name, v === '' ? [] : [v]);
+        return;
+    }
+
+    if (display === 'toggle') {
+        const cb = facetEl.querySelector('[data-hof-toggle]');
+        const trueValue = facetEl.getAttribute('data-hof-true-value') || '1';
+        store.set(name, cb?.checked ? [trueValue] : []);
+        return;
+    }
+
     if (display === 'range') {
         const min = facetEl.querySelector('[data-hof-input="min"]')?.value ?? '';
         const max = facetEl.querySelector('[data-hof-input="max"]')?.value ?? '';
         store.set(name, { min, max });
+        return;
+    }
+
+    if (display === 'date_range') {
+        const minIso = facetEl.querySelector('[data-hof-input="min"]')?.value ?? '';
+        const maxIso = facetEl.querySelector('[data-hof-input="max"]')?.value ?? '';
+        store.set(name, {
+            min: isoToEpoch(minIso, false),
+            max: isoToEpoch(maxIso, true),
+        });
         return;
     }
 
@@ -91,6 +120,14 @@ document.addEventListener('change', (e) => {
         store.set(name, e.target.value);
     }
 });
+
+// ISO yyyy-mm-dd → Unix epoch seconds (UTC).
+// `endOfDay`: if true, snap to 23:59:59 so the day is fully included as a max bound.
+function isoToEpoch(iso, endOfDay) {
+    if (!iso) return '';
+    const ts = Date.parse(iso + 'T' + (endOfDay ? '23:59:59' : '00:00:00') + 'Z');
+    return Number.isFinite(ts) ? Math.floor(ts / 1000) : '';
+}
 
 // Live search + live range updates while typing. Debounced so we don't
 // flood the network with one request per keystroke.
@@ -112,6 +149,15 @@ document.addEventListener('input', (e) => {
         const min = facetEl.querySelector('[data-hof-input="min"]')?.value ?? '';
         const max = facetEl.querySelector('[data-hof-input="max"]')?.value ?? '';
         debouncedSet(name, { min, max });
+    }
+
+    if (display === 'date_range' && e.target.matches('[data-hof-input]')) {
+        const minIso = facetEl.querySelector('[data-hof-input="min"]')?.value ?? '';
+        const maxIso = facetEl.querySelector('[data-hof-input="max"]')?.value ?? '';
+        debouncedSet(name, {
+            min: isoToEpoch(minIso, false),
+            max: isoToEpoch(maxIso, true),
+        });
     }
 });
 

@@ -7,7 +7,12 @@ const KINDS = [
 
 const DISPLAYS = [
     { value: 'checkbox',     label: 'Checkbox list' },
+    { value: 'radio',        label: 'Radio (single-select)' },
+    { value: 'dropdown',     label: 'Dropdown' },
+    { value: 'toggle',       label: 'Toggle' },
+    { value: 'hierarchy',    label: 'Hierarchy (nested taxonomy)' },
     { value: 'range',        label: 'Range slider' },
+    { value: 'date_range',   label: 'Date range' },
     { value: 'search',       label: 'Search box' },
     { value: 'swatch',       label: 'Fluid swatches' },
     { value: 'swiper',       label: 'Swipe deck' },
@@ -220,6 +225,54 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                 <em>"a gift for my dad's workshop"</em>.
                             </span>
                         </label>
+                    )}
+
+                    {facet.display === 'toggle' && (
+                        <>
+                            <label className="hof-field">
+                                <span className="hof-field-label">True value (in the index)</span>
+                                <input
+                                    className="hof-input"
+                                    type="text"
+                                    value={settings.true_value || ''}
+                                    onChange={(e) => updateSettings({ true_value: e.target.value })}
+                                    placeholder="1"
+                                />
+                                <span className="hof-field-help">
+                                    The exact <code>facet_value</code> the index stores for matching
+                                    products. Typically <code>1</code> for boolean meta, or e.g.
+                                    <code>yes</code>, <code>true</code>, <code>in-stock</code>.
+                                </span>
+                            </label>
+                            <label className="hof-field">
+                                <span className="hof-field-label">On label (optional)</span>
+                                <input
+                                    className="hof-input"
+                                    type="text"
+                                    value={settings.on_label || ''}
+                                    onChange={(e) => updateSettings({ on_label: e.target.value })}
+                                    placeholder="On"
+                                />
+                            </label>
+                            <label className="hof-field">
+                                <span className="hof-field-label">Off label (optional)</span>
+                                <input
+                                    className="hof-input"
+                                    type="text"
+                                    value={settings.off_label || ''}
+                                    onChange={(e) => updateSettings({ off_label: e.target.value })}
+                                    placeholder="Off"
+                                />
+                            </label>
+                        </>
+                    )}
+
+                    {facet.display === 'date_range' && (
+                        <span className="hof-field-help">
+                            <strong>Note:</strong> the source meta field must already store dates as
+                            Unix timestamps in <code>facet_numeric</code>. The Indexer doesn't yet do
+                            string-date → epoch conversion; that's a planned alpha follow-up.
+                        </span>
                     )}
 
                     <div className="hof-editor-actions">

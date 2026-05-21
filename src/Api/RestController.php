@@ -241,7 +241,11 @@ final class RestController implements Bootable {
      */
     private function sanitize_facets( array $raw ): array {
         $allowed_kinds    = [ 'taxonomy', 'meta', 'field', 'view' ];
-        $allowed_displays = [ 'checkbox', 'range', 'search', 'swatch', 'swiper', 'two_d_slider', 'ask' ];
+        $allowed_displays = [
+            'checkbox', 'radio', 'dropdown', 'toggle', 'hierarchy',
+            'range', 'date_range', 'search', 'swatch', 'swiper',
+            'two_d_slider', 'ask',
+        ];
 
         $clean = [];
         $seen  = [];
@@ -313,6 +317,30 @@ final class RestController implements Bootable {
                 $out['placeholder'] = sanitize_text_field( (string) $raw['placeholder'] );
             }
             return array_filter( $out, static fn( $v ) => $v !== '' );
+        }
+
+        if ( $display === 'toggle' ) {
+            $out = [];
+            if ( isset( $raw['true_value'] ) && is_scalar( $raw['true_value'] ) ) {
+                $out['true_value'] = (string) $raw['true_value'];
+            }
+            if ( isset( $raw['on_label'] ) && is_scalar( $raw['on_label'] ) ) {
+                $out['on_label'] = sanitize_text_field( (string) $raw['on_label'] );
+            }
+            if ( isset( $raw['off_label'] ) && is_scalar( $raw['off_label'] ) ) {
+                $out['off_label'] = sanitize_text_field( (string) $raw['off_label'] );
+            }
+            return array_filter( $out, static fn( $v ) => $v !== '' );
+        }
+
+        if ( $display === 'date_range' ) {
+            // 'date' = ISO yyyy-mm-dd; assumes the source meta is already
+            // Unix timestamps in facet_numeric. See Facet-Type-Date-Range.md.
+            $out = [];
+            if ( isset( $raw['format'] ) && in_array( (string) $raw['format'], [ 'date', 'datetime' ], true ) ) {
+                $out['format'] = (string) $raw['format'];
+            }
+            return $out;
         }
 
         // Default path — swiper sandbox knobs from the Blueprint UI.

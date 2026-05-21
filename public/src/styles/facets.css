@@ -1074,3 +1074,179 @@
 .hof-ask-status[data-hof-ask-status-kind="warn"]    { color: var(--hof-muted); }
 .hof-ask-status[data-hof-ask-status-kind="error"]   { color: var(--hof-danger); }
 .hof-ask-status[data-hof-ask-status-kind="loading"] { color: var(--hof-muted); font-style: italic; }
+
+/* ── Radio facet ────────────────────────────────────────────────────────── */
+/* Radio reuses .hof-facet-options layout from checkbox. The input-type
+   change is the whole visual difference. */
+.hof-facet-radio .hof-facet-option label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    cursor: pointer;
+}
+
+/* ── Dropdown facet ─────────────────────────────────────────────────────── */
+.hof-facet-dropdown .hof-facet-label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hof-facet-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 0.5px solid var(--hof-border);
+    border-radius: 8px;
+    background: var(--hof-surface);
+    color: var(--hof-text);
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.hof-facet-select:focus {
+    outline: none;
+    border-color: var(--hof-primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 18%, transparent);
+}
+
+/* ── Toggle facet ───────────────────────────────────────────────────────── */
+.hof-toggle-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.hof-toggle-input {
+    /* Visually hidden but still focusable. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip: rect(0 0 0 0);
+    overflow: hidden;
+}
+
+.hof-toggle-track {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--hof-muted) 20%, var(--hof-surface));
+    transition: background 180ms ease;
+}
+
+.hof-toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--hof-surface);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+    transition: transform 180ms ease, background 180ms ease;
+}
+
+.hof-toggle-input:checked + .hof-toggle-track {
+    background: var(--hof-primary);
+}
+
+.hof-toggle-input:checked + .hof-toggle-track .hof-toggle-thumb {
+    transform: translateX(16px);
+    background: var(--hof-on-primary);
+}
+
+.hof-toggle-input:focus-visible + .hof-toggle-track {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 22%, transparent);
+}
+
+.hof-toggle-text {
+    display: inline-flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.hof-toggle-text-main {
+    font-size: 0.9375rem;
+    color: var(--hof-text);
+}
+
+.hof-toggle-text-state {
+    font-size: 0.75rem;
+    color: var(--hof-muted);
+}
+
+/* ── Hierarchy facet ────────────────────────────────────────────────────── */
+.hof-hierarchy-tree,
+.hof-hierarchy-children {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.hof-hierarchy-children {
+    margin-left: 18px;
+    padding-left: 8px;
+    border-left: 1px dashed var(--hof-border);
+}
+
+.hof-hierarchy-row {
+    padding: 2px 0;
+}
+
+.hof-hierarchy-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.hof-hierarchy-has-children > details > summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hof-hierarchy-has-children > details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.hof-hierarchy-has-children > details > summary::before {
+    content: '▸';
+    display: inline-block;
+    width: 12px;
+    font-size: 0.75rem;
+    color: var(--hof-muted);
+    transition: transform 160ms ease;
+}
+
+.hof-hierarchy-has-children > details[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+/* ── Date range facet ───────────────────────────────────────────────────── */
+/* Reuses .hof-facet-range-inputs from the numeric range facet for the row
+   layout; the <input type="date"> elements style themselves natively. */
+.hof-facet-date-range .hof-facet-range-inputs input[type="date"] {
+    padding: 8px 10px;
+    border: 0.5px solid var(--hof-border);
+    border-radius: 8px;
+    background: var(--hof-surface);
+    color: var(--hof-text);
+    font-size: 0.9375rem;
+}
+
+.hof-facet-date-range .hof-facet-range-inputs input[type="date"]:focus {
+    outline: none;
+    border-color: var(--hof-primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 18%, transparent);
+}

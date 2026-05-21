@@ -51,9 +51,14 @@ final class Renderer {
 
         return match ( $display ) {
             'range'       => $this->render_range( $facet, $current_value, $counts ),
+            'date_range'  => $this->render_date_range( $facet, $current_value, $counts ),
             'search'      => $this->render_search( $facet, $current_value ),
             'swatch'      => $this->render_swatch( $facet, (array) $current_value, $counts ),
             'swiper'      => $this->render_swiper( $facet, (array) $current_value, $counts ),
+            'radio'       => $this->render_radio( $facet, (array) $current_value, $counts ),
+            'dropdown'    => $this->render_dropdown( $facet, (array) $current_value, $counts ),
+            'toggle'      => $this->render_toggle( $facet, (array) $current_value ),
+            'hierarchy'   => $this->render_hierarchy( $facet, (array) $current_value, $counts ),
             'two_d_slider' => $this->render_two_d_slider( $facet ),
             'ask'         => $this->render_ask( $facet ),
             // Legacy 'venn' / 'upset' displays fall through to checkbox.
@@ -279,6 +284,348 @@ final class Renderer {
                     </ul>
                 <?php endif; ?>
             </fieldset>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Radio — single-select variant of checkbox. Same data shape (single-
+     * element array on the wire) but enforces one-of-N at the input layer.
+     *
+     * @param array<string, mixed> $facet
+     * @param array<int, string>   $selected_values
+     * @param array<string, mixed> $counts
+     */
+    private function render_radio( array $facet, array $selected_values, array $counts ): string {
+        $name            = $facet['name'];
+        $label           = $facet['label'] ?: $name;
+        $buckets         = ( $counts['type'] ?? '' ) === 'values' ? $counts['buckets'] : [];
+        $selected        = isset( $selected_values[0] ) ? (string) $selected_values[0] : '';
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-radio"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="radio">
+            <fieldset class="hof-facet-fieldset">
+                <legend class="hof-facet-label"><?php echo esc_html( $label ); ?></legend>
+                <?php if ( empty( $buckets ) ) : ?>
+                    <p class="hof-facet-empty"><?php esc_html_e( 'No options available.', 'hooked-on-facets' ); ?></p>
+                <?php else : ?>
+                    <ul class="hof-facet-options">
+                        <li class="hof-facet-option">
+                            <label>
+                                <input type="radio"
+                                       name="hof[<?php echo esc_attr( $name ); ?>]"
+                                       value=""
+                                       <?php checked( $selected === '' ); ?>>
+                                <span class="hof-facet-name"><?php esc_html_e( 'Any', 'hooked-on-facets' ); ?></span>
+                            </label>
+                        </li>
+                        <?php foreach ( $buckets as $bucket ) :
+                            $value     = (string) $bucket['value'];
+                            $is_active = $selected === $value;
+                        ?>
+                            <li class="hof-facet-option">
+                                <label>
+                                    <input type="radio"
+                                           name="hof[<?php echo esc_attr( $name ); ?>]"
+                                           value="<?php echo esc_attr( $value ); ?>"
+                                           <?php checked( $is_active ); ?>>
+                                    <span class="hof-facet-name"><?php echo esc_html( $bucket['display'] ); ?></span>
+                                    <span class="hof-facet-count"
+                                          data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( (int) $bucket['count'] ) ); ?></span>
+                                </label>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </fieldset>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Dropdown — single-select via native <select>. Same wire shape as radio.
+     *
+     * @param array<string, mixed> $facet
+     * @param array<int, string>   $selected_values
+     * @param array<string, mixed> $counts
+     */
+    private function render_dropdown( array $facet, array $selected_values, array $counts ): string {
+        $name     = $facet['name'];
+        $label    = $facet['label'] ?: $name;
+        $buckets  = ( $counts['type'] ?? '' ) === 'values' ? $counts['buckets'] : [];
+        $selected = isset( $selected_values[0] ) ? (string) $selected_values[0] : '';
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-dropdown"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="dropdown">
+            <label class="hof-facet-label">
+                <span class="hof-facet-label-text"><?php echo esc_html( $label ); ?></span>
+                <select class="hof-facet-select"
+                        name="hof[<?php echo esc_attr( $name ); ?>]"
+                        data-hof-select>
+                    <option value=""><?php esc_html_e( 'Any', 'hooked-on-facets' ); ?></option>
+                    <?php foreach ( $buckets as $bucket ) :
+                        $value = (string) $bucket['value'];
+                    ?>
+                        <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $selected === $value ); ?>>
+                            <?php echo esc_html( $bucket['display'] ); ?>
+                            <?php echo ' (' . esc_html( number_format_i18n( (int) $bucket['count'] ) ) . ')'; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Toggle — a boolean switch. When on, the facet value is [true_value];
+     * when off, the facet is cleared. The index needs to carry the chosen
+     * true_value as facet_value for the products that match — typically "1"
+     * for boolean meta, but configurable so any string value works.
+     *
+     * @param array<string, mixed> $facet
+     * @param array<int, string>   $selected_values
+     */
+    private function render_toggle( array $facet, array $selected_values ): string {
+        $name       = $facet['name'];
+        $label      = $facet['label'] ?: $name;
+        $settings   = (array) ( $facet['settings'] ?? [] );
+        $true_value = (string) ( $settings['true_value'] ?? '1' );
+        $on_label   = (string) ( $settings['on_label']   ?? $label );
+        $off_label  = (string) ( $settings['off_label']  ?? __( 'Off', 'hooked-on-facets' ) );
+        $is_on      = in_array( $true_value, array_map( 'strval', $selected_values ), true );
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-toggle"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="toggle"
+             data-hof-true-value="<?php echo esc_attr( $true_value ); ?>">
+            <label class="hof-toggle-label">
+                <input type="checkbox"
+                       class="hof-toggle-input"
+                       name="hof[<?php echo esc_attr( $name ); ?>]"
+                       value="<?php echo esc_attr( $true_value ); ?>"
+                       data-hof-toggle
+                       <?php checked( $is_on ); ?>>
+                <span class="hof-toggle-track" aria-hidden="true">
+                    <span class="hof-toggle-thumb"></span>
+                </span>
+                <span class="hof-toggle-text">
+                    <span class="hof-toggle-text-main"><?php echo esc_html( $label ); ?></span>
+                    <?php if ( $on_label !== $label || $off_label !== '' ) : ?>
+                        <span class="hof-toggle-text-state"><?php echo esc_html( $is_on ? $on_label : $off_label ); ?></span>
+                    <?php endif; ?>
+                </span>
+            </label>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Hierarchy — taxonomy parent/child view. Top-level terms render as
+     * collapsible <details> sections; child terms render as a nested checkbox
+     * list inside. Each row is a real filter — selecting a parent filters on
+     * just the parent's slug, not all of its children. Children are queryable
+     * independently.
+     *
+     * Falls back to render_checkbox for non-taxonomy sources (since meta /
+     * field sources don't carry a parent/child relationship).
+     *
+     * @param array<string, mixed> $facet
+     * @param array<int, string>   $selected_values
+     * @param array<string, mixed> $counts
+     */
+    private function render_hierarchy( array $facet, array $selected_values, array $counts ): string {
+        if ( ( $facet['kind'] ?? '' ) !== 'taxonomy' ) {
+            return $this->render_checkbox( $facet, $selected_values, $counts );
+        }
+
+        $name     = $facet['name'];
+        $label    = $facet['label'] ?: $name;
+        $taxonomy = (string) ( $facet['source'] ?? '' );
+        $buckets  = ( $counts['type'] ?? '' ) === 'values' ? $counts['buckets'] : [];
+        $selected_lookup = array_fill_keys( array_map( 'strval', $selected_values ), true );
+
+        // Build a slug → bucket map, then a parent → children adjacency.
+        $by_slug = [];
+        foreach ( $buckets as $b ) {
+            $by_slug[ (string) $b['value'] ] = $b;
+        }
+
+        $parent_of = [];
+        $children  = [];
+        foreach ( array_keys( $by_slug ) as $slug ) {
+            $term = get_term_by( 'slug', $slug, $taxonomy );
+            if ( ! $term instanceof \WP_Term ) {
+                $parent_of[ $slug ] = '';
+                continue;
+            }
+            if ( $term->parent ) {
+                $parent_term = get_term( $term->parent, $taxonomy );
+                $parent_of[ $slug ] = ( $parent_term instanceof \WP_Term ) ? $parent_term->slug : '';
+            } else {
+                $parent_of[ $slug ] = '';
+            }
+        }
+        foreach ( $parent_of as $slug => $parent_slug ) {
+            if ( $parent_slug !== '' && isset( $by_slug[ $parent_slug ] ) ) {
+                $children[ $parent_slug ][] = $slug;
+            }
+        }
+
+        $roots = [];
+        foreach ( $parent_of as $slug => $parent_slug ) {
+            if ( $parent_slug === '' || ! isset( $by_slug[ $parent_slug ] ) ) {
+                $roots[] = $slug;
+            }
+        }
+
+        $render_row = function ( string $slug, int $depth ) use ( &$render_row, $by_slug, $children, $selected_lookup, $name ): string {
+            $b       = $by_slug[ $slug ];
+            $value   = (string) $b['value'];
+            $display = (string) $b['display'];
+            $count   = (int) $b['count'];
+            $checked = isset( $selected_lookup[ $value ] );
+            $kids    = $children[ $slug ] ?? [];
+
+            ob_start();
+            if ( ! empty( $kids ) ) : ?>
+                <li class="hof-hierarchy-row hof-hierarchy-has-children" data-hof-depth="<?php echo esc_attr( (string) $depth ); ?>">
+                    <details<?php echo $checked ? ' open' : ''; ?>>
+                        <summary>
+                            <label class="hof-hierarchy-label">
+                                <input type="checkbox"
+                                       name="hof[<?php echo esc_attr( $name ); ?>][]"
+                                       value="<?php echo esc_attr( $value ); ?>"
+                                       <?php checked( $checked ); ?>>
+                                <span class="hof-facet-name"><?php echo esc_html( $display ); ?></span>
+                                <span class="hof-facet-count" data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
+                            </label>
+                        </summary>
+                        <ul class="hof-hierarchy-children">
+                            <?php foreach ( $kids as $child_slug ) {
+                                echo $render_row( $child_slug, $depth + 1 );
+                            } ?>
+                        </ul>
+                    </details>
+                </li>
+            <?php else : ?>
+                <li class="hof-hierarchy-row" data-hof-depth="<?php echo esc_attr( (string) $depth ); ?>">
+                    <label class="hof-hierarchy-label">
+                        <input type="checkbox"
+                               name="hof[<?php echo esc_attr( $name ); ?>][]"
+                               value="<?php echo esc_attr( $value ); ?>"
+                               <?php checked( $checked ); ?>>
+                        <span class="hof-facet-name"><?php echo esc_html( $display ); ?></span>
+                        <span class="hof-facet-count" data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
+                    </label>
+                </li>
+            <?php endif;
+            return (string) ob_get_clean();
+        };
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-hierarchy"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="hierarchy">
+            <fieldset class="hof-facet-fieldset">
+                <legend class="hof-facet-label"><?php echo esc_html( $label ); ?></legend>
+                <?php if ( empty( $roots ) ) : ?>
+                    <p class="hof-facet-empty"><?php esc_html_e( 'No options available.', 'hooked-on-facets' ); ?></p>
+                <?php else : ?>
+                    <ul class="hof-hierarchy-tree">
+                        <?php foreach ( $roots as $root_slug ) {
+                            echo $render_row( $root_slug, 0 );
+                        } ?>
+                    </ul>
+                <?php endif; ?>
+            </fieldset>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Date Range — range over a date-typed numeric source. Renders HTML5 date
+     * inputs; the JS layer converts ISO yyyy-mm-dd ↔ Unix epoch seconds so the
+     * existing range resolver path works unchanged.
+     *
+     * Assumes the source meta is already stored as Unix timestamps in
+     * facet_numeric. (The Indexer side of date-aware meta is a TODO.)
+     *
+     * @param array<string, mixed> $facet
+     * @param mixed                $current_value
+     * @param array<string, mixed> $counts
+     */
+    private function render_date_range( array $facet, $current_value, array $counts ): string {
+        $name      = $facet['name'];
+        $label     = $facet['label'] ?: $name;
+        $bound_min = ( $counts['type'] ?? '' ) === 'range' ? $counts['min'] : null;
+        $bound_max = ( $counts['type'] ?? '' ) === 'range' ? $counts['max'] : null;
+
+        $epoch_to_iso = static function ( $v ): string {
+            if ( ! is_numeric( $v ) ) return '';
+            return gmdate( 'Y-m-d', (int) $v );
+        };
+
+        $value_min_iso = '';
+        $value_max_iso = '';
+        if ( is_array( $current_value ) ) {
+            if ( isset( $current_value['min'] ) ) {
+                $value_min_iso = $epoch_to_iso( $current_value['min'] );
+            }
+            if ( isset( $current_value['max'] ) ) {
+                $value_max_iso = $epoch_to_iso( $current_value['max'] );
+            }
+        }
+        $bound_min_iso = $bound_min !== null ? $epoch_to_iso( $bound_min ) : '';
+        $bound_max_iso = $bound_max !== null ? $epoch_to_iso( $bound_max ) : '';
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-date-range"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="date_range">
+            <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
+            <div class="hof-facet-range-inputs">
+                <input type="date"
+                       data-hof-input="min"
+                       data-hof-date
+                       name="hof[<?php echo esc_attr( $name ); ?>][min]"
+                       value="<?php echo esc_attr( $value_min_iso ); ?>"
+                       <?php if ( $bound_min_iso !== '' ) printf( 'min="%s"', esc_attr( $bound_min_iso ) ); ?>
+                       <?php if ( $bound_max_iso !== '' ) printf( 'max="%s"', esc_attr( $bound_max_iso ) ); ?>>
+                <span class="hof-facet-range-sep">→</span>
+                <input type="date"
+                       data-hof-input="max"
+                       data-hof-date
+                       name="hof[<?php echo esc_attr( $name ); ?>][max]"
+                       value="<?php echo esc_attr( $value_max_iso ); ?>"
+                       <?php if ( $bound_min_iso !== '' ) printf( 'min="%s"', esc_attr( $bound_min_iso ) ); ?>
+                       <?php if ( $bound_max_iso !== '' ) printf( 'max="%s"', esc_attr( $bound_max_iso ) ); ?>>
+            </div>
+            <?php if ( $bound_min_iso !== '' && $bound_max_iso !== '' ) : ?>
+                <p class="hof-facet-range-bounds">
+                    <?php printf(
+                        /* translators: 1: start date, 2: end date */
+                        esc_html__( 'Range: %1$s – %2$s', 'hooked-on-facets' ),
+                        esc_html( $bound_min_iso ),
+                        esc_html( $bound_max_iso )
+                    ); ?>
+                </p>
+            <?php endif; ?>
         </div>
         <?php
         return (string) ob_get_clean();
