@@ -20,6 +20,16 @@
     --hof-space:      8px;
     --hof-swatch-min: 36px;
     --hof-swatch-max: 96px;
+
+    /* Swatch theming tokens — override these from a page builder's custom
+       CSS, theme.json, or the hof_public_css_tokens filter to skin the
+       facet without forking the bundle. */
+    --hof-swatch-gap:        var(--hof-space);
+    --hof-swatch-radius:     calc(var(--hof-radius-ui) + 2px);
+    --hof-swatch-bg:         #EDEAE0;
+    --hof-swatch-shadow:     0 1px 2px rgba(28, 26, 22, 0.06), 0 2px 6px rgba(28, 26, 22, 0.04);
+    --hof-swatch-selected:   var(--hof-primary);
+    --hof-swatch-selected-w: 2px;
 }
 
 .hof-facet {
@@ -150,10 +160,10 @@
 .hof-facet-swatches {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 4px 2px 2px;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--hof-space);
+    gap: calc(var(--hof-swatch-gap) * 1.5) var(--hof-swatch-gap);
     align-items: flex-end;
 }
 
@@ -171,49 +181,57 @@
     display: inline-flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     cursor: pointer;
     user-select: none;
-    transition: transform 220ms ease;
-}
-
-.hof-facet-swatch-tile:hover .hof-facet-swatch-visual {
-    transform: translateY(-2px);
 }
 
 .hof-facet-swatch-visual {
     width: var(--hof-swatch-size);
     height: var(--hof-swatch-size);
-    background-color: var(--hof-swatch-color, var(--hof-bg));
+    background-color: var(--hof-swatch-color, var(--hof-swatch-bg));
     background-image: var(--hof-swatch-image, none);
     background-size: cover;
     background-position: center;
-    border-radius: var(--hof-radius-ui);
-    border: 0.5px solid var(--hof-border);
-    box-shadow: inset 0 0 0 0 var(--hof-primary);
+    border-radius: var(--hof-swatch-radius);
+    box-shadow: var(--hof-swatch-shadow);
     transition:
         width 320ms cubic-bezier(0.2, 0.7, 0.2, 1),
         height 320ms cubic-bezier(0.2, 0.7, 0.2, 1),
-        box-shadow 160ms ease,
-        transform 160ms ease;
+        box-shadow 200ms ease,
+        transform 200ms ease;
+}
+
+.hof-facet-swatch-tile:hover .hof-facet-swatch-visual {
+    transform: translateY(-2px);
+    box-shadow:
+        0 2px 4px rgba(28, 26, 22, 0.10),
+        0 10px 22px rgba(28, 26, 22, 0.10);
 }
 
 .hof-facet-swatch-tile[data-hof-selected] .hof-facet-swatch-visual {
+    box-shadow: 0 0 0 var(--hof-swatch-selected-w) var(--hof-swatch-selected);
+    transform: translateY(-1px);
+}
+
+.hof-facet-swatch-tile[data-hof-selected]:hover .hof-facet-swatch-visual {
+    transform: translateY(-3px);
     box-shadow:
-        inset 0 0 0 3px var(--hof-surface),
-        0 0 0 2px var(--hof-primary);
+        0 0 0 var(--hof-swatch-selected-w) var(--hof-swatch-selected),
+        0 6px 14px rgba(28, 26, 22, 0.14);
 }
 
 .hof-facet-swatch-text {
     display: flex;
     flex-direction: column;
     align-items: center;
-    line-height: 1.1;
+    line-height: 1.15;
     font-size: 0.8125rem;
 }
 
 .hof-facet-swatch-name {
     color: var(--hof-text);
+    font-weight: 500;
     max-width: calc(var(--hof-swatch-size) + 24px);
     text-align: center;
     overflow: hidden;
@@ -222,7 +240,9 @@
 }
 
 .hof-facet-swatch-tile .hof-facet-count {
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
+    color: var(--hof-muted);
+    font-variant-numeric: tabular-nums;
 }
 
 /* WP-style sr-only — duplicated so we don't depend on a theme class. */
