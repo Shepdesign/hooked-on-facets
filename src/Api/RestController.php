@@ -22,6 +22,7 @@ use HookedOnFacets\Ai\Settings as AiSettings;
 use HookedOnFacets\Contracts\Bootable;
 use HookedOnFacets\Filter\Resolver;
 use HookedOnFacets\Indexer;
+use HookedOnFacets\Licensing\LicenseManager;
 use HookedOnFacets\Telemetry\Recorder;
 
 defined( 'ABSPATH' ) || exit;
@@ -36,6 +37,7 @@ final class RestController implements Bootable {
         private readonly ?Recorder $recorder = null,
         private readonly ?NlFilter $nl_filter = null,
         private readonly ?AiSettings $ai_settings = null,
+        private readonly ?LicenseManager $license = null,
     ) {}
 
     public function register_hooks(): void {
@@ -165,6 +167,54 @@ final class RestController implements Bootable {
                 ],
             ],
         ] );
+
+        register_rest_route( self::NAMESPACE_V1, '/license', [
+            'methods'             => \WP_REST_Server::READABLE,
+            'callback'            => [ $this, 'get_license' ],
+            'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+        ] );
+
+        register_rest_route( self::NAMESPACE_V1, '/license/activate', [
+            'methods'             => \WP_REST_Server::CREATABLE,
+            'callback'            => [ $this, 'activate_license' ],
+            'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+            'args'                => [
+                'key' => [ 'type' => 'string', 'required' => true ],
+            ],
+        ] );
+
+        register_rest_route( self::NAMESPACE_V1, '/license/deactivate', [
+            'methods'             => \WP_REST_Server::CREATABLE,
+            'callback'            => [ $this, 'deactivate_license' ],
+            'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+        ] );
+    }
+
+    public function get_license( \WP_REST_Request $request ): \WP_REST_Response {
+        if ( ! $this->license ) {
+            return new \WP_REST_Response( [ 'configured' => false, 'status' => 'unavailable' ], 200 );
+        }
+        return new \WP_REST_Response( $this->license->state(), 200 );
+    }
+
+    public function activate_license( \WP_REST_Request $request ): \WP_REST_Response {
+        if ( ! $this->license ) {
+            return new \WP_REST_Response( [ 'ok' => false, 'error' => 'License manager unavailable' ], 503 );
+        }
+        $key    = (string) $request->get_param( 'key' );
+        $result = $this->license->activate( $key );
+        return new \WP_REST_Response(
+            array_merge( $result, [ 'state' => $this->license->state() ] ),
+            $result['ok'] ? 200 : 400
+        );
+    }
+
+    public function deactivate_license( \WP_REST_Request $request ): \WP_REST_Response {
+        if ( ! $this->license ) {
+            return new \WP_REST_Response( [ 'ok' => false, 'error' => 'License manager unavailable' ], 503 );
+        }
+        $this->license->deactivate();
+        return new \WP_REST_Response( [ 'ok' => true, 'state' => $this->license->state() ], 200 );
     }
 
     public function get_ai_settings( \WP_REST_Request $request ): \WP_REST_Response {

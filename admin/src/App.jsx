@@ -4,6 +4,7 @@ import {
     IconChevronRight,
     IconDatabase,
     IconFilter,
+    IconKey,
     IconLayoutGrid,
     IconPalette,
     IconSettings,
@@ -19,6 +20,7 @@ import Blueprint from './components/Blueprint.jsx';
 import Indexer from './components/Indexer.jsx';
 import QueryLoops from './components/QueryLoops.jsx';
 import AiSettings from './components/AiSettings.jsx';
+import LicenseSettings from './components/LicenseSettings.jsx';
 
 const VIEWS = [
     { id: 'dashboard',  label: 'Dashboard',     section: 'Main',   Icon: IconLayoutGrid },
@@ -27,6 +29,7 @@ const VIEWS = [
     { id: 'indexer',    label: 'Indexer',       section: 'Main',   Icon: IconDatabase },
     { id: 'blueprint',  label: 'Blueprint',     section: 'Studio', Icon: IconTools },
     { id: 'tokens',     label: 'Design tokens', section: 'Studio', Icon: IconPalette },
+    { id: 'license',    label: 'License',       section: 'System', Icon: IconKey },
     { id: 'settings',   label: 'Settings',      section: 'System', Icon: IconSettings },
 ];
 
@@ -290,6 +293,10 @@ export default function App({ bootstrap }) {
                     {view === 'indexer' && <Indexer />}
 
                     {view === 'queryloops' && <QueryLoops />}
+
+                    {view === 'license' && (
+                        <LicenseSettings bootstrap={bootstrap} />
+                    )}
 
                     {view === 'settings' && (
                         <AiSettings bootstrap={bootstrap} />

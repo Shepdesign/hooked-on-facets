@@ -130,12 +130,27 @@ final class Plugin {
             $c->make( \HookedOnFacets\Ai\Settings::class ),
         ) );
 
+        $this->bind( \HookedOnFacets\Licensing\LicenseClient::class, static fn() => new \HookedOnFacets\Licensing\LicenseClient() );
+
+        $this->bind( \HookedOnFacets\Licensing\LicenseManager::class, static fn( self $c ) => new \HookedOnFacets\Licensing\LicenseManager(
+            $c->make( \HookedOnFacets\Licensing\LicenseClient::class ),
+        ) );
+
+        $this->bind( \HookedOnFacets\Licensing\Updater::class, static fn( self $c ) => new \HookedOnFacets\Licensing\Updater(
+            $c->make( \HookedOnFacets\Licensing\LicenseClient::class ),
+        ) );
+
+        $this->bind( \HookedOnFacets\Admin\LicenseNotice::class, static fn( self $c ) => new \HookedOnFacets\Admin\LicenseNotice(
+            $c->make( \HookedOnFacets\Licensing\LicenseManager::class ),
+        ) );
+
         $this->bind( \HookedOnFacets\Api\RestController::class, static fn( self $c ) => new \HookedOnFacets\Api\RestController(
             $c->make( \HookedOnFacets\Filter\Resolver::class ),
             $c->make( Indexer::class ),
             $c->make( \HookedOnFacets\Telemetry\Recorder::class ),
             $c->make( \HookedOnFacets\Ai\NlFilter::class ),
             $c->make( \HookedOnFacets\Ai\Settings::class ),
+            $c->make( \HookedOnFacets\Licensing\LicenseManager::class ),
         ) );
 
         $this->bind( \HookedOnFacets\Facets\Renderer::class, static fn( self $c ) => new \HookedOnFacets\Facets\Renderer(
@@ -164,9 +179,12 @@ final class Plugin {
             \HookedOnFacets\Telemetry\Recorder::class,
             Indexer::class,
             QueryHook::class,
+            \HookedOnFacets\Licensing\LicenseManager::class,
+            \HookedOnFacets\Licensing\Updater::class,
             \HookedOnFacets\Api\RestController::class,
             \HookedOnFacets\Admin\MenuRegistrar::class,
             \HookedOnFacets\Admin\SwatchTermFields::class,
+            \HookedOnFacets\Admin\LicenseNotice::class,
             \HookedOnFacets\Frontend\AssetLoader::class,
             \HookedOnFacets\Frontend\Shortcodes::class,
             \HookedOnFacets\Frontend\BlockRegistrar::class,
