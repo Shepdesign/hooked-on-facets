@@ -104,7 +104,7 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 ## Phase 2 candidates (not sequenced)
 
 1. First page builder bridge — **Elementor** (largest WC overlap)
-2. Two "wow" facets in priority order: **Visual Fluid Swatches → Swipe Deck**. (Venn / UpSet were attempted, shipped, and retired — see CLAUDE.md.)
+2. Two "wow" facets in priority order: **Visual Fluid Swatches → Swipe Deck**. (Venn / UpSet were attempted, shipped, and retired — see SHEPDESIGN.md.)
 3. Action Scheduler-backed incremental reindex
 4. CSS Variable Engine — full theming UI
 5. ACF/Meta Box source plugins
