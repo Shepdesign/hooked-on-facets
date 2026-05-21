@@ -16,6 +16,13 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Minimal default permissions. checkout, setup-php, setup-node, npm ci, and
+# composer install all only need read access to the repo. PHPCS annotations
+# via cs2pr use the workflow-command protocol, not the checks API. Tighten
+# per-job if a future step needs to write somewhere specific.
+permissions:
+  contents: read
+
 jobs:
   # --------------------------------------------------------------------------
   php:
