@@ -47,6 +47,13 @@ updates:
           - "patch"
       dev-dependencies:
         dependency-type: "development"
+    ignore:
+      # React 19 migration is gated by the React 18 → 19 rollout plan.
+      # Lift this block when the upgrade lands.
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
