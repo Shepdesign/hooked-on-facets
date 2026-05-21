@@ -1241,25 +1241,38 @@ final class Renderer {
     /**
      * Build a {slug, hex, label}[] map for the visual_dna runtime.
      *
-     * Prefers the term's `swatch_color` meta (same key the Color Swatch
-     * facet uses). Falls back to a built-in CSS-color-name → hex table for
-     * common color names so a vanilla catalog still works without per-term
-     * meta. Terms with no resolvable color are skipped.
+     * Two paths, depending on the target facet's kind:
+     *   - taxonomy → walk terms, prefer term_meta `swatch_color` (the key
+     *     the Color Swatch facet already uses), fall back to a built-in
+     *     CSS-color-name table.
+     *   - meta / field → walk distinct facet_value rows in the index for
+     *     this facet, look each value up in the fallback table.
      *
-     * Only meaningful for taxonomy-sourced facets.
+     * Values that don't resolve to a hex are dropped.
      *
      * @param array<string, mixed> $target_facet
      * @return array<int, array{slug: string, hex: string, label: string}>
      */
     private function build_color_term_map( array $target_facet ): array {
-        if ( ( $target_facet['kind'] ?? '' ) !== 'taxonomy' ) {
-            return [];
+        $kind = (string) ( $target_facet['kind'] ?? '' );
+        if ( $kind === 'taxonomy' ) {
+            return $this->build_color_term_map_taxonomy( $target_facet );
         }
+        if ( $kind === 'meta' || $kind === 'field' ) {
+            return $this->build_color_term_map_from_index( $target_facet );
+        }
+        return [];
+    }
+
+    /**
+     * @param array<string, mixed> $target_facet
+     * @return array<int, array{slug: string, hex: string, label: string}>
+     */
+    private function build_color_term_map_taxonomy( array $target_facet ): array {
         $taxonomy = (string) ( $target_facet['source'] ?? '' );
         if ( $taxonomy === '' ) {
             return [];
         }
-
         $terms = get_terms( [
             'taxonomy'   => $taxonomy,
             'hide_empty' => false,
@@ -1286,6 +1299,51 @@ final class Renderer {
                 'slug'  => $term->slug,
                 'hex'   => $hex,
                 'label' => $term->name,
+            ];
+        }
+        return $out;
+    }
+
+    /**
+     * For meta/field facets, pull distinct facet_value rows from the index
+     * and match each against the CSS-name fallback table.
+     *
+     * @param array<string, mixed> $target_facet
+     * @return array<int, array{slug: string, hex: string, label: string}>
+     */
+    private function build_color_term_map_from_index( array $target_facet ): array {
+        global $wpdb;
+        $name = (string) ( $target_facet['name'] ?? '' );
+        if ( $name === '' ) {
+            return [];
+        }
+        $table = $wpdb->prefix . \HookedOnFacets\Activator::TABLE;
+        $rows  = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT facet_value AS value, MAX(facet_display) AS display
+                 FROM {$table}
+                 WHERE facet_name = %s
+                 GROUP BY facet_value
+                 ORDER BY facet_display ASC",
+                $name
+            ),
+            ARRAY_A
+        ) ?: [];
+
+        $fallback = self::css_color_name_map();
+        $out      = [];
+        foreach ( $rows as $r ) {
+            $value   = (string) $r['value'];
+            $display = (string) ( $r['display'] ?: $value );
+            $key     = strtolower( $value );
+            $hex     = $fallback[ $key ] ?? ( $fallback[ strtolower( $display ) ] ?? '' );
+            if ( $hex === '' ) {
+                continue;
+            }
+            $out[] = [
+                'slug'  => $value,
+                'hex'   => $hex,
+                'label' => $display,
             ];
         }
         return $out;
