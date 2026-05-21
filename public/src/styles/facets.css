@@ -264,6 +264,16 @@
         0 6px 14px rgba(28, 26, 22, 0.14);
 }
 
+/* Selected default tile: lift the initial to the selected accent so the
+   "selected" state always reads stronger than the "hover" state. Without
+   this, selecting a default tile leaves the letter muted gray inside a
+   bright purple ring — a visual hierarchy mismatch. Declared after the
+   hover rule so it wins when both apply (same specificity). */
+.hof-facet-swatch-tile[data-hof-selected] .hof-facet-swatch-initial {
+    color: var(--hof-swatch-selected);
+    opacity: 0.95;
+}
+
 .hof-facet-swatch-text {
     display: flex;
     flex-direction: column;
