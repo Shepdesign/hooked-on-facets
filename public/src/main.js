@@ -10,11 +10,13 @@ import './styles/facets.css';
 import { Store, buildUrl } from './state.js';
 import { refresh } from './refresh.js';
 import { initSwiper } from './swiper.js';
+import { init2dSlider } from './two-d-slider.js';
 
 const store = new Store();
 store.hydrateFromUrl();
 
 initSwiper();
+init2dSlider(store);
 
 const DEBOUNCE_MS = 250;
 

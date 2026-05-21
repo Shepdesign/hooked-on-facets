@@ -736,6 +736,9 @@
     box-shadow: inset 0 0 0 1px var(--hof-surface),
                 0 1px 2px rgba(28, 26, 22, 0.04);
     overflow: hidden;
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
 }
 
 .hof-2d-rect {
@@ -744,6 +747,11 @@
     border: 1.5px solid var(--hof-2d-rect-border);
     border-radius: 4px;
     transition: left 200ms ease, right 200ms ease, top 200ms ease, bottom 200ms ease;
+    cursor: grab;
+}
+
+.hof-2d-rect:active {
+    cursor: grabbing;
 }
 
 .hof-2d-readout {
