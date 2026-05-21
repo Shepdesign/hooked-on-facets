@@ -244,7 +244,7 @@ final class RestController implements Bootable {
         $allowed_displays = [
             'checkbox', 'radio', 'dropdown', 'toggle', 'hierarchy',
             'range', 'date_range', 'search', 'swatch', 'swiper',
-            'two_d_slider', 'ask',
+            'two_d_slider', 'ask', 'visual_dna',
         ];
 
         $clean = [];
@@ -341,6 +341,16 @@ final class RestController implements Bootable {
                 $out['format'] = (string) $raw['format'];
             }
             return $out;
+        }
+
+        if ( $display === 'visual_dna' ) {
+            // target_facet = which color-bearing facet to filter against once
+            // the input image/URL/eyedrop resolves to a hex.
+            $out = [];
+            if ( isset( $raw['target_facet'] ) && is_scalar( $raw['target_facet'] ) ) {
+                $out['target_facet'] = sanitize_key( (string) $raw['target_facet'] );
+            }
+            return array_filter( $out, static fn( $v ) => $v !== '' );
         }
 
         // Default path — swiper sandbox knobs from the Blueprint UI.

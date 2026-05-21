@@ -18,10 +18,14 @@ const DISPLAYS = [
     { value: 'swiper',       label: 'Swipe deck' },
     { value: 'two_d_slider', label: '2D slider' },
     { value: 'ask',          label: 'Ask' },
+    { value: 'visual_dna',   label: 'Visual DNA' },
 ];
 
 // Displays that don't have a source — they orchestrate other facets.
-const VIEW_DISPLAYS = new Set(['two_d_slider', 'ask']);
+const VIEW_DISPLAYS = new Set(['two_d_slider', 'ask', 'visual_dna']);
+
+// Displays that visual_dna can target (color-bearing displays).
+const COLOR_TARGET_DISPLAYS = new Set(['checkbox', 'radio', 'dropdown', 'swatch', 'swiper']);
 
 const sanitizeSlug = (raw) =>
     String(raw || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
@@ -30,6 +34,9 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
     const kindDef = KINDS.find((k) => k.value === facet.kind) || KINDS[0];
     const isView  = VIEW_DISPLAYS.has(facet.display);
     const rangeFacets = allFacets.filter((f) => f.display === 'range' && f.name !== facet.name);
+    const colorTargetFacets = allFacets.filter((f) =>
+        COLOR_TARGET_DISPLAYS.has(f.display) && f.name !== facet.name
+    );
     const settings = (facet.settings && typeof facet.settings === 'object' && !Array.isArray(facet.settings))
         ? facet.settings
         : {};
@@ -158,6 +165,13 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                 ✕ on any chip to correct it. Set the key in <em>Settings → Ask</em>.
                             </span>
                         )}
+                        {facet.display === 'visual_dna' && (
+                            <span className="hof-field-help">
+                                Drop an image, paste a URL, or eyedrop any color on screen — the
+                                catalog filters to products in the closest matching color term.
+                                Pick the color facet to drive below.
+                            </span>
+                        )}
                     </label>
 
                     {facet.display === 'two_d_slider' && (
@@ -273,6 +287,35 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                             Unix timestamps in <code>facet_numeric</code>. The Indexer doesn't yet do
                             string-date → epoch conversion; that's a planned alpha follow-up.
                         </span>
+                    )}
+
+                    {facet.display === 'visual_dna' && (
+                        <label className="hof-field">
+                            <span className="hof-field-label">Target color facet</span>
+                            <select
+                                className="hof-input"
+                                value={settings.target_facet || ''}
+                                onChange={(e) => updateSettings({ target_facet: e.target.value })}
+                            >
+                                <option value="">— pick a color facet —</option>
+                                {colorTargetFacets.map((f) => (
+                                    <option key={f.name} value={f.name}>
+                                        {f.label || f.name}{' '}({f.display})
+                                    </option>
+                                ))}
+                            </select>
+                            {colorTargetFacets.length === 0 && (
+                                <span className="hof-field-help hof-field-warn">
+                                    No color-bearing facets configured. Add a checkbox, dropdown, or
+                                    swatch facet for a color taxonomy first.
+                                </span>
+                            )}
+                            <span className="hof-field-help">
+                                Color terms get their hex from the term's <code>swatch_color</code> meta
+                                (same as the swatch facet uses), falling back to a built-in name table
+                                for common terms like <code>red</code>, <code>navy</code>, <code>olive</code>.
+                            </span>
+                        </label>
                     )}
 
                     <div className="hof-editor-actions">
@@ -395,6 +438,35 @@ function FacetPreview({ facet }) {
                     {ready
                         ? 'Shoppers drag a rectangle on this plane; both axes update at once.'
                         : 'Pick the x and y range facets to wire this up.'}
+                </p>
+            </div>
+        );
+    }
+
+    if (facet.display === 'visual_dna') {
+        const settings = (facet.settings && typeof facet.settings === 'object') ? facet.settings : {};
+        const ready = !!settings.target_facet;
+        return (
+            <div className="hof-preview">
+                <div className="hof-preview-label">{label}</div>
+                <div className="hof-preview-visual-drop">
+                    <span className="hof-preview-visual-icon" aria-hidden="true">⬇</span>
+                    <span>Drop · paste URL · 🎨 pick</span>
+                </div>
+                <div className="hof-preview-visual-result">
+                    <span className="hof-preview-visual-swatch" style={{ background: '#c84a2d' }} aria-hidden="true"></span>
+                    <span className="hof-preview-visual-readout">
+                        <code>#c84a2d</code>
+                        <span className="hof-preview-visual-match">
+                            <span className="hof-preview-visual-dot" style={{ background: '#f97316' }} aria-hidden="true"></span>
+                            orange
+                        </span>
+                    </span>
+                </div>
+                <p className="hof-preview-note">
+                    {ready
+                        ? `Drives the "${settings.target_facet}" facet by snapping to its nearest term in LAB ΔE.`
+                        : 'Pick a target color facet to wire this up.'}
                 </p>
             </div>
         );

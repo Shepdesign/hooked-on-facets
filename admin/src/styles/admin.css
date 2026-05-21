@@ -1981,3 +1981,68 @@ body.toplevel_page_hooked-on-facets .wrap {
     font-style: normal;
     color: #888780;
 }
+
+.hof-preview-visual-drop {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 10px;
+    border: 1.5px dashed #D3D1C7;
+    border-radius: 10px;
+    background: rgba(83, 74, 183, 0.03);
+    color: #888780;
+    font-size: 0.8125rem;
+}
+
+.hof-preview-visual-icon {
+    color: #534AB7;
+    font-size: 1.1rem;
+}
+
+.hof-preview-visual-result {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(83, 74, 183, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hof-preview-visual-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 0.5px solid #D3D1C7;
+    box-shadow: inset 0 0 0 1.5px #FFFFFF;
+}
+
+.hof-preview-visual-readout {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.75rem;
+}
+
+.hof-preview-visual-readout code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: #4A4842;
+    background: transparent;
+    padding: 0;
+}
+
+.hof-preview-visual-match {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #888780;
+}
+
+.hof-preview-visual-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 0.5px solid #D3D1C7;
+}

@@ -61,6 +61,7 @@ final class Renderer {
             'hierarchy'   => $this->render_hierarchy( $facet, (array) $current_value, $counts ),
             'two_d_slider' => $this->render_two_d_slider( $facet ),
             'ask'         => $this->render_ask( $facet ),
+            'visual_dna'  => $this->render_visual_dna( $facet ),
             // Legacy 'venn' / 'upset' displays fall through to checkbox.
             // Both shipped briefly in Phase 2 but the matrix UX confused
             // users; the foundational fix (active filters bar) made the
@@ -1138,6 +1139,206 @@ final class Renderer {
         </div>
         <?php
         return (string) ob_get_clean();
+    }
+
+    /**
+     * Visual DNA — drop an image, paste a URL, or eyedrop a color, and the
+     * catalog filters to products in the closest matching color term.
+     *
+     * A view facet: it doesn't produce a resolver filter directly. Sampling
+     * resolves the input to a hex, finds the nearest term in the configured
+     * `target_facet`, and applies that as a normal filter via the store.
+     *
+     * The color-term list is inlined as JSON on a data attribute so the
+     * runtime doesn't need a network round-trip on init.
+     *
+     * @param array<string, mixed> $facet
+     */
+    private function render_visual_dna( array $facet ): string {
+        $name     = (string) $facet['name'];
+        $label    = (string) ( $facet['label'] ?: $name );
+        $settings = (array) ( $facet['settings'] ?? [] );
+        $target   = (string) ( $settings['target_facet'] ?? '' );
+
+        $target_facet = $target !== '' ? $this->find_facet( $target ) : null;
+        if ( ! $target_facet ) {
+            return sprintf(
+                '<div class="hof-facet hof-facet-visual-dna hof-facet-misconfigured" data-hof-facet="%s">' .
+                '<span class="hof-facet-label">%s</span>' .
+                '<p class="hof-facet-empty">%s</p>' .
+                '</div>',
+                esc_attr( $name ),
+                esc_html( $label ),
+                esc_html__( 'Visual DNA needs a target color facet. Pick one in the admin.', 'hooked-on-facets' )
+            );
+        }
+
+        $color_map = $this->build_color_term_map( $target_facet );
+        $supports_eyedropper = true; // The JS feature-detects and hides if not.
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-visual-dna"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="visual_dna"
+             data-hof-target-facet="<?php echo esc_attr( $target ); ?>"
+             data-hof-color-map="<?php echo esc_attr( wp_json_encode( $color_map ) ); ?>">
+            <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
+
+            <div class="hof-visual-dna-drop"
+                 data-hof-visual-drop
+                 role="button"
+                 tabindex="0">
+                <input type="file"
+                       class="hof-visual-dna-file"
+                       accept="image/*"
+                       data-hof-visual-file
+                       hidden>
+                <span class="hof-visual-dna-drop-icon" aria-hidden="true">⬇</span>
+                <span class="hof-visual-dna-drop-text">
+                    <?php esc_html_e( 'Drop an image, click to pick a file, paste a URL below, or use the eyedropper.', 'hooked-on-facets' ); ?>
+                </span>
+            </div>
+
+            <div class="hof-visual-dna-actions">
+                <input type="url"
+                       class="hof-visual-dna-url"
+                       placeholder="<?php esc_attr_e( 'Paste an image URL…', 'hooked-on-facets' ); ?>"
+                       autocomplete="off"
+                       data-hof-visual-url>
+                <button type="button"
+                        class="hof-visual-dna-eyedrop"
+                        data-hof-visual-eyedrop
+                        hidden
+                        aria-label="<?php esc_attr_e( 'Eyedropper', 'hooked-on-facets' ); ?>">
+                    <span aria-hidden="true">🎨</span>
+                    <?php esc_html_e( 'Pick', 'hooked-on-facets' ); ?>
+                </button>
+            </div>
+
+            <div class="hof-visual-dna-result" data-hof-visual-result hidden>
+                <span class="hof-visual-dna-swatch" data-hof-visual-swatch aria-hidden="true"></span>
+                <span class="hof-visual-dna-readout">
+                    <span class="hof-visual-dna-hex" data-hof-visual-hex></span>
+                    <span class="hof-visual-dna-match-row">
+                        <span class="hof-visual-dna-match-caption"><?php esc_html_e( 'Closest match:', 'hooked-on-facets' ); ?></span>
+                        <span class="hof-visual-dna-match" data-hof-visual-match></span>
+                    </span>
+                </span>
+                <button type="button"
+                        class="hof-visual-dna-clear"
+                        data-hof-visual-clear>
+                    <?php esc_html_e( '↺ Clear', 'hooked-on-facets' ); ?>
+                </button>
+            </div>
+
+            <p class="hof-visual-dna-status" data-hof-visual-status hidden></p>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Build a {slug, hex, label}[] map for the visual_dna runtime.
+     *
+     * Prefers the term's `swatch_color` meta (same key the Color Swatch
+     * facet uses). Falls back to a built-in CSS-color-name → hex table for
+     * common color names so a vanilla catalog still works without per-term
+     * meta. Terms with no resolvable color are skipped.
+     *
+     * Only meaningful for taxonomy-sourced facets.
+     *
+     * @param array<string, mixed> $target_facet
+     * @return array<int, array{slug: string, hex: string, label: string}>
+     */
+    private function build_color_term_map( array $target_facet ): array {
+        if ( ( $target_facet['kind'] ?? '' ) !== 'taxonomy' ) {
+            return [];
+        }
+        $taxonomy = (string) ( $target_facet['source'] ?? '' );
+        if ( $taxonomy === '' ) {
+            return [];
+        }
+
+        $terms = get_terms( [
+            'taxonomy'   => $taxonomy,
+            'hide_empty' => false,
+        ] );
+        if ( is_wp_error( $terms ) || empty( $terms ) ) {
+            return [];
+        }
+
+        $fallback = self::css_color_name_map();
+        $out      = [];
+        foreach ( $terms as $term ) {
+            if ( ! $term instanceof \WP_Term ) {
+                continue;
+            }
+            $hex = (string) get_term_meta( $term->term_id, 'swatch_color', true );
+            if ( $hex === '' || ! preg_match( '/^#[0-9a-f]{6}$/i', $hex ) ) {
+                $key = strtolower( $term->slug );
+                $hex = $fallback[ $key ] ?? ( $fallback[ strtolower( $term->name ) ] ?? '' );
+            }
+            if ( $hex === '' ) {
+                continue;
+            }
+            $out[] = [
+                'slug'  => $term->slug,
+                'hex'   => $hex,
+                'label' => $term->name,
+            ];
+        }
+        return $out;
+    }
+
+    /**
+     * Common color names → hex. Lowercase keys. Used as a fallback when a
+     * term has no `swatch_color` meta. Not exhaustive — designed to cover
+     * the most common product-attribute colors.
+     *
+     * @return array<string, string>
+     */
+    private static function css_color_name_map(): array {
+        return [
+            'black'   => '#000000',
+            'white'   => '#ffffff',
+            'gray'    => '#808080',
+            'grey'    => '#808080',
+            'silver'  => '#c0c0c0',
+            'red'     => '#dc2626',
+            'crimson' => '#dc143c',
+            'pink'    => '#ec4899',
+            'fuchsia' => '#d946ef',
+            'magenta' => '#d946ef',
+            'orange'  => '#f97316',
+            'amber'   => '#f59e0b',
+            'yellow'  => '#eab308',
+            'olive'   => '#65a30d',
+            'lime'    => '#84cc16',
+            'green'   => '#16a34a',
+            'teal'    => '#14b8a6',
+            'cyan'    => '#06b6d4',
+            'blue'    => '#2563eb',
+            'navy'    => '#1e3a8a',
+            'indigo'  => '#4f46e5',
+            'violet'  => '#7c3aed',
+            'purple'  => '#9333ea',
+            'lavender'=> '#c4b5fd',
+            'brown'   => '#92400e',
+            'tan'     => '#d2b48c',
+            'beige'   => '#f5f5dc',
+            'cream'   => '#fffdd0',
+            'ivory'   => '#fffff0',
+            'gold'    => '#d4af37',
+            'maroon'  => '#7f1d1d',
+            'burgundy'=> '#7f1d1d',
+            'coral'   => '#ff7f50',
+            'salmon'  => '#fa8072',
+            'turquoise' => '#40e0d0',
+            'mint'    => '#a7f3d0',
+            'khaki'   => '#bdb76b',
+            'charcoal'=> '#36454f',
+        ];
     }
 
     // ── Internals ───────────────────────────────────────────────────────────

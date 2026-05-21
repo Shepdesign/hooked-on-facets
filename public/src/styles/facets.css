@@ -1250,3 +1250,180 @@
     border-color: var(--hof-primary);
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 18%, transparent);
 }
+
+/* ── Visual DNA facet ───────────────────────────────────────────────────── */
+
+.hof-visual-dna-drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 18px 14px;
+    border: 1.5px dashed var(--hof-border);
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--hof-primary) 3%, var(--hof-surface));
+    color: var(--hof-muted);
+    text-align: center;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, transform 120ms ease;
+}
+
+.hof-visual-dna-drop:hover,
+.hof-visual-dna-drop:focus-visible {
+    outline: none;
+    background: color-mix(in oklab, var(--hof-primary) 7%, var(--hof-surface));
+    border-color: color-mix(in oklab, var(--hof-primary) 50%, var(--hof-border));
+}
+
+.hof-visual-dna-drop.is-dragover {
+    background: color-mix(in oklab, var(--hof-primary) 12%, var(--hof-surface));
+    border-color: var(--hof-primary);
+    transform: scale(1.01);
+}
+
+.hof-visual-dna-drop-icon {
+    font-size: 1.4rem;
+    color: var(--hof-primary);
+    line-height: 1;
+}
+
+.hof-visual-dna-drop-text {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+.hof-visual-dna-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.hof-visual-dna-url {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border: 0.5px solid var(--hof-border);
+    border-radius: 8px;
+    background: var(--hof-surface);
+    color: var(--hof-text);
+    font-size: 0.875rem;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.hof-visual-dna-url:focus {
+    outline: none;
+    border-color: var(--hof-primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 18%, transparent);
+}
+
+.hof-visual-dna-eyedrop {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 0.5px solid var(--hof-border);
+    border-radius: 8px;
+    background: var(--hof-surface);
+    color: var(--hof-text);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease;
+}
+
+.hof-visual-dna-eyedrop:hover {
+    background: color-mix(in oklab, var(--hof-primary) 6%, var(--hof-surface));
+    border-color: color-mix(in oklab, var(--hof-primary) 40%, var(--hof-border));
+}
+
+.hof-visual-dna-result {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--hof-primary) 6%, var(--hof-surface));
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hof-visual-dna-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 0.5px solid var(--hof-border);
+    box-shadow: inset 0 0 0 2px var(--hof-surface);
+    flex-shrink: 0;
+}
+
+.hof-visual-dna-readout {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.8125rem;
+    min-width: 0;
+}
+
+.hof-visual-dna-hex {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+    color: var(--hof-text);
+}
+
+.hof-visual-dna-match-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--hof-muted);
+}
+
+.hof-visual-dna-match-caption {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.hof-visual-dna-match {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--hof-text);
+    font-size: 0.8125rem;
+}
+
+.hof-visual-dna-match-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 0.5px solid var(--hof-border);
+}
+
+.hof-visual-dna-clear {
+    padding: 4px 8px;
+    border: 0;
+    background: transparent;
+    color: var(--hof-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: color 120ms ease;
+}
+
+.hof-visual-dna-clear:hover {
+    color: var(--hof-text);
+}
+
+.hof-visual-dna-status {
+    margin: 8px 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+.hof-visual-dna-status[data-hof-visual-status-kind="loading"] {
+    color: var(--hof-muted);
+    font-style: italic;
+}
+
+.hof-visual-dna-status[data-hof-visual-status-kind="error"] {
+    color: var(--hof-danger);
+}
