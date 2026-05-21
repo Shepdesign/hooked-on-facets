@@ -80,13 +80,14 @@ final class MenuRegistrar implements Bootable {
         $inline = sprintf(
             'window.hofAdmin = %s;',
             wp_json_encode( [
-                'restUrl'         => esc_url_raw( rest_url( 'hof/v1/' ) ),
-                'nonce'           => wp_create_nonce( 'wp_rest' ),
-                'facets'          => array_values( (array) get_option( Indexer::OPTION_FACETS, [] ) ),
-                'tokens'          => $tokens,
-                'productsIndexed' => $this->count_indexed_products(),
-                'telemetry'       => $this->load_telemetry_snapshot(),
-                'version'         => HOF_VERSION,
+                'restUrl'            => esc_url_raw( rest_url( 'hof/v1/' ) ),
+                'nonce'              => wp_create_nonce( 'wp_rest' ),
+                'facets'             => array_values( (array) get_option( Indexer::OPTION_FACETS, [] ) ),
+                'tokens'             => $tokens,
+                'productsIndexed'    => $this->count_indexed_products(),
+                'telemetry'          => $this->load_telemetry_snapshot(),
+                'version'            => HOF_VERSION,
+                'woocommerceActive'  => function_exists( 'WC' ) || class_exists( \WooCommerce::class ),
             ] )
         );
 

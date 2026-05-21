@@ -75,6 +75,35 @@ export default function App({ bootstrap }) {
         setView('facets');
     };
 
+    const addWooCommerceFacets = async () => {
+        const restUrl = bootstrap?.restUrl || '';
+        const nonce   = bootstrap?.nonce || '';
+        try {
+            const res  = await fetch(`${restUrl}integrations/woocommerce/suggest`, {
+                headers: { 'X-WP-Nonce': nonce },
+            });
+            const data = await res.json();
+            if (!data?.available) {
+                alert(data?.reason || 'WooCommerce not detected on this site.');
+                return;
+            }
+            const suggested = Array.isArray(data.facets) ? data.facets : [];
+            if (suggested.length === 0) {
+                alert('No new WooCommerce facets to add — your existing facets already cover the store.');
+                return;
+            }
+            setFacets((prev) => {
+                const next = [...prev, ...suggested];
+                setSelectedIdx(prev.length); // jump to the first new one
+                return next;
+            });
+            setDirty(true);
+            setView('facets');
+        } catch (e) {
+            alert('Could not fetch WooCommerce suggestions: ' + (e?.message || 'unknown'));
+        }
+    };
+
     const deleteSelected = () => {
         if (selectedIdx === null) return;
         deleteAt(selectedIdx);
@@ -236,6 +265,16 @@ export default function App({ bootstrap }) {
                             <div className="hof-view-header">
                                 <h2 className="hof-view-title">Facets</h2>
                                 <div className="hof-view-actions">
+                                    {bootstrap?.woocommerceActive && (
+                                        <button
+                                            className="hof-btn"
+                                            onClick={addWooCommerceFacets}
+                                            type="button"
+                                            title="Add suggested facets based on the active WooCommerce store"
+                                        >
+                                            + WooCommerce facets
+                                        </button>
+                                    )}
                                     {error && <span className="hof-error" role="alert">{error}</span>}
                                     <button
                                         className={`hof-btn hof-btn-primary ${invalidCount > 0 ? 'hof-btn-blocked' : ''}`}

@@ -130,6 +130,8 @@ final class Plugin {
             $c->make( \HookedOnFacets\Ai\Settings::class ),
         ) );
 
+        $this->bind( \HookedOnFacets\Integrations\WooCommerce::class, static fn() => new \HookedOnFacets\Integrations\WooCommerce() );
+
         $this->bind( \HookedOnFacets\Licensing\LicenseClient::class, static fn() => new \HookedOnFacets\Licensing\LicenseClient() );
 
         $this->bind( \HookedOnFacets\Licensing\LicenseManager::class, static fn( self $c ) => new \HookedOnFacets\Licensing\LicenseManager(
@@ -151,6 +153,7 @@ final class Plugin {
             $c->make( \HookedOnFacets\Ai\NlFilter::class ),
             $c->make( \HookedOnFacets\Ai\Settings::class ),
             $c->make( \HookedOnFacets\Licensing\LicenseManager::class ),
+            $c->make( \HookedOnFacets\Integrations\WooCommerce::class ),
         ) );
 
         $this->bind( \HookedOnFacets\Facets\Renderer::class, static fn( self $c ) => new \HookedOnFacets\Facets\Renderer(
@@ -188,6 +191,7 @@ final class Plugin {
             \HookedOnFacets\Frontend\AssetLoader::class,
             \HookedOnFacets\Frontend\Shortcodes::class,
             \HookedOnFacets\Frontend\BlockRegistrar::class,
+            \HookedOnFacets\Cli\Commands::class,
         ];
     }
 }

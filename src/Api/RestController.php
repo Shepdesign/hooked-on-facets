@@ -22,6 +22,7 @@ use HookedOnFacets\Ai\Settings as AiSettings;
 use HookedOnFacets\Contracts\Bootable;
 use HookedOnFacets\Filter\Resolver;
 use HookedOnFacets\Indexer;
+use HookedOnFacets\Integrations\WooCommerce;
 use HookedOnFacets\Licensing\LicenseManager;
 use HookedOnFacets\Telemetry\Recorder;
 
@@ -38,6 +39,7 @@ final class RestController implements Bootable {
         private readonly ?NlFilter $nl_filter = null,
         private readonly ?AiSettings $ai_settings = null,
         private readonly ?LicenseManager $license = null,
+        private readonly ?WooCommerce $woocommerce = null,
     ) {}
 
     public function register_hooks(): void {
@@ -91,6 +93,13 @@ final class RestController implements Bootable {
             'methods'             => \WP_REST_Server::CREATABLE,
             'callback'            => [ $this, 'reindex' ],
             'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+            'args'                => [
+                'mode' => [
+                    'type'     => 'string',
+                    'enum'     => [ 'sync', 'background' ],
+                    'required' => false,
+                ],
+            ],
         ] );
 
         register_rest_route( self::NAMESPACE_V1, '/reindex/status', [
@@ -188,6 +197,27 @@ final class RestController implements Bootable {
             'callback'            => [ $this, 'deactivate_license' ],
             'permission_callback' => static fn() => current_user_can( 'manage_options' ),
         ] );
+
+        register_rest_route( self::NAMESPACE_V1, '/integrations/woocommerce/suggest', [
+            'methods'             => \WP_REST_Server::READABLE,
+            'callback'            => [ $this, 'suggest_woocommerce_facets' ],
+            'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+        ] );
+    }
+
+    public function suggest_woocommerce_facets( \WP_REST_Request $request ): \WP_REST_Response {
+        if ( ! $this->woocommerce || ! $this->woocommerce->is_active() ) {
+            return new \WP_REST_Response( [
+                'available' => false,
+                'reason'    => 'WooCommerce not active on this site.',
+                'facets'    => [],
+            ], 200 );
+        }
+        $existing = (array) get_option( Indexer::OPTION_FACETS, [] );
+        return new \WP_REST_Response( [
+            'available' => true,
+            'facets'    => $this->woocommerce->suggest( $existing ),
+        ], 200 );
     }
 
     public function get_license( \WP_REST_Request $request ): \WP_REST_Response {
@@ -577,9 +607,19 @@ final class RestController implements Bootable {
     }
 
     public function reindex( \WP_REST_Request $request ): \WP_REST_Response {
-        // Large catalogs can exceed PHP's default 30s ceiling. The indexer's
-        // bulk path is fast (~20s/100k) but a 500k site would still trip the
-        // limit. Disable the wall clock for this endpoint only.
+        // Background mode — queue chunked job via wp_cron and return
+        // immediately so the admin doesn't tie up PHP-FPM for large catalogs.
+        $mode = (string) ( $request->get_param( 'mode' ) ?? 'background' );
+        if ( $mode === 'background' && ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) ) {
+            $job = $this->indexer->queue_reindex_all();
+            return new \WP_REST_Response( array_merge( [
+                'mode' => 'background',
+                'job'  => $job,
+            ], $this->collect_index_stats() ), 202 );
+        }
+
+        // Synchronous fallback — original behavior. Used by CLI + when cron
+        // is disabled (per DISABLE_WP_CRON) or `mode=sync` is explicit.
         if ( function_exists( 'set_time_limit' ) ) {
             @set_time_limit( 0 );
         }
@@ -592,13 +632,17 @@ final class RestController implements Bootable {
         $stats = $this->collect_index_stats();
 
         return new \WP_REST_Response( array_merge( [
+            'mode'    => 'sync',
             'indexed' => $count,
             'elapsed' => round( $elapsed, 3 ),
         ], $stats ), 200 );
     }
 
     public function reindex_status( \WP_REST_Request $request ): \WP_REST_Response {
-        return new \WP_REST_Response( $this->collect_index_stats(), 200 );
+        return new \WP_REST_Response( array_merge(
+            $this->collect_index_stats(),
+            [ 'background' => $this->indexer->background_state() ]
+        ), 200 );
     }
 
     /**
