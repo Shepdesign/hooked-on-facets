@@ -22,7 +22,7 @@ jobs:
     name: PHP · Lint & Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Detect PHP project
         id: detect
@@ -67,7 +67,7 @@ jobs:
     name: JavaScript · Lint, Test & Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Detect JS project
         id: detect
@@ -107,7 +107,7 @@ jobs:
     name: Markdown · Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Lint markdown
         uses: DavidAnson/markdownlint-cli2-action@v15
