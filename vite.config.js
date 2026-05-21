@@ -11,6 +11,11 @@ import { resolve } from 'node:path';
 export default defineConfig({
     plugins: [react()],
 
+    // Disable Vite's static-copy directory. Its default is `public/`, which
+    // collides with our runtime-source directory — without this, every file
+    // under public/src/ ships into dist twice (once bundled, once verbatim).
+    publicDir: false,
+
     build: {
         outDir: 'assets/dist',
         emptyOutDir: true,
