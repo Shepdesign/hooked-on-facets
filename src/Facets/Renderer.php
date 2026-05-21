@@ -270,7 +270,7 @@ final class Renderer {
                                            <?php checked( $checked ); ?>>
                                     <span class="hof-facet-name"><?php echo esc_html( $bucket['display'] ); ?></span>
                                     <span class="hof-facet-count"
-                                          data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo (int) $bucket['count']; ?></span>
+                                          data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( (int) $bucket['count'] ) ); ?></span>
                                 </label>
                             </li>
                         <?php endforeach; ?>
@@ -453,7 +453,7 @@ final class Renderer {
                             <span class="hof-facet-swatch-text">
                                 <span class="hof-facet-swatch-name"><?php echo esc_html( $bucket['display'] ); ?></span>
                                 <span class="hof-facet-count"
-                                      data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo (int) $count; ?></span>
+                                      data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
                             </span>
                         </label>
                     </li>
@@ -569,7 +569,7 @@ final class Renderer {
                             <div class="hof-swiper-card-text">
                                 <span class="hof-swiper-card-name"><?php echo esc_html( $bucket['display'] ); ?></span>
                                 <span class="hof-facet-count"
-                                      data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo (int) $count; ?></span>
+                                      data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
                             </div>
                             <span class="hof-swiper-stamp hof-swiper-stamp-right" aria-hidden="true">
                                 <?php esc_html_e( 'Include', 'hooked-on-facets' ); ?>
