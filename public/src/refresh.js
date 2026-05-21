@@ -12,6 +12,13 @@
 
 let inflight = null;
 
+// Cancel any in-flight refetch when the page goes away. Without this,
+// the fetch rejects as TypeError('Failed to fetch') on navigation, which
+// the catch below would log as a real error.
+if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', () => inflight?.controller.abort());
+}
+
 export async function refresh(targetUrl = window.location.href) {
     if (inflight) {
         // Coalesce rapid changes — the latest URL wins.
