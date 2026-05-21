@@ -14,6 +14,21 @@
 
 const stateByFacet = new WeakMap();
 
+// Placeholders that cycle when the input is empty and unfocused. Designed
+// to teach shoppers what kind of language works.
+const EXAMPLE_PLACEHOLDERS = [
+    'comfy red shoes under $50',
+    'a gift for my dad\'s workshop',
+    'cozy stuff in dark colors',
+    'something I\'d wear hiking',
+];
+
+// How long an exiting chip transitions before we remove it from the DOM.
+const CHIP_EXIT_MS = 220;
+
+// How long the warm-glow pulse stays on a chip that just arrived.
+const CHIP_PULSE_MS = 800;
+
 export function initAsk(store) {
     const wired = new WeakSet();
 
@@ -50,7 +65,7 @@ function attach(facetEl, store) {
 
     facetEl.addEventListener('click', (e) => {
         const chip = e.target.closest('[data-hof-ask-chip]');
-        if (chip) {
+        if (chip && !chip.classList.contains('is-exiting')) {
             e.preventDefault();
             removeChip(facetEl, store, chip);
             return;
@@ -61,11 +76,22 @@ function attach(facetEl, store) {
             resetAsk(facetEl, store);
         }
     });
+
+    // Keyboard parity for chip removal — Enter / Space when chip has focus.
+    facetEl.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const chip = e.target.closest('[data-hof-ask-chip]');
+        if (chip && !chip.classList.contains('is-exiting')) {
+            e.preventDefault();
+            removeChip(facetEl, store, chip);
+        }
+    });
+
+    startPlaceholderCycle(facetEl);
 }
 
 async function runTurn(facetEl, store) {
     const input  = facetEl.querySelector('[data-hof-ask-input]');
-    const submit = facetEl.querySelector('[data-hof-ask-submit]');
     const status = facetEl.querySelector('[data-hof-ask-status]');
     const query  = (input?.value || '').trim();
     if (query === '') {
@@ -81,9 +107,11 @@ async function runTurn(facetEl, store) {
 
     const priorState = { ...(stateByFacet.get(facetEl) || {}) };
 
-    submit.disabled = true;
-    submit.classList.add('is-loading');
-    showStatus(status, 'loading', 'Thinking…');
+    setLoading(facetEl, true);
+    // Show optimistic skeletons immediately so the user sees motion before
+    // the network round-trip finishes.
+    renderSkeletons(facetEl, 3);
+    hideStatus(status);
 
     try {
         const res = await fetch(`${cfg.restUrl}ask`, {
@@ -97,13 +125,15 @@ async function runTurn(facetEl, store) {
         const body = await res.json().catch(() => ({}));
 
         if (!res.ok || !body.ok) {
+            renderChips(facetEl, priorState); // Roll skeletons back.
             showStatus(status, 'error', friendlyError(body));
             return;
         }
 
-        const nextState = body.filters || {};
+        const nextState   = body.filters || {};
+        const changedKeys = diffStateKeys(priorState, nextState);
         stateByFacet.set(facetEl, nextState);
-        renderChips(facetEl, nextState);
+        renderChips(facetEl, nextState, changedKeys);
         syncStoreFromState(store, priorState, nextState);
 
         if (Object.keys(nextState).length === 0) {
@@ -114,10 +144,10 @@ async function runTurn(facetEl, store) {
             input.value = '';
         }
     } catch (err) {
+        renderChips(facetEl, priorState);
         showStatus(status, 'error', err?.message || 'Ask failed.');
     } finally {
-        submit.disabled = false;
-        submit.classList.remove('is-loading');
+        setLoading(facetEl, false);
     }
 }
 
@@ -126,6 +156,11 @@ function removeChip(facetEl, store, chipEl) {
     const which = chipEl.getAttribute('data-hof-ask-kind'); // 'value' | 'min' | 'max'
     const value = chipEl.getAttribute('data-hof-ask-value') || '';
     if (!facet) return;
+
+    // Play the exit animation, then commit the state change. The state edit
+    // is computed up front so we don't depend on the chip element after the
+    // delay completes.
+    chipEl.classList.add('is-exiting');
 
     const state = { ...(stateByFacet.get(facetEl) || {}) };
     const current = state[facet];
@@ -155,7 +190,7 @@ function removeChip(facetEl, store, chipEl) {
     }
 
     stateByFacet.set(facetEl, state);
-    renderChips(facetEl, state);
+    setTimeout(() => renderChips(facetEl, state), CHIP_EXIT_MS);
 }
 
 function resetAsk(facetEl, store) {
@@ -166,7 +201,10 @@ function resetAsk(facetEl, store) {
     stateByFacet.set(facetEl, {});
     renderChips(facetEl, {});
     const input = facetEl.querySelector('[data-hof-ask-input]');
-    if (input) input.value = '';
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
     hideStatus(facetEl.querySelector('[data-hof-ask-status]'));
 }
 
@@ -187,7 +225,7 @@ function syncStoreFromState(store, before, after) {
     }
 }
 
-function renderChips(facetEl, state) {
+function renderChips(facetEl, state, changedKeys = null) {
     const heard = facetEl.querySelector('[data-hof-ask-heard]');
     const list  = facetEl.querySelector('[data-hof-ask-chips]');
     if (!heard || !list) return;
@@ -212,8 +250,47 @@ function renderChips(facetEl, state) {
         li.setAttribute('tabindex', '0');
         li.setAttribute('aria-label', `Remove ${chip.facet}: ${chip.label}`);
         li.innerHTML = `<span class="hof-ask-chip-label">${escapeHtml(chip.facet)}: ${escapeHtml(chip.label)}</span><span class="hof-ask-chip-x" aria-hidden="true">×</span>`;
+
+        if (changedKeys && changedKeys.has(chipKey(chip))) {
+            li.classList.add('is-new');
+            setTimeout(() => li.classList.remove('is-new'), CHIP_PULSE_MS);
+        }
+
         list.appendChild(li);
     }
+}
+
+function renderSkeletons(facetEl, count) {
+    const heard = facetEl.querySelector('[data-hof-ask-heard]');
+    const list  = facetEl.querySelector('[data-hof-ask-chips]');
+    if (!heard || !list) return;
+    heard.hidden = false;
+    list.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        const li = document.createElement('li');
+        li.className = 'hof-ask-chip hof-ask-skeleton';
+        li.setAttribute('aria-hidden', 'true');
+        li.style.setProperty('--hof-skel-delay', `${i * 120}ms`);
+        li.innerHTML = '<span class="hof-ask-skeleton-shimmer"></span>';
+        list.appendChild(li);
+    }
+}
+
+function diffStateKeys(before, after) {
+    // Returns a Set of chipKey strings for chips that are new or changed.
+    const result      = new Set();
+    const beforeChips = stateToChips(before);
+    const afterChips  = stateToChips(after);
+    const beforeKeys  = new Set(beforeChips.map(chipKey));
+    for (const chip of afterChips) {
+        const key = chipKey(chip);
+        if (!beforeKeys.has(key)) result.add(key);
+    }
+    return result;
+}
+
+function chipKey(chip) {
+    return `${chip.facet}|${chip.kind}|${chip.value ?? chip.label}`;
 }
 
 function stateToChips(state) {
@@ -229,6 +306,68 @@ function stateToChips(state) {
         }
     }
     return chips;
+}
+
+function setLoading(facetEl, loading) {
+    const form   = facetEl.querySelector('[data-hof-ask-form]');
+    const submit = facetEl.querySelector('[data-hof-ask-submit]');
+    if (!form || !submit) return;
+    if (loading) {
+        form.classList.add('is-loading');
+        submit.disabled = true;
+        submit.classList.add('is-loading');
+        const iconEl = submit.querySelector('span[aria-hidden]');
+        if (iconEl) {
+            submit.dataset.iconRest = iconEl.textContent || '';
+            iconEl.textContent = '✦';
+        }
+    } else {
+        form.classList.remove('is-loading');
+        submit.disabled = false;
+        submit.classList.remove('is-loading');
+        const iconEl = submit.querySelector('span[aria-hidden]');
+        if (iconEl) {
+            iconEl.textContent = submit.dataset.iconRest || '▶';
+            delete submit.dataset.iconRest;
+        }
+    }
+}
+
+function startPlaceholderCycle(facetEl) {
+    const input = facetEl.querySelector('[data-hof-ask-input]');
+    if (!input) return;
+
+    // Honor an admin-configured placeholder — only cycle when the renderer
+    // emitted the default. (The defaults strings live in Renderer + here;
+    // any other value is the admin's chosen copy.)
+    const DEFAULTS = new Set(['Describe what you\'re looking for…']);
+    const original = input.getAttribute('placeholder') || '';
+    if (original && !DEFAULTS.has(original)) return;
+
+    let i = 0;
+    let paused = false;
+
+    const tick = () => {
+        if (paused) return;
+        if (document.activeElement === input) return;
+        if (input.value) return;
+        const list     = facetEl.querySelector('[data-hof-ask-chips]');
+        const hasChips = list && list.children.length > 0
+            && !list.querySelector('.hof-ask-skeleton');
+        if (hasChips) return;
+
+        input.classList.add('is-placeholder-fade');
+        setTimeout(() => {
+            i = (i + 1) % EXAMPLE_PLACEHOLDERS.length;
+            input.setAttribute('placeholder', `Try: ${EXAMPLE_PLACEHOLDERS[i]}`);
+            input.classList.remove('is-placeholder-fade');
+        }, 180);
+    };
+
+    setInterval(tick, 3500);
+
+    input.addEventListener('focus', () => { paused = true; });
+    input.addEventListener('blur',  () => { paused = false; });
 }
 
 function friendlyError(body) {

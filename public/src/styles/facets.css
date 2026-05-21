@@ -843,10 +843,30 @@
     transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
+.hof-ask-input::placeholder {
+    transition: opacity 160ms ease;
+    opacity: 1;
+}
+
+.hof-ask-input.is-placeholder-fade::placeholder {
+    opacity: 0;
+}
+
 .hof-ask-input:focus {
     outline: none;
     border-color: var(--hof-primary);
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 18%, transparent);
+}
+
+/* Loading state — input gets a slow ring pulse. */
+.hof-ask-form.is-loading .hof-ask-input {
+    border-color: color-mix(in oklab, var(--hof-primary) 60%, var(--hof-border));
+    animation: hof-ask-input-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes hof-ask-input-glow {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--hof-primary) 0%, transparent); }
+    50%      { box-shadow: 0 0 0 4px color-mix(in oklab, var(--hof-primary) 16%, transparent); }
 }
 
 .hof-ask-submit {
@@ -874,8 +894,19 @@
 
 .hof-ask-submit:disabled,
 .hof-ask-submit.is-loading {
-    opacity: 0.7;
-    cursor: not-allowed;
+    opacity: 0.9;
+    cursor: progress;
+}
+
+.hof-ask-submit.is-loading > span[aria-hidden] {
+    display: inline-block;
+    font-size: 1rem;
+    animation: hof-ask-spin 2s linear infinite;
+}
+
+@keyframes hof-ask-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
 }
 
 .hof-ask-heard {
@@ -913,12 +944,55 @@
     color: var(--hof-text);
     font-size: 0.8125rem;
     cursor: pointer;
-    transition: background 120ms ease, border-color 120ms ease;
+    transition:
+        background 120ms ease,
+        border-color 120ms ease,
+        transform 200ms cubic-bezier(0.2, 0.9, 0.3, 1.2),
+        opacity 200ms ease;
+    /* Entrance — @starting-style applies these values for one frame, the
+       declared values above are the target. Falls back to instant in
+       browsers without @starting-style support. */
+}
+
+@starting-style {
+    .hof-ask-chip:not(.hof-ask-skeleton) {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.92);
+    }
 }
 
 .hof-ask-chip:hover {
     background: color-mix(in oklab, var(--hof-danger) 8%, var(--hof-surface));
     border-color: color-mix(in oklab, var(--hof-danger) 40%, var(--hof-border));
+}
+
+.hof-ask-chip:focus-visible {
+    outline: none;
+    border-color: var(--hof-primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 22%, transparent);
+}
+
+/* Exit animation — JS adds .is-exiting then waits for the transition. */
+.hof-ask-chip.is-exiting {
+    opacity: 0;
+    transform: scale(0.85);
+    pointer-events: none;
+}
+
+/* New-chip pulse — JS adds .is-new for ~800ms after a fresh turn. */
+.hof-ask-chip.is-new {
+    animation: hof-ask-chip-pulse 700ms ease-out;
+}
+
+@keyframes hof-ask-chip-pulse {
+    0% {
+        background: color-mix(in oklab, var(--hof-primary) 22%, var(--hof-surface));
+        box-shadow: 0 0 0 0 color-mix(in oklab, var(--hof-primary) 30%, transparent);
+    }
+    100% {
+        background: var(--hof-surface);
+        box-shadow: 0 0 0 6px color-mix(in oklab, var(--hof-primary) 0%, transparent);
+    }
 }
 
 .hof-ask-chip-x {
@@ -929,6 +1003,51 @@
 
 .hof-ask-chip:hover .hof-ask-chip-x {
     color: var(--hof-danger);
+}
+
+/* Skeleton chips — shown optimistically during an inflight turn. */
+.hof-ask-skeleton {
+    cursor: default;
+    pointer-events: none;
+    background: color-mix(in oklab, var(--hof-primary) 4%, var(--hof-surface));
+    border-color: color-mix(in oklab, var(--hof-primary) 14%, var(--hof-border));
+    overflow: hidden;
+    position: relative;
+    min-width: 88px;
+    height: 22px;
+    padding: 0;
+}
+
+.hof-ask-skeleton:nth-child(2) { min-width: 124px; }
+.hof-ask-skeleton:nth-child(3) { min-width: 96px; }
+
+.hof-ask-skeleton-shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in oklab, var(--hof-primary) 14%, transparent) 50%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: hof-ask-skel 1.2s linear infinite;
+    animation-delay: var(--hof-skel-delay, 0ms);
+}
+
+@keyframes hof-ask-skel {
+    from { background-position: -150% 0; }
+    to   { background-position:  150% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hof-ask-chip,
+    .hof-ask-skeleton-shimmer,
+    .hof-ask-submit.is-loading > span[aria-hidden],
+    .hof-ask-form.is-loading .hof-ask-input {
+        animation: none !important;
+        transition: none !important;
+    }
 }
 
 .hof-ask-reset {
