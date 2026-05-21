@@ -133,7 +133,12 @@ final class RestController implements Bootable {
             'args'                => [
                 'hex' => [
                     'type'     => 'string',
-                    'required' => true,
+                    'required' => false,
+                ],
+                'hexes' => [
+                    'type'     => 'array',
+                    'items'    => [ 'type' => 'string' ],
+                    'required' => false,
                 ],
                 'limit' => [
                     'type'     => 'integer',
@@ -224,11 +229,31 @@ final class RestController implements Bootable {
     public function visual_dna( \WP_REST_Request $request ): \WP_REST_Response {
         global $wpdb;
 
-        $hex   = (string) $request->get_param( 'hex' );
-        $lab   = \HookedOnFacets\VisualDna\ColorExtractor::hex_to_lab( $hex );
-        if ( $lab === null ) {
+        // v3: accept either single `hex` (back-compat) or `hexes` array.
+        // Build the query palette as a list of LAB triplets.
+        $hexes_param = $request->get_param( 'hexes' );
+        $single_hex  = $request->get_param( 'hex' );
+
+        $query_hexes = [];
+        if ( is_array( $hexes_param ) ) {
+            foreach ( $hexes_param as $h ) {
+                if ( is_scalar( $h ) ) $query_hexes[] = (string) $h;
+            }
+        }
+        if ( $single_hex !== null && is_scalar( $single_hex ) ) {
+            $query_hexes[] = (string) $single_hex;
+        }
+
+        $query_labs = [];
+        foreach ( $query_hexes as $h ) {
+            $lab = \HookedOnFacets\VisualDna\ColorExtractor::hex_to_lab( $h );
+            if ( $lab !== null ) {
+                $query_labs[] = [ 'hex' => $h, 'L' => $lab['L'], 'a' => $lab['a'], 'b' => $lab['b'] ];
+            }
+        }
+        if ( empty( $query_labs ) ) {
             return new \WP_REST_Response(
-                [ 'ok' => false, 'error' => 'invalid hex', 'error_code' => 'invalid_hex' ],
+                [ 'ok' => false, 'error' => 'no valid color in hex/hexes', 'error_code' => 'invalid_hex' ],
                 400
             );
         }
@@ -238,17 +263,34 @@ final class RestController implements Bootable {
         $limit = min( 500, $limit );
 
         $table = $wpdb->prefix . \HookedOnFacets\Activator::TABLE;
-        // ΔE76 in SQL — adequate at this scale and lets MySQL stream the
-        // computation right next to the rows in the visual_dna_lookup index.
+
+        // Per-product ΔE = MIN over the cross product (query palette × product
+        // palette). We compute one ΔE expression per query color, wrap them
+        // in LEAST(...) when multi, then aggregate MIN across the product's
+        // palette rows via GROUP BY.
+        $params   = [];
+        $exprs    = [];
+        foreach ( $query_labs as $q ) {
+            $exprs[]  = "SQRT(POW(lab_l - %f, 2) + POW(lab_a - %f, 2) + POW(lab_b - %f, 2))";
+            $params[] = $q['L'];
+            $params[] = $q['a'];
+            $params[] = $q['b'];
+        }
+        $row_de = count( $exprs ) === 1
+            ? $exprs[0]
+            : ( 'LEAST(' . implode( ', ', $exprs ) . ')' );
+
+        $params[] = $limit;
+
         $sql = $wpdb->prepare(
-            "SELECT object_id,
-                    SQRT(POW(lab_l - %f, 2) + POW(lab_a - %f, 2) + POW(lab_b - %f, 2)) AS delta_e
+            "SELECT object_id, MIN({$row_de}) AS delta_e
              FROM {$table}
              WHERE facet_name = '_visual_dna_lab'
                AND lab_l IS NOT NULL
+             GROUP BY object_id
              ORDER BY delta_e ASC
              LIMIT %d",
-            $lab['L'], $lab['a'], $lab['b'], $limit
+            $params
         );
         $rows = $wpdb->get_results( $sql, ARRAY_A ) ?: [];
 
@@ -257,17 +299,15 @@ final class RestController implements Bootable {
             $ids[] = (int) $r['object_id'];
         }
 
-        // Probe overall indexed count once so the frontend can fall back to
-        // v1 (snap-to-term) when no products have LAB data yet.
+        // Indexed-count probe: number of distinct products with palette rows.
         $indexed = (int) $wpdb->get_var(
-            "SELECT COUNT(*) FROM {$table} WHERE facet_name = '_visual_dna_lab'"
+            "SELECT COUNT(DISTINCT object_id) FROM {$table} WHERE facet_name = '_visual_dna_lab'"
         );
 
         return new \WP_REST_Response(
             [
                 'ok'             => true,
-                'hex'            => $hex,
-                'lab'            => $lab,
+                'query_palette'  => $query_labs,
                 'ids'            => $ids,
                 'indexed_count'  => $indexed,
                 'returned_count' => count( $ids ),

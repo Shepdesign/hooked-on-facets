@@ -215,14 +215,12 @@ final class Indexer implements Bootable {
 
         $rows = $this->gather_rows( $object_id, $object_type );
 
-        // Visual DNA v2 — one extra synthetic row per object carrying the
-        // dominant-color LAB extracted from the featured image. Skipped
-        // silently when there's no thumbnail or extraction fails.
+        // Visual DNA v3 — N synthetic rows per object, one per palette entry.
+        // Each row carries one LAB triplet in lab_l/lab_a/lab_b plus its
+        // weight (fraction of opaque pixels in that bucket) in facet_numeric.
+        // Skipped silently when there's no thumbnail or extraction fails.
         if ( $object_type === 'post' ) {
-            $lab_row = $this->visual_dna_row( $object_id );
-            if ( $lab_row !== null ) {
-                $rows[] = $lab_row;
-            }
+            $rows = array_merge( $rows, $this->visual_dna_rows( $object_id ) );
         }
 
         if ( empty( $rows ) ) {
@@ -233,29 +231,33 @@ final class Indexer implements Bootable {
     }
 
     /**
-     * Build the synthetic _visual_dna_lab row for an object, or null when
-     * extraction fails / there's no featured image. Extracted lazily — the
-     * editor + GD work only runs when a thumbnail exists.
+     * Build the synthetic _visual_dna_lab rows for an object's palette.
+     * Returns [] when extraction fails / there's no featured image.
      *
-     * @return array<string, mixed>|null
+     * @return array<int, array<string, mixed>>
      */
-    private function visual_dna_row( int $object_id ): ?array {
+    private function visual_dna_rows( int $object_id ): array {
         static $extractor = null;
         if ( $extractor === null ) {
             $extractor = new \HookedOnFacets\VisualDna\ColorExtractor();
         }
-        $lab = $extractor->extract_from_post( $object_id );
-        if ( $lab === null ) {
-            return null;
+        $palette = $extractor->extract_palette_from_post( $object_id );
+        if ( $palette === null ) {
+            return [];
         }
-        return [
-            'object_id'   => $object_id,
-            'object_type' => 'post',
-            'facet_name'  => '_visual_dna_lab',
-            'lab_l'       => $lab['L'],
-            'lab_a'       => $lab['a'],
-            'lab_b'       => $lab['b'],
-        ];
+        $rows = [];
+        foreach ( $palette as $entry ) {
+            $rows[] = [
+                'object_id'     => $object_id,
+                'object_type'   => 'post',
+                'facet_name'    => '_visual_dna_lab',
+                'lab_l'         => $entry['L'],
+                'lab_a'         => $entry['a'],
+                'lab_b'         => $entry['b'],
+                'facet_numeric' => $entry['weight'],
+            ];
+        }
+        return $rows;
     }
 
     public function delete_object( int $object_id ): void {

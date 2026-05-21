@@ -92,8 +92,8 @@ async function runFile(facetEl, store, file) {
         const url = URL.createObjectURL(file);
         const img = await loadImage(url);
         URL.revokeObjectURL(url);
-        const hex = dominantHex(img);
-        commitColor(facetEl, store, hex);
+        const palette = dominantPalette(img, 5);
+        commitColors(facetEl, store, palette);
     } catch (err) {
         showStatus(facetEl, 'error', "Couldn't read that image.");
     }
@@ -106,8 +106,8 @@ async function runUrl(facetEl, store, url) {
         // don't return permissive CORS headers will fail here — that's a
         // browser-level constraint we can't work around in pure JS.
         const img = await loadImage(url, true);
-        const hex = dominantHex(img);
-        commitColor(facetEl, store, hex);
+        const palette = dominantPalette(img, 5);
+        commitColors(facetEl, store, palette);
     } catch (err) {
         showStatus(facetEl, 'error',
             "Couldn't sample that URL. The image host may block cross-origin reads — try downloading and dropping the file instead.");
@@ -119,22 +119,28 @@ async function runEyedrop(facetEl, store) {
     try {
         const ed = new window.EyeDropper();
         const result = await ed.open();
-        commitColor(facetEl, store, normalizeHex(result.sRGBHex));
+        // Eyedrop returns one pixel — single-hex query.
+        commitColors(facetEl, store, [{ hex: normalizeHex(result.sRGBHex), weight: 1 }]);
     } catch (err) {
         // User cancelled — silent.
         hideStatus(facetEl);
     }
 }
 
-async function commitColor(facetEl, store, hex) {
+// `palette` is an array of {hex, weight} ordered by weight desc.
+// The first entry is treated as the "primary" for the readout swatch
+// and snap-to-term fallback.
+async function commitColors(facetEl, store, palette) {
+    if (!palette || palette.length === 0) return;
+    const primary     = palette[0].hex;
     const map         = readColorMap(facetEl);
     const targetFacet = facetEl.getAttribute('data-hof-target-facet') || '';
     const cfg         = window.hofPublic || {};
 
-    // v2 path — ask the server for products ranked by ΔE76 against the
-    // indexed per-product LAB. Falls back to v1 snap-to-term if no
-    // products have LAB data yet (no featured images, indexer hasn't run
-    // since the v2 schema migration, etc.).
+    // v3 path — server matches the query palette against each product's
+    // palette (min-ΔE over the cross product). Multiple hexes in, ranked
+    // product IDs out. Falls back to v1 snap-to-term if no products have
+    // LAB data yet.
     if (cfg.restUrl) {
         try {
             const res = await fetch(`${cfg.restUrl}visual-dna`, {
@@ -143,17 +149,22 @@ async function commitColor(facetEl, store, hex) {
                     'Content-Type': 'application/json',
                     ...(cfg.nonce ? { 'X-WP-Nonce': cfg.nonce } : {}),
                 },
-                body: JSON.stringify({ hex, limit: 120 }),
+                body: JSON.stringify({
+                    hexes: palette.map((p) => p.hex),
+                    limit: 120,
+                }),
             });
             const body = await res.json().catch(() => ({}));
             if (res.ok && body.ok && body.indexed_count > 0 && Array.isArray(body.ids) && body.ids.length > 0) {
                 const nearest = map.length
-                    ? nearestTerm(hex, map)
-                    : { hex, label: 'similar products' };
-                renderResult(facetEl, hex, nearest, { mode: 'ranked', count: body.returned_count });
+                    ? nearestTerm(primary, map)
+                    : { hex: primary, label: 'similar products' };
+                renderResult(facetEl, primary, nearest, {
+                    mode: palette.length > 1 ? 'palette' : 'ranked',
+                    count: body.returned_count,
+                    palette,
+                });
                 hideStatus(facetEl);
-                // Also clear any stale snap-to-term value on the target facet
-                // so the two paths don't compound.
                 if (targetFacet) store.set(targetFacet, []);
                 store.set('_visual_ids', body.ids);
                 return;
@@ -164,18 +175,18 @@ async function commitColor(facetEl, store, hex) {
         }
     }
 
-    // v1 fallback — snap to nearest existing color term.
+    // v1 fallback — snap to nearest existing color term using the primary.
     if (!map.length) {
         showStatus(facetEl, 'error',
             'No color terms available — the target facet has no matchable colors.');
         return;
     }
-    const nearest = nearestTerm(hex, map);
+    const nearest = nearestTerm(primary, map);
     if (!nearest) {
         showStatus(facetEl, 'error', "Couldn't match that color to any term.");
         return;
     }
-    renderResult(facetEl, hex, nearest, { mode: 'snap' });
+    renderResult(facetEl, primary, nearest, { mode: 'snap' });
     hideStatus(facetEl);
     if (targetFacet) store.set(targetFacet, [nearest.slug]);
 }
@@ -209,15 +220,39 @@ function renderResult(facetEl, hex, nearest, opts = {}) {
     const hexEl       = facetEl.querySelector('[data-hof-visual-hex]');
     const matchEl     = facetEl.querySelector('[data-hof-visual-match]');
     const captionEl   = facetEl.querySelector('.hof-visual-dna-match-caption');
+    const paletteEl   = facetEl.querySelector('[data-hof-visual-palette]');
     if (!result) return;
-    if (swatchEl) swatchEl.style.background = hex;
-    if (hexEl)   hexEl.textContent = hex;
 
-    // Caption shifts based on which path resolved the input.
+    // Primary swatch is always the dominant from the input.
+    if (swatchEl) swatchEl.style.background = hex;
+    if (hexEl)    hexEl.textContent = hex;
+
+    // Palette mode: render the extracted palette as a row of dots so the
+    // shopper sees what the AI/algorithm pulled out of their image.
+    if (paletteEl) {
+        paletteEl.innerHTML = '';
+        if (opts.mode === 'palette' && Array.isArray(opts.palette) && opts.palette.length > 1) {
+            for (const entry of opts.palette) {
+                const dot = document.createElement('span');
+                dot.className = 'hof-visual-dna-palette-dot';
+                dot.style.background = entry.hex;
+                dot.title = entry.hex;
+                paletteEl.appendChild(dot);
+            }
+            paletteEl.hidden = false;
+        } else {
+            paletteEl.hidden = true;
+        }
+    }
+
     if (captionEl) {
-        captionEl.textContent = opts.mode === 'ranked'
-            ? `Ranked by visual ΔE${opts.count ? ` (${opts.count} closest):` : ':'}`
-            : 'Closest match:';
+        if (opts.mode === 'palette') {
+            captionEl.textContent = `Ranked by palette ΔE${opts.count ? ` (${opts.count} closest):` : ':'}`;
+        } else if (opts.mode === 'ranked') {
+            captionEl.textContent = `Ranked by visual ΔE${opts.count ? ` (${opts.count} closest):` : ':'}`;
+        } else {
+            captionEl.textContent = 'Closest match:';
+        }
     }
     if (matchEl) {
         matchEl.innerHTML = '';
@@ -260,11 +295,9 @@ function loadImage(src, crossOrigin = false) {
     });
 }
 
-// Quantize each channel to 4 bits → 4096 buckets, then pick the heaviest
-// bucket that isn't near-white or near-black (unless those dominate).
-// Cheap, deterministic, robust to JPEG noise. The 96×96 downsample keeps
-// the loop tight regardless of source resolution.
-function dominantHex(img) {
+// Sample the image into 4-bit-per-channel buckets, sorted by count desc.
+// Shared by dominantHex and dominantPalette so the two stay in lockstep.
+function collectBuckets(img) {
     const W = 96, H = 96;
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
@@ -272,21 +305,27 @@ function dominantHex(img) {
     ctx.drawImage(img, 0, 0, W, H);
     const data = ctx.getImageData(0, 0, W, H).data;
 
-    const buckets = new Map(); // key → {count, r, g, b}
+    const buckets = new Map();
     for (let i = 0; i < data.length; i += 4) {
         const a = data[i + 3];
-        if (a < 200) continue; // skip transparent
+        if (a < 200) continue;
         const r = data[i], g = data[i + 1], b = data[i + 2];
         const key = (r >> 4) << 8 | (g >> 4) << 4 | (b >> 4);
         const ex  = buckets.get(key);
         if (ex) { ex.count++; ex.r += r; ex.g += g; ex.b += b; }
         else    { buckets.set(key, { count: 1, r, g, b }); }
     }
-    if (buckets.size === 0) return '#888888';
-
-    // Pick the largest non-extreme bucket if extremes are a small minority.
+    if (buckets.size === 0) return null;
     const sorted = Array.from(buckets.values()).sort((a, b) => b.count - a.count);
     const total  = sorted.reduce((s, b) => s + b.count, 0);
+    return { sorted, total };
+}
+
+// Single dominant hex — v2 single-color path.
+function dominantHex(img) {
+    const collected = collectBuckets(img);
+    if (!collected) return '#888888';
+    const { sorted, total } = collected;
     for (const b of sorted) {
         const avgR = b.r / b.count, avgG = b.g / b.count, avgB = b.b / b.count;
         const isNearWhite = avgR > 245 && avgG > 245 && avgB > 245;
@@ -297,6 +336,32 @@ function dominantHex(img) {
     }
     const top = sorted[0];
     return rgbToHex(top.r / top.count, top.g / top.count, top.b / top.count);
+}
+
+// Top-N palette — v3 multi-color path. Returns [{hex, weight}, …] ordered
+// by weight desc, excluding near-white/black (unless the palette would
+// otherwise be empty) and entries below MIN_WEIGHT.
+function dominantPalette(img, topN = 5) {
+    const MIN_WEIGHT = 0.05;
+    const collected = collectBuckets(img);
+    if (!collected) return [{ hex: '#888888', weight: 1 }];
+    const { sorted, total } = collected;
+
+    const palette = [];
+    for (const b of sorted) {
+        if (palette.length >= topN) break;
+        const weight = b.count / total;
+        if (weight < MIN_WEIGHT) break;
+        const avgR = b.r / b.count, avgG = b.g / b.count, avgB = b.b / b.count;
+        const isNearWhite = avgR > 245 && avgG > 245 && avgB > 245;
+        const isNearBlack = avgR <  10 && avgG <  10 && avgB <  10;
+        if (isNearWhite || isNearBlack) continue;
+        palette.push({ hex: rgbToHex(avgR, avgG, avgB), weight });
+    }
+    if (palette.length === 0) {
+        return [{ hex: dominantHex(img), weight: 1 }];
+    }
+    return palette;
 }
 
 function rgbToHex(r, g, b) {

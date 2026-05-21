@@ -1342,8 +1342,31 @@
     border-radius: 10px;
     background: color-mix(in oklab, var(--hof-primary) 6%, var(--hof-surface));
     display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hof-visual-dna-result-row {
+    display: flex;
     align-items: center;
     gap: 10px;
+}
+
+.hof-visual-dna-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    padding: 4px 0 0;
+}
+
+.hof-visual-dna-palette-dot {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 0.5px solid var(--hof-border);
+    box-shadow: inset 0 0 0 1.5px var(--hof-surface);
 }
 
 .hof-visual-dna-swatch {

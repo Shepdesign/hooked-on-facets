@@ -1217,19 +1217,25 @@ final class Renderer {
             </div>
 
             <div class="hof-visual-dna-result" data-hof-visual-result hidden>
-                <span class="hof-visual-dna-swatch" data-hof-visual-swatch aria-hidden="true"></span>
-                <span class="hof-visual-dna-readout">
-                    <span class="hof-visual-dna-hex" data-hof-visual-hex></span>
-                    <span class="hof-visual-dna-match-row">
-                        <span class="hof-visual-dna-match-caption"><?php esc_html_e( 'Closest match:', 'hooked-on-facets' ); ?></span>
-                        <span class="hof-visual-dna-match" data-hof-visual-match></span>
+                <div class="hof-visual-dna-result-row">
+                    <span class="hof-visual-dna-swatch" data-hof-visual-swatch aria-hidden="true"></span>
+                    <span class="hof-visual-dna-readout">
+                        <span class="hof-visual-dna-hex" data-hof-visual-hex></span>
+                        <span class="hof-visual-dna-match-row">
+                            <span class="hof-visual-dna-match-caption"><?php esc_html_e( 'Closest match:', 'hooked-on-facets' ); ?></span>
+                            <span class="hof-visual-dna-match" data-hof-visual-match></span>
+                        </span>
                     </span>
-                </span>
-                <button type="button"
-                        class="hof-visual-dna-clear"
-                        data-hof-visual-clear>
-                    <?php esc_html_e( '↺ Clear', 'hooked-on-facets' ); ?>
-                </button>
+                    <button type="button"
+                            class="hof-visual-dna-clear"
+                            data-hof-visual-clear>
+                        <?php esc_html_e( '↺ Clear', 'hooked-on-facets' ); ?>
+                    </button>
+                </div>
+                <div class="hof-visual-dna-palette"
+                     data-hof-visual-palette
+                     aria-label="<?php esc_attr_e( 'Detected palette', 'hooked-on-facets' ); ?>"
+                     hidden></div>
             </div>
 
             <p class="hof-visual-dna-status" data-hof-visual-status hidden></p>
