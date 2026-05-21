@@ -63,7 +63,7 @@ export default function AiSettings({ bootstrap }) {
     if (loading) {
         return (
             <div className="hof-ai-settings">
-                <h2 className="hof-ai-settings-title">AI search</h2>
+                <h2 className="hof-ai-settings-title">Ask</h2>
                 <p className="hof-ai-settings-status">Loading…</p>
             </div>
         );
@@ -74,11 +74,12 @@ export default function AiSettings({ bootstrap }) {
             <header className="hof-ai-settings-header">
                 <span className="hof-ai-settings-icon"><IconSparkle size={20} stroke={1.75} /></span>
                 <div>
-                    <h2 className="hof-ai-settings-title">AI search</h2>
+                    <h2 className="hof-ai-settings-title">Ask</h2>
                     <p className="hof-ai-settings-sub">
-                        Turn natural-language queries like <em>"red shoes under $50"</em> into structured facet
-                        filters via the Anthropic API. Bring your own key — the key is stored on this site and
-                        never sent to the browser or shared with Hooked on Facets.
+                        Powers the conversational <em>Ask</em> facet — turning natural-language requests
+                        like <em>"red shoes under $50"</em> into editable filter chips via the Anthropic API.
+                        Bring your own key — it's stored on this site and never sent to the browser or
+                        shared with Hooked on Facets.
                     </p>
                 </div>
             </header>
@@ -101,7 +102,7 @@ export default function AiSettings({ bootstrap }) {
                     <div className="hof-ai-settings-row hof-ai-settings-row--warn">
                         <span className="hof-ai-settings-row-icon"><IconAlertTriangle size={16} stroke={2} /></span>
                         <p className="hof-ai-settings-row-line">
-                            No key configured. The AI search endpoint will return <code>no_api_key</code> until you save one.
+                            No key configured. The Ask endpoint will return <code>no_api_key</code> until you save one.
                         </p>
                     </div>
                 )}
@@ -152,8 +153,8 @@ export default function AiSettings({ bootstrap }) {
             <section className="hof-ai-settings-section">
                 <h3 className="hof-ai-settings-section-title">Cost &amp; privacy</h3>
                 <ul className="hof-ai-settings-list">
-                    <li>Each AI search calls Anthropic and counts against your account credits. Typical cost: ~$0.0001–0.0005 per search on Haiku 4.5.</li>
-                    <li>The user's free-text query is sent to Anthropic along with your facet schema. Customer products and PII are not sent.</li>
+                    <li>Each turn of an ask calls Anthropic and counts against your account credits. Typical cost: ~$0.0001–0.0005 per turn on Haiku 4.5.</li>
+                    <li>The user's free-text turn (plus the constraints they've already accepted) is sent to Anthropic along with your facet schema. Customer products and PII are not sent.</li>
                     <li>You can revoke or rotate the key at <code>console.anthropic.com</code> at any time. Rotation only requires saving the new key here.</li>
                 </ul>
             </section>

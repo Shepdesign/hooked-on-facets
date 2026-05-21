@@ -55,7 +55,7 @@ final class Renderer {
             'swatch'      => $this->render_swatch( $facet, (array) $current_value, $counts ),
             'swiper'      => $this->render_swiper( $facet, (array) $current_value, $counts ),
             'two_d_slider' => $this->render_two_d_slider( $facet ),
-            'ai_search'   => $this->render_ai_search( $facet ),
+            'ask'         => $this->render_ask( $facet ),
             // Legacy 'venn' / 'upset' displays fall through to checkbox.
             // Both shipped briefly in Phase 2 but the matrix UX confused
             // users; the foundational fix (active filters bar) made the
@@ -736,46 +736,57 @@ final class Renderer {
     }
 
     /**
-     * AI search — natural-language search box. Like the 2D slider, it's a
-     * view facet that produces no resolver filter; submitting the form POSTs
-     * to /wp-json/hof/v1/ai-search and applies the structured filters via
-     * the public runtime's store, which the existing resolver path handles
-     * natively.
+     * Ask — conversational, multi-turn natural-language facet. Like the 2D
+     * slider, it's a view facet that produces no resolver filter of its own;
+     * each turn POSTs to /wp-json/hof/v1/ask with the current chip state, and
+     * the public runtime applies the returned constraints via the store.
      *
      * Renders even when no API key is configured so the public facing UI
      * doesn't disappear unpredictably for admins testing — the JS surfaces
-     * "Search is not configured" inline if the endpoint reports no_api_key.
+     * "Ask isn't available right now" inline if the endpoint reports no_api_key.
      *
      * @param array<string, mixed> $facet
      */
-    private function render_ai_search( array $facet ): string {
+    private function render_ask( array $facet ): string {
         $name        = (string) $facet['name'];
         $label       = (string) ( $facet['label'] ?: $name );
         $settings    = (array) ( $facet['settings'] ?? [] );
-        $placeholder = (string) ( $settings['placeholder'] ?? __( 'Try: comfy red shoes under $50', 'hooked-on-facets' ) );
+        $placeholder = (string) ( $settings['placeholder'] ?? __( 'Describe what you\'re looking for…', 'hooked-on-facets' ) );
 
         ob_start();
         ?>
-        <div class="hof-facet hof-facet-ai-search"
+        <div class="hof-facet hof-facet-ask"
              data-hof-facet="<?php echo esc_attr( $name ); ?>"
-             data-hof-display="ai_search">
+             data-hof-display="ask">
             <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
-            <form class="hof-ai-search-form" data-hof-ai-form>
-                <span class="hof-ai-search-icon" aria-hidden="true">✦</span>
-                <input type="search"
-                       class="hof-ai-search-input"
-                       name="hof-ai-query"
+            <form class="hof-ask-form" data-hof-ask-form>
+                <span class="hof-ask-icon" aria-hidden="true">✦</span>
+                <input type="text"
+                       class="hof-ask-input"
+                       name="hof-ask-query"
                        placeholder="<?php echo esc_attr( $placeholder ); ?>"
                        autocomplete="off"
-                       data-hof-ai-input>
+                       data-hof-ask-input>
                 <button type="submit"
-                        class="hof-ai-search-btn"
-                        data-hof-ai-submit>
-                    <?php esc_html_e( 'Search', 'hooked-on-facets' ); ?>
+                        class="hof-ask-submit"
+                        aria-label="<?php esc_attr_e( 'Ask', 'hooked-on-facets' ); ?>"
+                        data-hof-ask-submit>
+                    <span aria-hidden="true">▶</span>
                 </button>
             </form>
-            <p class="hof-ai-search-status"
-               data-hof-ai-status
+            <div class="hof-ask-heard"
+                 data-hof-ask-heard
+                 hidden>
+                <p class="hof-ask-heard-label"><?php esc_html_e( 'I heard:', 'hooked-on-facets' ); ?></p>
+                <ul class="hof-ask-chips" data-hof-ask-chips></ul>
+                <button type="button"
+                        class="hof-ask-reset"
+                        data-hof-ask-reset>
+                    <?php esc_html_e( '↺ Start over', 'hooked-on-facets' ); ?>
+                </button>
+            </div>
+            <p class="hof-ask-status"
+               data-hof-ask-status
                hidden></p>
         </div>
         <?php

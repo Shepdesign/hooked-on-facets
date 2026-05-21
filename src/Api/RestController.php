@@ -110,14 +110,18 @@ final class RestController implements Bootable {
             ],
         ] );
 
-        register_rest_route( self::NAMESPACE_V1, '/ai-search', [
+        register_rest_route( self::NAMESPACE_V1, '/ask', [
             'methods'             => \WP_REST_Server::CREATABLE,
-            'callback'            => [ $this, 'ai_search' ],
+            'callback'            => [ $this, 'ask' ],
             'permission_callback' => '__return_true',
             'args'                => [
                 'query' => [
                     'type'     => 'string',
                     'required' => true,
+                ],
+                'prior_state' => [
+                    'type'     => 'object',
+                    'required' => false,
                 ],
             ],
         ] );
@@ -165,16 +169,19 @@ final class RestController implements Bootable {
         return $this->get_ai_settings( $request );
     }
 
-    public function ai_search( \WP_REST_Request $request ): \WP_REST_Response {
+    public function ask( \WP_REST_Request $request ): \WP_REST_Response {
         if ( ! $this->nl_filter ) {
             return new \WP_REST_Response(
-                [ 'ok' => false, 'error' => 'AI search not available', 'error_code' => 'unavailable' ],
+                [ 'ok' => false, 'error' => 'Ask is not available', 'error_code' => 'unavailable' ],
                 503
             );
         }
 
-        $query  = (string) $request->get_param( 'query' );
-        $result = $this->nl_filter->translate( $query );
+        $query       = (string) $request->get_param( 'query' );
+        $prior_state = $request->get_param( 'prior_state' );
+        $prior_state = is_array( $prior_state ) ? $prior_state : [];
+
+        $result = $this->nl_filter->translate( $query, $prior_state );
 
         if ( ! $result['ok'] ) {
             $status = match ( $result['error_code'] ?? '' ) {
@@ -234,7 +241,7 @@ final class RestController implements Bootable {
      */
     private function sanitize_facets( array $raw ): array {
         $allowed_kinds    = [ 'taxonomy', 'meta', 'field', 'view' ];
-        $allowed_displays = [ 'checkbox', 'range', 'search', 'swatch', 'swiper', 'two_d_slider', 'ai_search' ];
+        $allowed_displays = [ 'checkbox', 'range', 'search', 'swatch', 'swiper', 'two_d_slider', 'ask' ];
 
         $clean = [];
         $seen  = [];
@@ -300,7 +307,7 @@ final class RestController implements Bootable {
             return array_filter( $out, static fn( $v ) => $v !== '' );
         }
 
-        if ( $display === 'ai_search' ) {
+        if ( $display === 'ask' ) {
             $out = [];
             if ( isset( $raw['placeholder'] ) && is_scalar( $raw['placeholder'] ) ) {
                 $out['placeholder'] = sanitize_text_field( (string) $raw['placeholder'] );

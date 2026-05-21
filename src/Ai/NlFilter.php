@@ -60,7 +60,12 @@ final class NlFilter {
      *     error_code?: string,
      * }
      */
-    public function translate( string $query ): array {
+    /**
+     * @param array<string, mixed> $prior_state Currently-accepted constraints from
+     *                                          earlier turns (same shape as the returned
+     *                                          `filters`). Empty array for the first turn.
+     */
+    public function translate( string $query, array $prior_state = [] ): array {
         $query = trim( $query );
         if ( $query === '' ) {
             return [ 'ok' => false, 'error' => 'empty query', 'error_code' => 'empty_query' ];
@@ -76,6 +81,8 @@ final class NlFilter {
             return [ 'ok' => false, 'error' => 'no facets configured', 'error_code' => 'no_facets' ];
         }
 
+        $user_message = $this->compose_user_message( $query, $prior_state );
+
         $payload = [
             'model'       => apply_filters( 'hof_ai_model', self::MODEL_HAIKU ),
             'max_tokens'  => self::MAX_TOKENS,
@@ -89,7 +96,7 @@ final class NlFilter {
             'tools'       => [ $this->tool_schema( $facet_context['facets'] ) ],
             'tool_choice' => [ 'type' => 'tool', 'name' => self::TOOL_NAME ],
             'messages'    => [
-                [ 'role' => 'user', 'content' => $query ],
+                [ 'role' => 'user', 'content' => $user_message ],
             ],
         ];
 
@@ -144,8 +151,8 @@ final class NlFilter {
             $info    = $counts[ $name ] ?? [];
             $type    = $info['type'] ?? null;
 
-            // Skip view facets like the 2D slider — they don't produce filters.
-            if ( $kind === 'view' || $display === 'two_d_slider' ) {
+            // Skip view facets — they orchestrate other facets but aren't themselves filter targets.
+            if ( $kind === 'view' || $display === 'two_d_slider' || $display === 'ask' ) {
                 continue;
             }
 
@@ -215,12 +222,39 @@ final class NlFilter {
         $lines[] = '';
         $lines[] = 'Rules:';
         $lines[] = '- Always call the apply_facet_filters tool exactly once.';
-        $lines[] = '- Only set parameters you can confidently infer from the query. Leave a parameter unset if the query says nothing about it — do NOT guess.';
+        $lines[] = '- The tool call MUST contain the FULL resulting state of every active filter — not just what changed. The caller replaces its state with whatever you return.';
+        $lines[] = '- Only set parameters you can confidently infer from the conversation so far. Leave a parameter unset if nothing said anything about it — do NOT guess.';
         $lines[] = '- Multi-value parameters take an array. Use the canonical value (left side of any "X (\"Y\")" entry above), not the display name.';
-        $lines[] = '- For the price range parameter, only set min or max if the query gives an explicit bound. "under $50" → max=50. "between $20 and $40" → min=20, max=40.';
-        $lines[] = '- If nothing in the query matches any facet, call the tool with no parameters set.';
+        $lines[] = '- For range parameters, only set min or max if the user gave an explicit bound. "under $50" → max=50. "between $20 and $40" → min=20, max=40.';
+        $lines[] = '- When the user adds a new constraint, keep prior constraints unless they explicitly contradict or release them. "...also under $50" extends the prior state.';
+        $lines[] = '- When the user tightens a constraint ("...and rated 4+"), update only that parameter; keep the rest.';
+        $lines[] = '- When the user broadens or releases a constraint ("actually any color", "any price"), omit that parameter in your response.';
+        $lines[] = '- If the new turn matches nothing and changes nothing, return the prior state unchanged.';
 
         return implode( "\n", $lines );
+    }
+
+    /**
+     * Fold the prior state into the user message so Claude sees both the
+     * cumulative conversation context and the fresh turn.
+     *
+     * @param array<string, mixed> $prior_state
+     */
+    private function compose_user_message( string $query, array $prior_state ): string {
+        if ( empty( $prior_state ) ) {
+            return $query;
+        }
+
+        $json = wp_json_encode( $prior_state, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+        if ( ! is_string( $json ) ) {
+            $json = '{}';
+        }
+
+        return sprintf(
+            "Current accepted state from earlier turns:\n%s\n\nNew turn from the shopper:\n%s",
+            $json,
+            $query
+        );
     }
 
     private function tool_schema( array $facets ): array {

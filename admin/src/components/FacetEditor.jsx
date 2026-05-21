@@ -12,11 +12,11 @@ const DISPLAYS = [
     { value: 'swatch',       label: 'Fluid swatches' },
     { value: 'swiper',       label: 'Swipe deck' },
     { value: 'two_d_slider', label: '2D slider' },
-    { value: 'ai_search',    label: 'AI search' },
+    { value: 'ask',          label: 'Ask' },
 ];
 
 // Displays that don't have a source — they orchestrate other facets.
-const VIEW_DISPLAYS = new Set(['two_d_slider', 'ai_search']);
+const VIEW_DISPLAYS = new Set(['two_d_slider', 'ask']);
 
 const sanitizeSlug = (raw) =>
     String(raw || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
@@ -146,10 +146,11 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                 Pick the x and y axes below.
                             </span>
                         )}
-                        {facet.display === 'ai_search' && (
+                        {facet.display === 'ask' && (
                             <span className="hof-field-help">
-                                Natural-language search box. Each query calls the configured Anthropic
-                                API endpoint — set the key in <em>Settings → AI search</em>.
+                                A conversational, multi-turn facet. Each turn calls Anthropic and
+                                returns chips for every constraint the model heard — shoppers can tap
+                                ✕ on any chip to correct it. Set the key in <em>Settings → Ask</em>.
                             </span>
                         )}
                     </label>
@@ -203,7 +204,7 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                         </>
                     )}
 
-                    {facet.display === 'ai_search' && (
+                    {facet.display === 'ask' && (
                         <label className="hof-field">
                             <span className="hof-field-label">Placeholder text</span>
                             <input
@@ -211,11 +212,12 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                 type="text"
                                 value={settings.placeholder || ''}
                                 onChange={(e) => updateSettings({ placeholder: e.target.value })}
-                                placeholder="Try: comfy red shoes under $50"
+                                placeholder="Describe what you're looking for…"
                             />
                             <span className="hof-field-help">
-                                Shown in the search input before the shopper types. Use it as a one-line hint
-                                of what kinds of queries work — e.g. "Find me a gift under $100".
+                                Shown in the input before the shopper types. Hint what kinds of asks
+                                work — e.g. <em>"comfy red shoes under $50"</em> or
+                                <em>"a gift for my dad's workshop"</em>.
                             </span>
                         </label>
                     )}
@@ -345,20 +347,26 @@ function FacetPreview({ facet }) {
         );
     }
 
-    if (facet.display === 'ai_search') {
+    if (facet.display === 'ask') {
         const settings = (facet.settings && typeof facet.settings === 'object') ? facet.settings : {};
         return (
             <div className="hof-preview">
                 <div className="hof-preview-label">{label}</div>
-                <div className="hof-preview-ai">
-                    <span className="hof-preview-ai-icon" aria-hidden="true">✦</span>
-                    <span className="hof-preview-ai-placeholder">
-                        {settings.placeholder || 'Try: comfy red shoes under $50'}
+                <div className="hof-preview-ask-input">
+                    <span className="hof-preview-ask-icon" aria-hidden="true">✦</span>
+                    <span className="hof-preview-ask-placeholder">
+                        {settings.placeholder || 'Describe what you\'re looking for…'}
                     </span>
+                    <span className="hof-preview-ask-send" aria-hidden="true">▶</span>
+                </div>
+                <div className="hof-preview-ask-heard">
+                    <span className="hof-preview-ask-heard-label">I heard:</span>
+                    <span className="hof-preview-ask-chip">color: red <em>×</em></span>
+                    <span className="hof-preview-ask-chip">price: ≤50 <em>×</em></span>
                 </div>
                 <p className="hof-preview-note">
-                    Natural-language search. Each query calls the Anthropic API; configure the key in
-                    Settings → AI search.
+                    Conversational. Each chip is removable — taps update both the filter and the
+                    model's next-turn context. Configure the key in Settings → Ask.
                 </p>
             </div>
         );
