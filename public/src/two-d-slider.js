@@ -18,6 +18,9 @@
 
 const MIN_DRAG_PX = 6;
 const CLICK_RECT_PCT = 12;
+// Minimum gap each axis must keep so a rect dragged in from one side never
+// inverts past the opposite side. In percent of plane size.
+const MIN_AXIS_PCT = 2;
 
 export function init2dSlider(store) {
     const wired = new WeakSet();
@@ -57,19 +60,27 @@ function attach(facetEl, store) {
         e.preventDefault();
         try { facetEl.setPointerCapture(e.pointerId); } catch {}
 
-        // If the rect spans the full plane (no filter active), it has no
-        // room to translate — fall back to marquee so a drag actually
-        // creates a sub-region. Full-bound = each side flush at 0% inset.
         const startRect = readRectPct(rect);
         const fullBound = startRect.l + startRect.r < 0.5 && startRect.t + startRect.b < 0.5;
-        const onRect    = !fullBound && (rect === e.target || rect.contains(e.target));
+        const handle    = e.target.closest && e.target.closest('[data-hof-2d-handle]');
+
+        let mode = 'marquee';
+        let handleDir = null;
+        if (handle && !fullBound) {
+            // Resize: drag this handle's edge(s); pin the opposite edge(s).
+            mode = 'resize';
+            handleDir = handle.getAttribute('data-hof-2d-handle');
+        } else if (!fullBound && (rect === e.target || rect.contains(e.target))) {
+            mode = 'translate';
+        }
 
         drag = {
-            mode:      onRect ? 'translate' : 'marquee',
+            mode,
+            handleDir,
             planeBox:  plane.getBoundingClientRect(),
             startX:    e.clientX,
             startY:    e.clientY,
-            startRect: onRect ? startRect : undefined,
+            startRect: (mode === 'translate' || mode === 'resize') ? startRect : undefined,
             plane,
             rect,
             pointerId: e.pointerId,
@@ -112,6 +123,33 @@ function attach(facetEl, store) {
 
 function applyDrag(drag, e) {
     const { planeBox, startX, startY, rect } = drag;
+
+    if (drag.mode === 'resize') {
+        const dxPct = ((e.clientX - startX) / planeBox.width)  * 100;
+        const dyPct = ((e.clientY - startY) / planeBox.height) * 100;
+        const s = drag.startRect;
+        const dir = drag.handleDir; // n/s/e/w/nw/ne/sw/se
+
+        let nl = s.l, nr = s.r, nt = s.t, nb = s.b;
+        if (dir.includes('w')) {
+            // Left edge moves with pointer; right edge pinned.
+            nl = clamp(s.l + dxPct, 0, 100 - s.r - MIN_AXIS_PCT);
+        }
+        if (dir.includes('e')) {
+            // Right edge moves; left edge pinned.
+            nr = clamp(s.r - dxPct, 0, 100 - s.l - MIN_AXIS_PCT);
+        }
+        if (dir.includes('n')) {
+            // Top edge moves; bottom edge pinned.
+            nt = clamp(s.t + dyPct, 0, 100 - s.b - MIN_AXIS_PCT);
+        }
+        if (dir.includes('s')) {
+            // Bottom edge moves; top edge pinned.
+            nb = clamp(s.b - dyPct, 0, 100 - s.t - MIN_AXIS_PCT);
+        }
+        applyRectPct(rect, { l: nl, r: nr, t: nt, b: nb });
+        return;
+    }
 
     if (drag.mode === 'marquee') {
         const sxPct = clamp(((startX - planeBox.left) / planeBox.width) * 100, 0, 100);

@@ -712,6 +712,14 @@ final class Renderer {
                 <div class="hof-2d-plane">
                     <div class="hof-2d-rect"
                          style="left: <?php echo esc_attr( $fmt( $left ) ); ?>%; right: <?php echo esc_attr( $fmt( 100 - $right ) ); ?>%; top: <?php echo esc_attr( $fmt( $top ) ); ?>%; bottom: <?php echo esc_attr( $fmt( 100 - $bottom ) ); ?>%;">
+                        <span class="hof-2d-handle hof-2d-handle-n"  data-hof-2d-handle="n"  aria-hidden="true"></span>
+                        <span class="hof-2d-handle hof-2d-handle-s"  data-hof-2d-handle="s"  aria-hidden="true"></span>
+                        <span class="hof-2d-handle hof-2d-handle-e"  data-hof-2d-handle="e"  aria-hidden="true"></span>
+                        <span class="hof-2d-handle hof-2d-handle-w"  data-hof-2d-handle="w"  aria-hidden="true"></span>
+                        <span class="hof-2d-handle hof-2d-handle-nw" data-hof-2d-handle="nw" aria-hidden="true"></span>
+                        <span class="hof-2d-handle hof-2d-handle-ne" data-hof-2d-handle="ne" aria-hidden="true"></span>
+                        <span class="hof-2d-handle hof-2d-handle-sw" data-hof-2d-handle="sw" aria-hidden="true"></span>
+                        <span class="hof-2d-handle hof-2d-handle-se" data-hof-2d-handle="se" aria-hidden="true"></span>
                     </div>
                 </div>
                 <span class="hof-2d-axis-x"><?php echo esc_html( $x_facet['label'] ?: $x_name ); ?></span>
