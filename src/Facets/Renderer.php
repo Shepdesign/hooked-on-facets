@@ -50,10 +50,11 @@ final class Renderer {
         $display       = $facet['display'] ?? 'checkbox';
 
         return match ( $display ) {
-            'range'  => $this->render_range( $facet, $current_value, $counts ),
-            'search' => $this->render_search( $facet, $current_value ),
-            'swatch' => $this->render_swatch( $facet, (array) $current_value, $counts ),
-            'swiper' => $this->render_swiper( $facet, (array) $current_value, $counts ),
+            'range'       => $this->render_range( $facet, $current_value, $counts ),
+            'search'      => $this->render_search( $facet, $current_value ),
+            'swatch'      => $this->render_swatch( $facet, (array) $current_value, $counts ),
+            'swiper'      => $this->render_swiper( $facet, (array) $current_value, $counts ),
+            'two_d_slider' => $this->render_two_d_slider( $facet ),
             // Legacy 'venn' / 'upset' displays fall through to checkbox.
             // Both shipped briefly in Phase 2 but the matrix UX confused
             // users; the foundational fix (active filters bar) made the
@@ -627,6 +628,99 @@ final class Renderer {
                        placeholder="<?php esc_attr_e( 'Search…', 'hooked-on-facets' ); ?>"
                        autocomplete="off">
             </label>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * 2D slider — a view facet that orchestrates two underlying range facets
+     * on a draggable plane. The facet itself produces no resolver filter; its
+     * interactions update the URL state for the underlying x/y range facets,
+     * which the existing range resolver path handles natively.
+     *
+     * Config shape:
+     *   {
+     *     "name": "explore",
+     *     "kind": "view",
+     *     "display": "two_d_slider",
+     *     "settings": { "x_facet": "price", "y_facet": "rating" }
+     *   }
+     *
+     * @param array<string, mixed> $facet
+     */
+    private function render_two_d_slider( array $facet ): string {
+        $name     = $facet['name'];
+        $label    = $facet['label'] ?: $name;
+        $settings = (array) ( $facet['settings'] ?? [] );
+        $x_name   = (string) ( $settings['x_facet'] ?? '' );
+        $y_name   = (string) ( $settings['y_facet'] ?? '' );
+
+        $x_facet = $x_name !== '' ? $this->find_facet( $x_name ) : null;
+        $y_facet = $y_name !== '' ? $this->find_facet( $y_name ) : null;
+        if ( ! $x_facet || ! $y_facet ) {
+            return sprintf(
+                '<div class="hof-facet hof-facet-2d hof-facet-empty"><span class="hof-facet-label">%s</span><p>%s</p></div>',
+                esc_html( $label ),
+                esc_html__( '2D slider needs valid x_facet and y_facet settings.', 'hooked-on-facets' )
+            );
+        }
+
+        $x_counts = $this->counts_for( $x_name );
+        $y_counts = $this->counts_for( $y_name );
+        $x_min    = (float) ( $x_counts['min'] ?? 0 );
+        $x_max    = (float) ( $x_counts['max'] ?? 1 );
+        $y_min    = (float) ( $y_counts['min'] ?? 0 );
+        $y_max    = (float) ( $y_counts['max'] ?? 1 );
+
+        // Current selection (from URL state of the underlying range facets).
+        $state    = Resolver::parse_request_filters();
+        $x_state  = (array) ( $state[ $x_name ] ?? [] );
+        $y_state  = (array) ( $state[ $y_name ] ?? [] );
+        $x_low    = isset( $x_state['min'] ) ? (float) $x_state['min'] : $x_min;
+        $x_high   = isset( $x_state['max'] ) ? (float) $x_state['max'] : $x_max;
+        $y_low    = isset( $y_state['min'] ) ? (float) $y_state['min'] : $y_min;
+        $y_high   = isset( $y_state['max'] ) ? (float) $y_state['max'] : $y_max;
+
+        // Rectangle position on the plane, in percent (Y inverted so visual
+        // up = higher value).
+        $pct = static function ( float $v, float $lo, float $hi ): float {
+            $r = $hi - $lo;
+            return $r > 0 ? max( 0.0, min( 100.0, ( ( $v - $lo ) / $r ) * 100.0 ) ) : 0.0;
+        };
+        $left   = $pct( $x_low,  $x_min, $x_max );
+        $right  = $pct( $x_high, $x_min, $x_max );
+        $top    = 100.0 - $pct( $y_high, $y_min, $y_max );
+        $bottom = 100.0 - $pct( $y_low,  $y_min, $y_max );
+
+        $fmt = static fn( float $n ): string => rtrim( rtrim( sprintf( '%.2f', $n ), '0' ), '.' );
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-2d"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="two_d_slider"
+             data-hof-x-facet="<?php echo esc_attr( $x_name ); ?>"
+             data-hof-y-facet="<?php echo esc_attr( $y_name ); ?>"
+             data-hof-x-min="<?php echo esc_attr( (string) $x_min ); ?>"
+             data-hof-x-max="<?php echo esc_attr( (string) $x_max ); ?>"
+             data-hof-y-min="<?php echo esc_attr( (string) $y_min ); ?>"
+             data-hof-y-max="<?php echo esc_attr( (string) $y_max ); ?>">
+            <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
+            <div class="hof-2d-grid">
+                <span class="hof-2d-axis-y"><?php echo esc_html( $y_facet['label'] ?: $y_name ); ?></span>
+                <div class="hof-2d-plane">
+                    <div class="hof-2d-rect"
+                         style="left: <?php echo esc_attr( $fmt( $left ) ); ?>%; right: <?php echo esc_attr( $fmt( 100 - $right ) ); ?>%; top: <?php echo esc_attr( $fmt( $top ) ); ?>%; bottom: <?php echo esc_attr( $fmt( 100 - $bottom ) ); ?>%;">
+                    </div>
+                </div>
+                <span class="hof-2d-axis-x"><?php echo esc_html( $x_facet['label'] ?: $x_name ); ?></span>
+                <p class="hof-2d-readout">
+                    <span class="hof-2d-x-readout"><?php echo esc_html( $fmt( $x_low ) . ' – ' . $fmt( $x_high ) ); ?></span>
+                    <span class="hof-2d-readout-sep">·</span>
+                    <span class="hof-2d-y-readout"><?php echo esc_html( $fmt( $y_low ) . ' – ' . $fmt( $y_high ) ); ?></span>
+                </p>
+            </div>
         </div>
         <?php
         return (string) ob_get_clean();
