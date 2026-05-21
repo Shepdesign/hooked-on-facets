@@ -31,6 +31,7 @@
     --hof-swatch-selected:   var(--hof-primary);
     --hof-swatch-selected-w: 2px;
     --hof-swatch-initial-color: var(--hof-muted);
+    --hof-swatch-hover-accent: var(--hof-swatch-selected);
 }
 
 .hof-facet {
@@ -228,12 +229,25 @@
 }
 
 .hof-facet-swatch-tile:hover .hof-facet-swatch-initial {
-    opacity: 0.8;
+    color: var(--hof-swatch-hover-accent);
+    opacity: 0.9;
 }
 
 .hof-facet-swatch-tile:hover .hof-facet-swatch-visual {
     transform: translateY(-2px);
     box-shadow:
+        0 2px 4px rgba(28, 26, 22, 0.10),
+        0 10px 22px rgba(28, 26, 22, 0.10);
+}
+
+/* Default-tile-only hover accent — a tinted inset ring announces the tile
+   as interactive. Color/image tiles already have visual presence, so they
+   keep the plain elevation hover. The :has() match targets only tiles
+   whose visual contains the initial-glyph child (server-rendered solely
+   for tiles without per-term color or image meta). */
+.hof-facet-swatch-tile:hover .hof-facet-swatch-visual:has(.hof-facet-swatch-initial) {
+    box-shadow:
+        inset 0 0 0 1.5px var(--hof-swatch-hover-accent),
         0 2px 4px rgba(28, 26, 22, 0.10),
         0 10px 22px rgba(28, 26, 22, 0.10);
 }
