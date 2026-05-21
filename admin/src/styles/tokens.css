@@ -1,0 +1,57 @@
+/* HOF design tokens — defaults.
+   PHP injects an inline <style> block that overrides these from the
+   hof_admin_css_tokens filter, so this file is the fallback when filters
+   are quiet. Same custom-property names as the public runtime.
+
+   Palette mirrors BRAND.md (brand kit repo). Legacy --hof-* names alias
+   onto brand --hof-color-* tokens so component CSS doesn't have to churn. */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap');
+
+#hof-admin-root,
+.hof-admin {
+    /* Brand palette */
+    --hof-color-hook-purple: #534AB7;
+    --hof-color-facet-coral: #D85A30;
+    --hof-color-deep-ink:    #2C2C2A;
+    --hof-color-warm-cream:  #F1EFE8;
+
+    --hof-color-purple-50:  #EEEDFE;
+    --hof-color-purple-200: #CECBF6;
+    --hof-color-purple-400: #7F77DD;
+    --hof-color-purple-700: #3C3489;
+
+    --hof-color-coral-50:  #FAECE7;
+    --hof-color-coral-200: #F5C4B3;
+
+    --hof-color-ink-900: #1A1A19;
+    --hof-color-ink-700: #5F5E5A;
+    --hof-color-ink-500: #888780;
+    --hof-color-ink-300: #B4B2A9;
+    --hof-color-ink-200: #D3D1C7;
+    --hof-color-ink-100: #E6E3D9;
+    --hof-color-ink-50:  #F8F6EE;
+
+    /* Fonts */
+    --hof-font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    --hof-font-mono: 'Geist Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+    /* Radii */
+    --hof-radius-sm:   6px;
+    --hof-radius-md:   8px;
+    --hof-radius-lg:   14px;
+    --hof-radius-pill: 999px;
+
+    /* Legacy aliases — bridge brand tokens to existing component CSS. */
+    --hof-primary:    var(--hof-color-hook-purple);
+    --hof-on-primary: var(--hof-color-warm-cream);
+    --hof-surface:    #FFFFFF;
+    --hof-bg:         var(--hof-color-ink-100);
+    --hof-border:     var(--hof-color-ink-200);
+    --hof-text:       var(--hof-color-deep-ink);
+    --hof-muted:      var(--hof-color-ink-700);
+    --hof-danger:     var(--hof-color-facet-coral);
+    --hof-radius-ui:  var(--hof-radius-md);
+    --hof-space:      8px;
+    --hof-font:       var(--hof-font-sans);
+}

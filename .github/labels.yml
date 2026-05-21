@@ -1,0 +1,127 @@
+# Labels — synced by .github/workflows/labels.yml
+# Edit this file, push to main, labels auto-sync via EndBug/label-sync.
+
+# ============================================================================
+# TYPE
+# ============================================================================
+- name: bug
+  color: D85A30
+  description: Something isn't working
+
+- name: enhancement
+  color: 534AB7
+  description: New feature or improvement
+
+- name: documentation
+  color: 7F77DD
+  description: Docs, wiki, or README
+
+- name: question
+  color: 3C3489
+  description: A request for clarification
+
+# ============================================================================
+# STATUS
+# ============================================================================
+- name: needs-triage
+  color: FBBF24
+  description: Awaiting maintainer review
+
+- name: in-progress
+  color: 8B5CF6
+  description: Actively being worked on
+
+- name: blocked
+  color: 991B1B
+  description: Cannot proceed without external input
+
+- name: ready-for-review
+  color: 10B981
+  description: PR ready for maintainer review
+
+# ============================================================================
+# PRIORITY
+# ============================================================================
+- name: priority/critical
+  color: 7F1D1D
+  description: Drop everything
+
+- name: priority/high
+  color: B91C1C
+  description: Address soon
+
+- name: priority/low
+  color: 64748B
+  description: Nice to have
+
+# ============================================================================
+# AREA
+# ============================================================================
+- name: area/indexer
+  color: 1F2937
+  description: Index build & maintenance
+
+- name: area/frontend
+  color: 1F2937
+  description: Public-runtime frontend (vanilla JS + Vite)
+
+- name: area/admin
+  color: 1F2937
+  description: React 18 admin SPA
+
+- name: area/integrations
+  color: 1F2937
+  description: WooCommerce, ACF, page builders, etc.
+
+- name: area/performance
+  color: 1F2937
+  description: Speed, indexing, query optimization
+
+# ============================================================================
+# COMMUNITY (GitHub conventions — DO NOT rename, GitHub uses these for discovery)
+# ============================================================================
+- name: good first issue
+  color: 10B981
+  description: Good for newcomers
+
+- name: help wanted
+  color: 10B981
+  description: Maintainers welcome external help
+
+# ============================================================================
+# RESOLUTION
+# ============================================================================
+- name: duplicate
+  color: 9CA3AF
+  description: This issue or PR already exists
+
+- name: wontfix
+  color: 9CA3AF
+  description: This will not be worked on
+
+- name: invalid
+  color: 9CA3AF
+  description: This doesn't seem right
+
+# ============================================================================
+# META
+# ============================================================================
+- name: dependencies
+  color: 0366D6
+  description: Pull requests that update a dependency
+
+- name: php
+  color: 777BB4
+  description: Touches PHP code
+
+- name: javascript
+  color: F1E05A
+  description: Touches JavaScript / TypeScript code
+
+- name: ci
+  color: 0E8A16
+  description: Continuous integration
+
+- name: pre-alpha
+  color: D85A30
+  description: Spec / scaffold work before alpha

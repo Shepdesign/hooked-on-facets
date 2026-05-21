@@ -1,0 +1,2167 @@
+@import './tokens.css';
+
+/* Charcoal "stage" behind the SPA so the whole interface reads as a floating
+   card. Scoped to the HOF admin page so we don't touch any other admin
+   screens. WP's #wpcontent/.wrap have their own backgrounds we have to neutralise. */
+body.toplevel_page_hooked-on-facets,
+body.toplevel_page_hooked-on-facets #wpwrap,
+body.toplevel_page_hooked-on-facets #wpcontent,
+body.toplevel_page_hooked-on-facets #wpbody-content,
+body.toplevel_page_hooked-on-facets .wrap {
+    background: #D3D1C7;
+}
+
+#hof-admin-root {
+    background: var(--hof-bg);
+    color: var(--hof-text);
+    font-family: var(--hof-font-sans);
+    font-feature-settings: 'ss01', 'cv11';
+    margin: 14px 18px 18px -2px;
+    border-radius: var(--hof-radius-md);
+    overflow: hidden;
+    min-height: calc(100vh - 90px);
+}
+
+#hof-admin-root *,
+#hof-admin-root *::before,
+#hof-admin-root *::after {
+    box-sizing: border-box;
+}
+
+.hof {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 90px);
+}
+
+/* ── Status bar (dark top breadcrumb) ─────────────────────────────────── */
+
+.hof-statusbar {
+    background: var(--hof-color-ink-900);
+    padding: 9px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--hof-color-ink-500);
+}
+
+.hof-statusbar svg {
+    color: var(--hof-color-ink-700);
+    flex-shrink: 0;
+}
+
+.hof-crumb {
+    font-family: var(--hof-font-mono);
+    font-size: 11px;
+    color: var(--hof-color-ink-300);
+}
+
+.hof-crumb-muted { color: var(--hof-color-ink-500); }
+.hof-crumb-active { color: var(--hof-color-warm-cream); }
+
+.hof-version {
+    margin-left: auto;
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    color: var(--hof-color-ink-700);
+}
+
+/* ── Layout ────────────────────────────────────────────────────────────── */
+
+.hof-layout {
+    display: grid;
+    grid-template-columns: 168px minmax(0, 1fr);
+    flex: 1;
+}
+
+/* ── Dark nav sidebar ──────────────────────────────────────────────────── */
+
+.hof-nav {
+    background: var(--hof-color-deep-ink);
+    color: var(--hof-color-ink-300);
+    padding: 18px 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.hof-nav-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 24px;
+    padding: 12px 10px 14px;
+}
+
+.hof-nav-wordmark {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--hof-color-warm-cream);
+    white-space: nowrap;
+    text-align: center;
+    line-height: 1.1;
+}
+
+.hof-nav-section {
+    margin-bottom: 14px;
+}
+
+.hof-nav-section-label {
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    color: var(--hof-color-ink-700);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0 10px 6px;
+    margin: 0;
+}
+
+.hof-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: transparent;
+    border: 0;
+    padding: 7px 10px;
+    color: var(--hof-color-ink-500);
+    font: inherit;
+    font-size: 13px;
+    border-radius: var(--hof-radius-md);
+    cursor: pointer;
+    text-align: left;
+    margin-bottom: 1px;
+    transition: background 140ms ease, color 140ms ease;
+}
+
+.hof-nav-item:hover {
+    color: var(--hof-color-warm-cream);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.hof-nav-item.is-active {
+    background: rgba(216, 90, 48, 0.14);
+    color: var(--hof-color-warm-cream);
+}
+
+/* ── View (cream main content) ─────────────────────────────────────────── */
+
+.hof-view {
+    background: var(--hof-color-warm-cream);
+    padding: 22px;
+    overflow-y: auto;
+}
+
+.hof-error {
+    color: var(--hof-danger);
+    font-size: 0.875rem;
+}
+
+/* ── Eyebrow / live dot / chip utilities (reusable patterns from BRAND.md) */
+
+.hof-eyebrow {
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    color: var(--hof-color-facet-coral);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.hof-live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--hof-color-facet-coral);
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.hof-live-dot-muted {
+    background: var(--hof-color-ink-300);
+}
+
+.hof-chip {
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    color: var(--hof-color-purple-700);
+    background: var(--hof-color-purple-50);
+    padding: 3px 9px;
+    border-radius: var(--hof-radius-pill);
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+.hof-chip-muted {
+    color: var(--hof-color-ink-700);
+    background: var(--hof-color-ink-200);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+
+.hof-btn {
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    color: var(--hof-text);
+    padding: 6px 14px;
+    border-radius: var(--hof-radius-ui);
+    cursor: pointer;
+    font: inherit;
+    transition: filter 120ms ease, border-color 120ms ease, color 120ms ease, background 120ms ease;
+}
+
+.hof-btn:hover:not(:disabled) {
+    border-color: var(--hof-primary);
+    color: var(--hof-primary);
+}
+
+.hof-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.hof-btn-primary {
+    background: var(--hof-primary);
+    border-color: var(--hof-primary);
+    color: var(--hof-on-primary);
+}
+
+.hof-btn-primary:hover:not(:disabled) {
+    color: var(--hof-on-primary);
+    filter: brightness(0.95);
+}
+
+.hof-btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--hof-muted);
+}
+
+.hof-btn-ghost:hover:not(:disabled) {
+    background: var(--hof-bg);
+    border-color: transparent;
+    color: var(--hof-text);
+}
+
+.hof-btn-danger {
+    background: transparent;
+    border-color: var(--hof-danger);
+    color: var(--hof-danger);
+}
+
+.hof-btn-danger:hover:not(:disabled) {
+    background: var(--hof-danger);
+    color: var(--hof-on-primary);
+}
+
+/* ── Facets view header (above the editor pane) ───────────────────────── */
+
+.hof-view-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.hof-view-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--hof-color-deep-ink);
+    letter-spacing: -0.02em;
+}
+
+.hof-view-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--hof-space);
+}
+
+.hof-facets-pane {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.hof-facets-content {
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
+    padding: calc(var(--hof-space) * 3);
+    min-height: 400px;
+}
+
+/* ── Facets sidebar (list of configured facets inside the Facets view) ── */
+
+.hof-sidebar {
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.hof-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(var(--hof-space) * 2.5) calc(var(--hof-space) * 3);
+    border-bottom: 0.5px solid var(--hof-border);
+}
+
+.hof-sidebar-title {
+    font-weight: 600;
+    color: var(--hof-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.hof-sidebar-empty {
+    padding: calc(var(--hof-space) * 3);
+    color: var(--hof-muted);
+    font-size: 0.875rem;
+}
+
+.hof-sidebar-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.hof-sidebar-item {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    background: transparent;
+    border-left: 2px solid transparent;
+    color: var(--hof-text);
+    font: inherit;
+    position: relative;
+    will-change: transform;
+}
+
+.hof-sidebar-item:hover {
+    background: var(--hof-bg);
+}
+
+.hof-sidebar-item.is-active {
+    background: var(--hof-bg);
+    border-left-color: var(--hof-primary);
+}
+
+.hof-sidebar-item.is-dragging {
+    background: color-mix(in oklab, #534AB7 12%, var(--hof-bg));
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 2;
+    cursor: grabbing;
+}
+
+.hof-sidebar-item.is-invalid {
+    border-left-color: #e0364f;
+}
+
+.hof-sidebar-grip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--hof-muted);
+    cursor: grab;
+    touch-action: none;
+    opacity: 0.4;
+    transition: opacity 120ms ease;
+}
+
+.hof-sidebar-item:hover .hof-sidebar-grip,
+.hof-sidebar-grip:focus-visible {
+    opacity: 1;
+    outline: none;
+}
+
+.hof-sidebar-grip:active {
+    cursor: grabbing;
+}
+
+.hof-sidebar-row-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    padding: calc(var(--hof-space) * 2) calc(var(--hof-space) * 2);
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+    min-width: 0;
+}
+
+.hof-sidebar-label {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.hof-sidebar-meta {
+    font-size: 0.75rem;
+    color: var(--hof-muted);
+    margin-top: 2px;
+}
+
+.hof-sidebar-invalid {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 4px;
+    color: #e0364f;
+    cursor: help;
+}
+
+.hof-sidebar-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding-right: calc(var(--hof-space) * 2);
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+
+.hof-sidebar-item:hover .hof-sidebar-row-actions,
+.hof-sidebar-item:focus-within .hof-sidebar-row-actions {
+    opacity: 1;
+}
+
+.hof-sidebar-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    border-radius: 4px;
+    color: var(--hof-muted);
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.hof-sidebar-action:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--hof-text);
+}
+
+.hof-sidebar-action-danger:hover {
+    background: rgba(224, 54, 79, 0.12);
+    color: #e0364f;
+}
+
+/* ── Content / editor ─────────────────────────────────────────────────── */
+
+.hof-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: calc(var(--hof-space) * 3);
+}
+
+.hof-empty {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--hof-muted);
+    gap: var(--hof-space);
+}
+
+.hof-editor-title {
+    margin: 0 0 calc(var(--hof-space) * 2) 0;
+}
+
+.hof-editor-subtitle {
+    margin: 0 0 var(--hof-space) 0;
+    color: var(--hof-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.hof-editor-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: calc(var(--hof-space) * 4);
+    align-items: start;
+}
+
+@media (max-width: 960px) {
+    .hof-editor-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.hof-editor-form {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--hof-space) * 2);
+}
+
+.hof-editor-actions {
+    margin-top: calc(var(--hof-space) * 2);
+}
+
+/* Canvas-tone preview pane — matches the brand "sandbox" surface tone so
+   the preview reads as a stage rather than competing with the form column. */
+.hof-editor-preview {
+    background: var(--hof-color-ink-100);
+    border: 0.5px solid var(--hof-color-ink-300);
+    border-radius: var(--hof-radius-lg);
+    padding: calc(var(--hof-space) * 2.5);
+    position: sticky;
+    top: 0;
+}
+
+.hof-editor-preview .hof-editor-subtitle {
+    display: inline-flex;
+    align-items: center;
+    color: var(--hof-color-ink-700);
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 5px 11px;
+    border-radius: var(--hof-radius-pill);
+    border: 0.5px solid var(--hof-color-ink-300);
+    margin-bottom: calc(var(--hof-space) * 2);
+}
+
+/* ── Form fields ──────────────────────────────────────────────────────── */
+
+.hof-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hof-field-label {
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.hof-field-help {
+    color: var(--hof-muted);
+    font-size: 0.75rem;
+}
+
+.hof-field-warn {
+    color: var(--hof-danger);
+}
+
+.hof-field-error {
+    color: #e0364f;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.hof-field.is-invalid .hof-input,
+.hof-field.is-invalid select.hof-input {
+    border-color: #e0364f;
+    box-shadow: 0 0 0 3px rgba(224, 54, 79, 0.12);
+}
+
+.hof-btn-blocked,
+.hof-btn-primary:disabled.hof-btn-blocked {
+    background: #e0364f;
+    color: #fff;
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+/* All field rules are scoped to #hof-admin-root so they beat WP's
+   wp-admin/css/forms.css — `.wp-admin select` is (0,1,1) and would
+   override an unscoped `.hof-input`. */
+#hof-admin-root .hof-input {
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
+    padding: 9px 14px;
+    color: var(--hof-text);
+    font: inherit;
+    font-size: 0.9375rem;
+    line-height: 1.35;
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    box-shadow: none;
+    transition: border-color 140ms ease, outline-color 140ms ease;
+}
+
+#hof-admin-root .hof-input:hover:not(:focus) {
+    border-color: var(--hof-color-ink-300);
+}
+
+#hof-admin-root .hof-input:focus {
+    outline: 2px solid var(--hof-color-hook-purple);
+    outline-offset: 2px;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+#hof-admin-root select.hof-input {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--hof-color-ink-500) 50%),
+        linear-gradient(135deg, var(--hof-color-ink-500) 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) 50%,
+        calc(100% - 13px) 50%;
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+    padding-right: 40px;
+    cursor: pointer;
+}
+
+#hof-admin-root select.hof-input:focus {
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--hof-color-hook-purple) 50%),
+        linear-gradient(135deg, var(--hof-color-hook-purple) 50%, transparent 50%);
+}
+
+/* ── Preview ──────────────────────────────────────────────────────────── */
+
+.hof-preview-label {
+    font-weight: 600;
+    margin-bottom: var(--hof-space);
+}
+
+.hof-preview-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hof-preview-list label {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    cursor: not-allowed;
+    color: var(--hof-text);
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-color-ink-200);
+    border-radius: var(--hof-radius-md);
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.hof-preview-list label input[type="checkbox"] {
+    accent-color: var(--hof-color-hook-purple);
+    width: 14px;
+    height: 14px;
+    margin: 0;
+}
+
+.hof-preview-count {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--hof-color-ink-500);
+    font-variant-numeric: tabular-nums;
+}
+
+.hof-preview-note {
+    color: var(--hof-muted);
+    font-size: 0.75rem;
+    margin: var(--hof-space) 0 0 0;
+}
+
+.hof-preview-range {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 8px 4px;
+}
+
+.hof-preview-range input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-color-ink-300);
+    border-radius: var(--hof-radius-pill);
+    outline: none;
+    margin: 0;
+}
+
+.hof-preview-range input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--hof-color-hook-purple);
+    border-radius: 50%;
+    cursor: not-allowed;
+    border: 0;
+}
+
+.hof-preview-range input[type='range']::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--hof-color-hook-purple);
+    border-radius: 50%;
+    cursor: not-allowed;
+    border: 0;
+}
+
+.hof-preview-range-bounds {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    color: var(--hof-color-ink-500);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.hof-preview-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hof-space);
+    align-items: flex-end;
+}
+
+.hof-preview-swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--hof-muted);
+}
+
+.hof-preview-swatch-visual {
+    border-radius: var(--hof-radius-ui);
+    border: 0.5px solid var(--hof-border);
+}
+
+.hof-preview-swiper {
+    position: relative;
+    width: 168px;
+    height: 220px;
+    margin: 8px auto 14px;
+}
+
+.hof-preview-swiper-card {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--hof-radius-lg);
+    border: 0.5px solid var(--hof-color-ink-300);
+    background: var(--hof-surface);
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.hof-preview-swiper-card-back-1 {
+    background: var(--hof-color-ink-300);
+    transform: translate(4px, 4px);
+    z-index: 1;
+}
+
+.hof-preview-swiper-card-back-2 {
+    background: var(--hof-color-ink-200);
+    transform: translate(8px, 8px);
+    z-index: 0;
+}
+
+/* Top card gets a coral border + a coral content block — pulls focus on the
+   canvas the same way the blueprint sandbox's editing card does. */
+.hof-preview-swiper-card:not(.hof-preview-swiper-card-back) {
+    border-color: var(--hof-color-facet-coral);
+    z-index: 2;
+}
+
+.hof-preview-swiper-card:not(.hof-preview-swiper-card-back)::before {
+    content: '';
+    display: block;
+    height: 124px;
+    background: var(--hof-color-facet-coral);
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.hof-preview-swiper-card-meta {
+    display: block;
+    font-family: var(--hof-font-mono);
+    font-size: 9px;
+    color: var(--hof-color-ink-500);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.hof-preview-swiper-card-label {
+    display: block;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--hof-color-deep-ink);
+    letter-spacing: -0.01em;
+    margin: 3px 0 0;
+}
+
+.hof-preview-swiper-controls {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 4px;
+}
+
+.hof-preview-swiper-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-color-ink-300);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.hof-preview-swiper-btn-skip { color: var(--hof-color-ink-500); }
+
+.hof-preview-swiper-btn-include {
+    background: var(--hof-color-facet-coral);
+    border-color: var(--hof-color-facet-coral);
+    color: var(--hof-color-coral-50);
+}
+
+
+/* ── Tokens panel ─────────────────────────────────────────────────────── */
+
+.hof-tokens {
+    padding: calc(var(--hof-space) * 3);
+    flex: 1;
+    overflow-y: auto;
+}
+
+.hof-tokens-header h2 {
+    margin: 0 0 var(--hof-space) 0;
+}
+
+.hof-tokens-header p {
+    color: var(--hof-muted);
+    max-width: 60ch;
+}
+
+.hof-tokens-empty {
+    color: var(--hof-muted);
+}
+
+.hof-tokens-list {
+    list-style: none;
+    margin: calc(var(--hof-space) * 2) 0 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--hof-space);
+}
+
+.hof-tokens-item {
+    display: flex;
+    align-items: center;
+    gap: var(--hof-space);
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-ui);
+    padding: calc(var(--hof-space) * 1.5);
+}
+
+.hof-tokens-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.hof-tokens-name {
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.hof-tokens-value {
+    margin-left: auto;
+    color: var(--hof-muted);
+    font-size: 0.75rem;
+    max-width: 50%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Button variants (coral CTA, outline secondary) ───────────────────── */
+
+.hof-btn-coral {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--hof-color-facet-coral);
+    border: 0.5px solid var(--hof-color-facet-coral);
+    color: var(--hof-color-coral-50);
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--hof-radius-md);
+}
+
+.hof-btn-coral:hover:not(:disabled) {
+    filter: brightness(0.95);
+    color: var(--hof-color-coral-50);
+}
+
+.hof-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 0.5px solid var(--hof-color-deep-ink);
+    color: var(--hof-color-deep-ink);
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--hof-radius-md);
+}
+
+.hof-btn-outline:hover:not(:disabled) {
+    background: var(--hof-color-deep-ink);
+    color: var(--hof-color-warm-cream);
+}
+
+/* ── Dashboard view ───────────────────────────────────────────────────── */
+
+.hof-dash-hero {
+    background: var(--hof-color-purple-50);
+    border-radius: var(--hof-radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 14px;
+}
+
+.hof-dash-headline {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--hof-color-purple-700);
+    margin: 10px 0 6px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.hof-dash-sub {
+    font-size: 13px;
+    color: var(--hof-color-hook-purple);
+    margin: 0;
+    line-height: 1.5;
+    max-width: 480px;
+}
+
+.hof-dash-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.hof-stat {
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
+    padding: 14px;
+}
+
+.hof-stat .hof-eyebrow {
+    color: var(--hof-color-ink-500);
+    margin-bottom: 10px;
+    letter-spacing: 0.12em;
+    display: block;
+}
+
+.hof-stat-value {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--hof-color-deep-ink);
+    margin: 0;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.hof-stat-unit {
+    font-size: 13px;
+    color: var(--hof-color-ink-700);
+    margin-left: 2px;
+    font-weight: 400;
+}
+
+.hof-dash-section-label {
+    color: var(--hof-color-ink-500);
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.hof-dash-facets {
+    list-style: none;
+    margin: 0 0 18px;
+    padding: 0;
+}
+
+.hof-dash-facet {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto auto;
+    gap: 12px;
+    align-items: center;
+    padding: 11px 14px;
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
+    margin-bottom: 6px;
+    transition: border-color 140ms ease;
+}
+
+.hof-dash-facet:hover {
+    border-color: var(--hof-color-ink-300);
+}
+
+.hof-dash-facet[data-hof-draft] {
+    opacity: 0.6;
+}
+
+.hof-dash-facet-icon {
+    color: var(--hof-color-hook-purple);
+}
+
+.hof-dash-facet[data-hof-draft] .hof-dash-facet-icon {
+    color: var(--hof-color-ink-500);
+}
+
+.hof-dash-facet-text {
+    min-width: 0;
+}
+
+.hof-dash-facet-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--hof-color-deep-ink);
+    margin: 0;
+}
+
+.hof-dash-facet-source {
+    font-size: 11px;
+    color: var(--hof-color-ink-500);
+    margin: 2px 0 0;
+    font-family: var(--hof-font-mono);
+}
+
+.hof-dash-empty {
+    color: var(--hof-color-ink-700);
+    font-size: 13px;
+    margin: 0 0 18px;
+}
+
+.hof-dash-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+/* ── Blueprint sandbox ────────────────────────────────────────────────── */
+
+.hof-bp {
+    border: 0.5px solid var(--hof-color-ink-300);
+    border-radius: var(--hof-radius-lg);
+    overflow: hidden;
+    background: var(--hof-surface);
+}
+
+.hof-bp-bar {
+    background: #0B0B0A;
+    padding: 11px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--hof-color-ink-300);
+}
+
+.hof-bp-back {
+    background: transparent;
+    border: 0;
+    color: var(--hof-color-ink-500);
+    cursor: pointer;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    transition: color 140ms ease;
+}
+
+.hof-bp-back:hover { color: var(--hof-color-warm-cream); }
+
+.hof-bp-sep { color: var(--hof-color-ink-700); flex-shrink: 0; }
+
+.hof-bp-crumb {
+    font-family: var(--hof-font-mono);
+    font-size: 11px;
+    color: var(--hof-color-ink-300);
+}
+
+.hof-bp-crumb-active { color: var(--hof-color-warm-cream); }
+
+.hof-bp-bar-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+}
+
+.hof-bp-chip,
+.hof-bp-deploy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 0.5px solid #5F5E5A;
+    color: var(--hof-color-warm-cream);
+    padding: 6px 10px;
+    border-radius: var(--hof-radius-md);
+    font-family: var(--hof-font-mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.hof-bp-chip-icon { padding: 6px 8px; }
+
+.hof-bp-chip:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--hof-color-ink-300);
+}
+
+.hof-bp-deploy {
+    background: var(--hof-color-deep-ink);
+    border-color: var(--hof-color-ink-500);
+    color: var(--hof-color-warm-cream);
+    font-family: var(--hof-font-sans);
+    font-weight: 500;
+    padding: 6px 12px;
+}
+
+.hof-bp-deploy:hover {
+    background: var(--hof-color-ink-900);
+    border-color: var(--hof-color-warm-cream);
+    color: var(--hof-color-warm-cream);
+}
+
+.hof-bp-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 240px;
+}
+
+/* Canvas (left) ───────────────────────────────── */
+
+.hof-bp-canvas {
+    background: var(--hof-color-ink-100);
+    padding: 22px 18px;
+    min-height: 460px;
+    display: flex;
+    flex-direction: column;
+}
+
+.hof-bp-results-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    color: var(--hof-color-ink-700);
+    letter-spacing: 0.1em;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 5px 11px;
+    border-radius: var(--hof-radius-pill);
+    border: 0.5px solid var(--hof-color-ink-300);
+    align-self: flex-start;
+    margin-bottom: 18px;
+}
+
+.hof-bp-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    flex: 1;
+}
+
+.hof-bp-action {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 0.5px solid var(--hof-color-ink-500);
+    background: transparent;
+    color: var(--hof-color-ink-500);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.hof-bp-action:hover {
+    color: var(--hof-color-deep-ink);
+    border-color: var(--hof-color-deep-ink);
+}
+
+.hof-bp-action-include {
+    background: var(--hof-color-facet-coral);
+    border-color: var(--hof-color-facet-coral);
+    color: var(--hof-color-coral-50);
+}
+
+.hof-bp-action-include:hover {
+    color: var(--hof-color-coral-50);
+    filter: brightness(0.95);
+    border-color: var(--hof-color-facet-coral);
+}
+
+.hof-bp-deck {
+    position: relative;
+    width: var(--hof-bp-card-w, 160px);
+    height: calc(var(--hof-bp-card-h, 190px) + 8px);
+    transition: width 180ms ease, height 180ms ease;
+}
+
+.hof-bp-deck.is-swipe .hof-bp-deck-top {
+    transform: rotate(-3deg);
+    transition: transform 220ms ease;
+}
+
+.hof-bp-deck-card {
+    position: absolute;
+    width: var(--hof-bp-card-w, 160px);
+    height: var(--hof-bp-card-h, 190px);
+    border-radius: var(--hof-radius-md);
+    box-sizing: border-box;
+    transition: width 180ms ease, height 180ms ease;
+}
+
+/* Generic back-card surface — JS provides the per-card offset/opacity
+   so deck depth can scale beyond 2. */
+.hof-bp-deck-back {
+    top: 0;
+    left: 0;
+    background: var(--hof-color-ink-400, var(--hof-color-ink-500));
+}
+
+.hof-bp-deck-top {
+    top: 0;
+    left: 0;
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-color-facet-coral);
+    padding: 12px;
+}
+
+.hof-bp-badge {
+    position: absolute;
+    top: -9px;
+    right: -6px;
+    background: var(--hof-color-facet-coral);
+    color: var(--hof-color-coral-50);
+    padding: 3px 9px;
+    border-radius: var(--hof-radius-pill);
+    font-size: 9px;
+    font-family: var(--hof-font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.hof-bp-card-visual {
+    height: calc(var(--hof-bp-card-h, 190px) * 0.5);
+    background: var(--hof-color-facet-coral);
+    border-radius: 6px;
+    margin-bottom: 10px;
+    transition: height 180ms ease;
+}
+
+.hof-bp-card-meta {
+    font-family: var(--hof-font-mono);
+    font-size: 9px;
+    color: var(--hof-color-ink-500);
+    margin: 0;
+    letter-spacing: 0.1em;
+}
+
+.hof-bp-card-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--hof-color-deep-ink);
+    margin: 3px 0 0;
+    letter-spacing: -0.01em;
+}
+
+.hof-bp-response {
+    margin-top: 22px;
+}
+
+.hof-bp-response-label {
+    color: var(--hof-color-ink-700);
+    margin-bottom: 8px;
+    display: block;
+    letter-spacing: 0.12em;
+}
+
+.hof-bp-response-bars {
+    display: flex;
+    gap: 6px;
+}
+
+.hof-bp-response-bar {
+    flex: 1;
+    height: 56px;
+    background: var(--hof-color-facet-coral);
+    border-radius: var(--hof-radius-md);
+}
+
+.hof-bp-response-bar-muted {
+    background: var(--hof-color-ink-300);
+    opacity: 0.3;
+}
+
+/* Inspector (right) ───────────────────────────── */
+
+.hof-bp-inspector {
+    background: var(--hof-surface);
+    padding: 20px 16px;
+    border-left: 0.5px solid var(--hof-color-ink-200);
+    display: flex;
+    flex-direction: column;
+}
+
+.hof-bp-inspector .hof-eyebrow {
+    margin-bottom: 4px;
+    letter-spacing: 0.14em;
+}
+
+.hof-bp-inspector-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--hof-color-deep-ink);
+    letter-spacing: -0.02em;
+}
+
+.hof-bp-inspector-subtitle {
+    font-size: 12px;
+    color: var(--hof-color-ink-700);
+    margin: 2px 0 20px;
+}
+
+.hof-bp-field {
+    margin-bottom: 14px;
+}
+
+.hof-bp-field-label {
+    font-family: var(--hof-font-mono);
+    font-size: 10px;
+    color: var(--hof-color-ink-500);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 0 0 8px;
+}
+
+/* Segmented control */
+
+.hof-bp-segmented {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 3px;
+    padding: 3px;
+    background: var(--hof-color-warm-cream);
+    border-radius: var(--hof-radius-md);
+    border: 0.5px solid var(--hof-color-ink-200);
+}
+
+.hof-bp-segmented-item {
+    font-size: 11px;
+    text-align: center;
+    padding: 6px 4px;
+    border-radius: 4px;
+    color: var(--hof-color-ink-700);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    font-size: 11px;
+    transition: background 140ms ease, color 140ms ease;
+}
+
+.hof-bp-segmented-item:hover {
+    color: var(--hof-color-deep-ink);
+}
+
+.hof-bp-segmented-item.is-active {
+    background: var(--hof-surface);
+    color: var(--hof-color-deep-ink);
+    font-weight: 500;
+}
+
+/* Slider */
+
+.hof-bp-slider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hof-bp-slider-input {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: var(--hof-color-ink-100);
+    border-radius: var(--hof-radius-pill);
+    outline: none;
+    padding: 0;
+}
+
+.hof-bp-slider-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--hof-color-hook-purple);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 0;
+}
+
+.hof-bp-slider-input::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--hof-color-hook-purple);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 0;
+}
+
+.hof-bp-slider-value {
+    font-family: var(--hof-font-mono);
+    font-size: 11px;
+    color: var(--hof-color-deep-ink);
+    font-variant-numeric: tabular-nums;
+    min-width: 12px;
+    text-align: right;
+}
+
+/* Radio group */
+
+.hof-bp-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hof-bp-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--hof-color-ink-700);
+    cursor: pointer;
+    transition: color 140ms ease;
+}
+
+.hof-bp-radio.is-active { color: var(--hof-color-deep-ink); }
+
+.hof-bp-radio input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.hof-bp-radio-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: transparent;
+    border: 0.5px solid var(--hof-color-ink-300);
+    display: inline-block;
+    transition: background 140ms ease, border-color 140ms ease;
+}
+
+.hof-bp-radio.is-active .hof-bp-radio-dot {
+    background: var(--hof-color-hook-purple);
+    border-color: var(--hof-color-hook-purple);
+}
+
+.hof-bp-inspector-cta {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 0.5px solid var(--hof-color-ink-100);
+}
+
+.hof-bp-sync {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ── Stub view ────────────────────────────────────────────────────────── */
+
+.hof-stub {
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
+    padding: 32px;
+    max-width: 560px;
+}
+
+.hof-stub-title {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--hof-color-deep-ink);
+    letter-spacing: -0.02em;
+}
+
+.hof-stub-body {
+    margin: 0;
+    color: var(--hof-color-ink-700);
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+/* ── Indexer view ─────────────────────────────────────────────────────── */
+
+.hof-indexer {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.hof-indexer-blurb {
+    margin: 0;
+    color: var(--hof-color-ink-700);
+    font-size: 13.5px;
+    line-height: 1.6;
+    max-width: 720px;
+}
+
+.hof-indexer-blurb code {
+    background: var(--hof-color-ink-100);
+    border: 0.5px solid var(--hof-color-ink-200);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: var(--hof-font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+    font-size: 12.5px;
+    color: var(--hof-color-deep-ink);
+}
+
+.hof-indexer-toast,
+.hof-indexer-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: var(--hof-radius-md, 6px);
+    font-size: 13px;
+    border: 0.5px solid;
+}
+
+.hof-indexer-toast {
+    background: rgba(83, 74, 183, 0.06);
+    border-color: rgba(83, 74, 183, 0.35);
+    color: var(--hof-color-deep-ink);
+}
+
+.hof-indexer-toast svg {
+    color: var(--hof-color-hook-purple);
+    flex-shrink: 0;
+}
+
+.hof-indexer-error {
+    background: rgba(216, 90, 48, 0.06);
+    border-color: rgba(216, 90, 48, 0.45);
+    color: var(--hof-color-deep-ink);
+}
+
+.hof-indexer-error svg {
+    color: var(--hof-color-facet-coral);
+    flex-shrink: 0;
+}
+
+.hof-indexer-facets {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Rotating refresh icon while a reindex is in flight. */
+@keyframes hof-spin {
+    to { transform: rotate(360deg); }
+}
+
+.hof-spin {
+    animation: hof-spin 0.9s linear infinite;
+}
+
+/* ── Query loops view ─────────────────────────────────────────────────── */
+
+.hof-loops {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.hof-loops-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hof-loops-sig {
+    font-family: var(--hof-font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+    font-size: 13px;
+    color: var(--hof-color-deep-ink);
+    background: transparent;
+    padding: 0;
+}
+
+/* ── Blueprint sandbox — facet picker, grid variant, toast ────────────── */
+
+.hof-bp-facet-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 4px 0 14px;
+}
+
+.hof-bp-facet-chip {
+    appearance: none;
+    background: var(--hof-color-ink-100);
+    border: 0.5px solid var(--hof-color-ink-300);
+    color: var(--hof-color-ink-700);
+    border-radius: var(--hof-radius-pill, 999px);
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: var(--hof-font-mono);
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.hof-bp-facet-chip:hover {
+    color: var(--hof-color-deep-ink);
+    border-color: var(--hof-color-ink-500);
+}
+
+.hof-bp-facet-chip.is-active {
+    background: var(--hof-color-hook-purple);
+    border-color: var(--hof-color-hook-purple);
+    color: var(--hof-color-purple-50, #EEEDFE);
+}
+
+/* Grid variant — 2×3 mini-card matrix to preview the non-deck layout. */
+.hof-bp-grid-stage {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 360px;
+    padding: 4px;
+}
+
+.hof-bp-grid-card {
+    background: var(--hof-surface);
+    border: 0.5px solid var(--hof-color-ink-200);
+    border-radius: var(--hof-radius-md);
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.hof-bp-grid-card .hof-bp-card-visual {
+    height: 64px;
+    margin-bottom: 8px;
+}
+
+.hof-bp-grid-card .hof-bp-card-title {
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.hof-bp-grid-card .hof-bp-card-meta {
+    font-size: 8.5px;
+}
+
+.hof-bp-toast {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    margin-top: 8px;
+    border-radius: var(--hof-radius-md, 6px);
+    font-size: 11.5px;
+    border: 0.5px solid;
+}
+
+.hof-bp-toast-ok {
+    background: rgba(83, 74, 183, 0.08);
+    border-color: rgba(83, 74, 183, 0.4);
+    color: var(--hof-color-deep-ink);
+}
+
+.hof-bp-toast-ok svg {
+    color: var(--hof-color-hook-purple);
+}
+
+.hof-bp-toast-err {
+    background: rgba(216, 90, 48, 0.08);
+    border-color: rgba(216, 90, 48, 0.5);
+    color: var(--hof-color-deep-ink);
+}
+
+.hof-bp-toast-err svg {
+    color: var(--hof-color-facet-coral);
+}
+
+.hof-bp-sync:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* ── AI settings ─────────────────────────────────────────────────────────── */
+
+.hof-ai-settings {
+    max-width: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.hof-ai-settings-header {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.hof-ai-settings-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #534AB7, #7F77DD);
+    color: #F1EFE8;
+    flex-shrink: 0;
+}
+
+.hof-ai-settings-title {
+    margin: 0 0 4px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--hof-text, #2C2C2A);
+}
+
+.hof-ai-settings-sub {
+    margin: 0;
+    color: var(--hof-muted, #5F5E5A);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.hof-ai-settings-sub em {
+    color: var(--hof-text, #2C2C2A);
+    font-style: italic;
+}
+
+.hof-ai-settings-section {
+    background: #FFFFFF;
+    border: 0.5px solid #D3D1C7;
+    border-radius: 10px;
+    padding: 18px 20px;
+}
+
+.hof-ai-settings-section-title {
+    margin: 0 0 12px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hof-muted, #5F5E5A);
+}
+
+.hof-ai-settings-row {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+}
+
+.hof-ai-settings-row--ok {
+    background: rgba(83, 74, 183, 0.06);
+    border: 0.5px solid rgba(83, 74, 183, 0.18);
+}
+
+.hof-ai-settings-row--warn {
+    background: rgba(216, 90, 48, 0.08);
+    border: 0.5px solid rgba(216, 90, 48, 0.25);
+}
+
+.hof-ai-settings-row-icon {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.hof-ai-settings-row--ok .hof-ai-settings-row-icon { color: #534AB7; }
+.hof-ai-settings-row--warn .hof-ai-settings-row-icon { color: #D85A30; }
+
+.hof-ai-settings-row-line {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--hof-text, #2C2C2A);
+}
+
+.hof-ai-settings-row-sub {
+    margin: 2px 0 0;
+    font-size: 0.8125rem;
+    color: var(--hof-muted, #5F5E5A);
+}
+
+.hof-ai-settings-row code,
+.hof-ai-settings-list code {
+    font-family: var(--hof-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    background: rgba(28, 26, 22, 0.04);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.8125em;
+}
+
+.hof-ai-settings-input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hof-ai-settings-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--hof-text, #2C2C2A);
+}
+
+.hof-ai-settings-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.hof-ai-settings-input-icon {
+    position: absolute;
+    left: 10px;
+    color: var(--hof-muted, #5F5E5A);
+    display: inline-grid;
+    place-items: center;
+    pointer-events: none;
+}
+
+.hof-ai-settings-input {
+    width: 100%;
+    padding: 9px 12px 9px 34px;
+    border: 0.5px solid #D3D1C7;
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: var(--hof-text, #2C2C2A);
+    font-family: var(--hof-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 0.875rem;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.hof-ai-settings-input:focus {
+    outline: none;
+    border-color: #534AB7;
+    box-shadow: 0 0 0 3px rgba(83, 74, 183, 0.15);
+}
+
+.hof-ai-settings-input:disabled {
+    background: #F8F6EE;
+    cursor: not-allowed;
+}
+
+.hof-ai-settings-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.hof-ai-settings-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 0.5px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.hof-ai-settings-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.hof-ai-settings-btn--primary {
+    background: #534AB7;
+    color: #F1EFE8;
+}
+
+.hof-ai-settings-btn--primary:not(:disabled):hover {
+    background: #3C3489;
+}
+
+.hof-ai-settings-btn--ghost {
+    background: transparent;
+    color: var(--hof-muted, #5F5E5A);
+    border-color: #D3D1C7;
+}
+
+.hof-ai-settings-btn--ghost:not(:disabled):hover {
+    color: #D85A30;
+    border-color: #D85A30;
+}
+
+.hof-ai-settings-msg {
+    margin: 4px 0 0;
+    font-size: 0.8125rem;
+}
+
+.hof-ai-settings-msg--error { color: #D85A30; }
+.hof-ai-settings-msg--ok    { color: #534AB7; }
+
+.hof-ai-settings-list {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--hof-text, #2C2C2A);
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.hof-ai-settings-list li + li {
+    margin-top: 6px;
+}
+
+.hof-ai-settings-status {
+    color: var(--hof-muted, #5F5E5A);
+    font-size: 0.9375rem;
+}
+
+/* ── FacetEditor previews for view facets ───────────────────────────────── */
+
+.hof-preview-2d {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+.hof-preview-2d-plane {
+    position: relative;
+    width: 140px;
+    height: 100px;
+    background:
+        linear-gradient(to right, #D3D1C7 0.5px, transparent 0.5px) 0 0 / 25% 100%,
+        linear-gradient(to top,   #D3D1C7 0.5px, transparent 0.5px) 0 0 / 100% 25%,
+        #FFFFFF;
+    border: 0.5px solid #D3D1C7;
+    border-radius: 6px;
+}
+
+.hof-preview-2d-rect {
+    position: absolute;
+    left: 25%;
+    right: 25%;
+    top: 20%;
+    bottom: 30%;
+    background: rgba(83, 74, 183, 0.18);
+    border: 1.5px solid #534AB7;
+    border-radius: 3px;
+}
+
+.hof-preview-2d-axes {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #5F5E5A;
+    display: flex;
+    gap: 12px;
+}
+
+.hof-preview-2d-axes code {
+    background: rgba(28, 26, 22, 0.05);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.875em;
+}
+
+.hof-preview-ask-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #FFFFFF;
+    border: 0.5px solid #D3D1C7;
+    border-radius: 10px;
+    font-size: 0.9375rem;
+    color: #888780;
+}
+
+.hof-preview-ask-icon {
+    color: #534AB7;
+    line-height: 1;
+}
+
+.hof-preview-ask-placeholder {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hof-preview-ask-send {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #534AB7;
+    color: #FFFFFF;
+    font-size: 0.75rem;
+}
+
+.hof-preview-ask-heard {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: rgba(83, 74, 183, 0.05);
+    font-size: 0.8125rem;
+    color: #4A4842;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.hof-preview-ask-heard-label {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #888780;
+    margin-right: 2px;
+}
+
+.hof-preview-ask-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #FFFFFF;
+    border: 0.5px solid #D3D1C7;
+    font-size: 0.75rem;
+}
+
+.hof-preview-ask-chip em {
+    font-style: normal;
+    color: #888780;
+}
+
+.hof-preview-visual-drop {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 10px;
+    border: 1.5px dashed #D3D1C7;
+    border-radius: 10px;
+    background: rgba(83, 74, 183, 0.03);
+    color: #888780;
+    font-size: 0.8125rem;
+}
+
+.hof-preview-visual-icon {
+    color: #534AB7;
+    font-size: 1.1rem;
+}
+
+.hof-preview-visual-result {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(83, 74, 183, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hof-preview-visual-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 0.5px solid #D3D1C7;
+    box-shadow: inset 0 0 0 1.5px #FFFFFF;
+}
+
+.hof-preview-visual-readout {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.75rem;
+}
+
+.hof-preview-visual-readout code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: #4A4842;
+    background: transparent;
+    padding: 0;
+}
+
+.hof-preview-visual-match {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #888780;
+}
+
+.hof-preview-visual-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 0.5px solid #D3D1C7;
+}

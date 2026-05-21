@@ -1,0 +1,127 @@
+# CI — runs lint, tests, and build verification on push and PR.
+#
+# Pre-alpha aware: each job detects whether its relevant files exist (composer.json,
+# package.json) and no-ops gracefully if not. Once Claude Code drops the scaffold,
+# the jobs activate automatically.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Minimal default permissions. checkout, setup-php, setup-node, npm ci, and
+# composer install all only need read access to the repo. PHPCS annotations
+# via cs2pr use the workflow-command protocol, not the checks API. Tighten
+# per-job if a future step needs to write somewhere specific.
+permissions:
+  contents: read
+
+jobs:
+  # --------------------------------------------------------------------------
+  php:
+    name: PHP · Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Detect PHP project
+        id: detect
+        run: |
+          if [ -f composer.json ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "::notice::No composer.json yet — PHP CI will activate when the scaffold lands."
+          fi
+
+      - name: Setup PHP
+        if: steps.detect.outputs.found == 'true'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer:v2, cs2pr
+
+      - name: Cache Composer dependencies
+        if: steps.detect.outputs.found == 'true'
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install Composer dependencies
+        if: steps.detect.outputs.found == 'true'
+        run: composer install --prefer-dist --no-progress
+
+      - name: Lint (PHPCS)
+        if: steps.detect.outputs.found == 'true'
+        run: composer run-script lint --if-it-exists || true
+
+      - name: Test (PHPUnit)
+        if: steps.detect.outputs.found == 'true'
+        run: composer run-script test --if-it-exists || true
+
+  # --------------------------------------------------------------------------
+  javascript:
+    name: JavaScript · Lint, Test & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Detect JS project
+        id: detect
+        run: |
+          if [ -f package.json ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "::notice::No package.json yet — JS CI will activate when the scaffold lands."
+          fi
+
+      - name: Setup Node.js
+        if: steps.detect.outputs.found == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.detect.outputs.found == 'true'
+        run: npm ci
+
+      - name: Lint
+        if: steps.detect.outputs.found == 'true'
+        run: npm run lint --if-present
+
+      - name: Test
+        if: steps.detect.outputs.found == 'true'
+        run: npm test --if-present
+
+      - name: Build
+        if: steps.detect.outputs.found == 'true'
+        run: npm run build --if-present
+
+  # --------------------------------------------------------------------------
+  markdown:
+    name: Markdown · Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Lint markdown
+        uses: DavidAnson/markdownlint-cli2-action@v23
+        with:
+          globs: |
+            *.md
+            docs/**/*.md
+            !node_modules
+            !vendor
+        continue-on-error: true

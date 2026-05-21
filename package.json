@@ -1,0 +1,24 @@
+{
+    "name": "hooked-on-facets",
+    "private": true,
+    "version": "0.5.0-alpha",
+    "type": "module",
+    "description": "Ultra-modern faceted search and filtering for WordPress + WooCommerce.",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-react": "^6.0.2",
+        "vite": "^8.0.14"
+    },
+    "dependencies": {
+        "@tabler/icons-react": "^3.44.0",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1"
+    },
+    "engines": {
+        "node": ">=20"
+    }
+}
