@@ -428,6 +428,12 @@ final class Renderer {
                     if ( $color !== '' ) {
                         $style .= sprintf( '--hof-swatch-color: %s;', $color );
                     }
+                    // Initial glyph for tiles with no per-term color/image —
+                    // gives the long tail of default tiles distinct identity.
+                    $has_visual_meta = $img_url || $color !== '';
+                    $initial         = $has_visual_meta
+                        ? ''
+                        : mb_strtoupper( mb_substr( (string) $bucket['display'], 0, 1 ) );
                 ?>
                     <li class="hof-facet-swatch-item">
                         <label class="hof-facet-swatch-tile"
@@ -439,7 +445,11 @@ final class Renderer {
                                    name="hof[<?php echo esc_attr( $name ); ?>][]"
                                    value="<?php echo esc_attr( $value ); ?>"
                                    <?php checked( $checked ); ?>>
-                            <span class="hof-facet-swatch-visual" aria-hidden="true"></span>
+                            <span class="hof-facet-swatch-visual" aria-hidden="true">
+                                <?php if ( $initial !== '' ) : ?>
+                                    <span class="hof-facet-swatch-initial"><?php echo esc_html( $initial ); ?></span>
+                                <?php endif; ?>
+                            </span>
                             <span class="hof-facet-swatch-text">
                                 <span class="hof-facet-swatch-name"><?php echo esc_html( $bucket['display'] ); ?></span>
                                 <span class="hof-facet-count"

@@ -30,6 +30,7 @@
     --hof-swatch-shadow:     0 1px 2px rgba(28, 26, 22, 0.06), 0 2px 6px rgba(28, 26, 22, 0.04);
     --hof-swatch-selected:   var(--hof-primary);
     --hof-swatch-selected-w: 2px;
+    --hof-swatch-initial-color: var(--hof-muted);
 }
 
 .hof-facet {
@@ -187,6 +188,7 @@
 }
 
 .hof-facet-swatch-visual {
+    position: relative;
     width: var(--hof-swatch-size);
     height: var(--hof-swatch-size);
     background-color: var(--hof-swatch-color, var(--hof-swatch-bg));
@@ -195,11 +197,34 @@
     background-position: center;
     border-radius: var(--hof-swatch-radius);
     box-shadow: var(--hof-swatch-shadow);
+    overflow: hidden;
     transition:
         width 320ms cubic-bezier(0.2, 0.7, 0.2, 1),
         height 320ms cubic-bezier(0.2, 0.7, 0.2, 1),
         box-shadow 200ms ease,
         transform 200ms ease;
+}
+
+/* Identity glyph for tiles without a per-term color or image — renders
+   server-side only when neither meta is set, so it doesn't fight with
+   colored or image swatches. Scales with the tile so the long-tail
+   minimum tiles still get a visible letter. */
+.hof-facet-swatch-initial {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-weight: 500;
+    color: var(--hof-swatch-initial-color);
+    font-size: clamp(11px, calc(var(--hof-swatch-size) * 0.42), 36px);
+    opacity: 0.55;
+    user-select: none;
+    pointer-events: none;
+    transition: opacity 200ms ease, color 200ms ease;
+}
+
+.hof-facet-swatch-tile:hover .hof-facet-swatch-initial {
+    opacity: 0.8;
 }
 
 .hof-facet-swatch-tile:hover .hof-facet-swatch-visual {
