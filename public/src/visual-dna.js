@@ -126,9 +126,45 @@ async function runEyedrop(facetEl, store) {
     }
 }
 
-function commitColor(facetEl, store, hex) {
+async function commitColor(facetEl, store, hex) {
     const map         = readColorMap(facetEl);
     const targetFacet = facetEl.getAttribute('data-hof-target-facet') || '';
+    const cfg         = window.hofPublic || {};
+
+    // v2 path — ask the server for products ranked by ΔE76 against the
+    // indexed per-product LAB. Falls back to v1 snap-to-term if no
+    // products have LAB data yet (no featured images, indexer hasn't run
+    // since the v2 schema migration, etc.).
+    if (cfg.restUrl) {
+        try {
+            const res = await fetch(`${cfg.restUrl}visual-dna`, {
+                method:  'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(cfg.nonce ? { 'X-WP-Nonce': cfg.nonce } : {}),
+                },
+                body: JSON.stringify({ hex, limit: 120 }),
+            });
+            const body = await res.json().catch(() => ({}));
+            if (res.ok && body.ok && body.indexed_count > 0 && Array.isArray(body.ids) && body.ids.length > 0) {
+                const nearest = map.length
+                    ? nearestTerm(hex, map)
+                    : { hex, label: 'similar products' };
+                renderResult(facetEl, hex, nearest, { mode: 'ranked', count: body.returned_count });
+                hideStatus(facetEl);
+                // Also clear any stale snap-to-term value on the target facet
+                // so the two paths don't compound.
+                if (targetFacet) store.set(targetFacet, []);
+                store.set('_visual_ids', body.ids);
+                return;
+            }
+            // indexed_count === 0 → fall through to v1.
+        } catch (err) {
+            // Network/parse error — keep going to v1 rather than breaking.
+        }
+    }
+
+    // v1 fallback — snap to nearest existing color term.
     if (!map.length) {
         showStatus(facetEl, 'error',
             'No color terms available — the target facet has no matchable colors.');
@@ -139,7 +175,7 @@ function commitColor(facetEl, store, hex) {
         showStatus(facetEl, 'error', "Couldn't match that color to any term.");
         return;
     }
-    renderResult(facetEl, hex, nearest);
+    renderResult(facetEl, hex, nearest, { mode: 'snap' });
     hideStatus(facetEl);
     if (targetFacet) store.set(targetFacet, [nearest.slug]);
 }
@@ -151,6 +187,7 @@ function clearResult(facetEl, store) {
     if (result) result.hidden = true;
     if (url) url.value = '';
     hideStatus(facetEl);
+    store.set('_visual_ids', null);
     if (targetFacet) store.set(targetFacet, []);
 }
 
@@ -166,14 +203,22 @@ function readColorMap(facetEl) {
     }
 }
 
-function renderResult(facetEl, hex, nearest) {
-    const result   = facetEl.querySelector('[data-hof-visual-result]');
-    const swatchEl = facetEl.querySelector('[data-hof-visual-swatch]');
-    const hexEl    = facetEl.querySelector('[data-hof-visual-hex]');
-    const matchEl  = facetEl.querySelector('[data-hof-visual-match]');
+function renderResult(facetEl, hex, nearest, opts = {}) {
+    const result      = facetEl.querySelector('[data-hof-visual-result]');
+    const swatchEl    = facetEl.querySelector('[data-hof-visual-swatch]');
+    const hexEl       = facetEl.querySelector('[data-hof-visual-hex]');
+    const matchEl     = facetEl.querySelector('[data-hof-visual-match]');
+    const captionEl   = facetEl.querySelector('.hof-visual-dna-match-caption');
     if (!result) return;
     if (swatchEl) swatchEl.style.background = hex;
     if (hexEl)   hexEl.textContent = hex;
+
+    // Caption shifts based on which path resolved the input.
+    if (captionEl) {
+        captionEl.textContent = opts.mode === 'ranked'
+            ? `Ranked by visual ΔE${opts.count ? ` (${opts.count} closest):` : ':'}`
+            : 'Closest match:';
+    }
     if (matchEl) {
         matchEl.innerHTML = '';
         const dot = document.createElement('span');

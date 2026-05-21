@@ -126,6 +126,22 @@ final class RestController implements Bootable {
             ],
         ] );
 
+        register_rest_route( self::NAMESPACE_V1, '/visual-dna', [
+            'methods'             => \WP_REST_Server::CREATABLE,
+            'callback'            => [ $this, 'visual_dna' ],
+            'permission_callback' => '__return_true',
+            'args'                => [
+                'hex' => [
+                    'type'     => 'string',
+                    'required' => true,
+                ],
+                'limit' => [
+                    'type'     => 'integer',
+                    'required' => false,
+                ],
+            ],
+        ] );
+
         register_rest_route( self::NAMESPACE_V1, '/ai-settings', [
             [
                 'methods'             => \WP_REST_Server::READABLE,
@@ -195,6 +211,69 @@ final class RestController implements Bootable {
         }
 
         return new \WP_REST_Response( $result, 200 );
+    }
+
+    /**
+     * Visual DNA v2 — accept a hex color, return the top-K product IDs
+     * ranked by ΔE76 distance against the indexed `_visual_dna_lab` rows.
+     *
+     * SQL math runs the conversion against pre-extracted LAB coords — no
+     * per-product image processing happens here, so 10k+ catalogs respond
+     * in tens of ms.
+     */
+    public function visual_dna( \WP_REST_Request $request ): \WP_REST_Response {
+        global $wpdb;
+
+        $hex   = (string) $request->get_param( 'hex' );
+        $lab   = \HookedOnFacets\VisualDna\ColorExtractor::hex_to_lab( $hex );
+        if ( $lab === null ) {
+            return new \WP_REST_Response(
+                [ 'ok' => false, 'error' => 'invalid hex', 'error_code' => 'invalid_hex' ],
+                400
+            );
+        }
+
+        $limit = (int) $request->get_param( 'limit' );
+        if ( $limit <= 0 ) $limit = 60;
+        $limit = min( 500, $limit );
+
+        $table = $wpdb->prefix . \HookedOnFacets\Activator::TABLE;
+        // ΔE76 in SQL — adequate at this scale and lets MySQL stream the
+        // computation right next to the rows in the visual_dna_lookup index.
+        $sql = $wpdb->prepare(
+            "SELECT object_id,
+                    SQRT(POW(lab_l - %f, 2) + POW(lab_a - %f, 2) + POW(lab_b - %f, 2)) AS delta_e
+             FROM {$table}
+             WHERE facet_name = '_visual_dna_lab'
+               AND lab_l IS NOT NULL
+             ORDER BY delta_e ASC
+             LIMIT %d",
+            $lab['L'], $lab['a'], $lab['b'], $limit
+        );
+        $rows = $wpdb->get_results( $sql, ARRAY_A ) ?: [];
+
+        $ids = [];
+        foreach ( $rows as $r ) {
+            $ids[] = (int) $r['object_id'];
+        }
+
+        // Probe overall indexed count once so the frontend can fall back to
+        // v1 (snap-to-term) when no products have LAB data yet.
+        $indexed = (int) $wpdb->get_var(
+            "SELECT COUNT(*) FROM {$table} WHERE facet_name = '_visual_dna_lab'"
+        );
+
+        return new \WP_REST_Response(
+            [
+                'ok'             => true,
+                'hex'            => $hex,
+                'lab'            => $lab,
+                'ids'            => $ids,
+                'indexed_count'  => $indexed,
+                'returned_count' => count( $ids ),
+            ],
+            200
+        );
     }
 
     public function telemetry( \WP_REST_Request $request ): \WP_REST_Response {
@@ -374,6 +453,16 @@ final class RestController implements Bootable {
     public function apply_filter( \WP_REST_Request $request ): \WP_REST_Response {
         $raw_filters = $request->get_param( 'filters' );
         $filters     = Resolver::sanitize_filter_state( is_array( $raw_filters ) ? $raw_filters : [] );
+
+        // Visual DNA v2 — optional ordered ID restriction passed as a sibling
+        // param. Fold it into the filter state under the reserved key so the
+        // resolver sees it the same way it would from URL state.
+        $raw_visual_ids = $request->get_param( 'visual_ids' );
+        if ( is_array( $raw_visual_ids ) && ! empty( $raw_visual_ids ) ) {
+            $filters['_visual_ids'] = $raw_visual_ids;
+            // Re-sanitize to coerce types + drop garbage.
+            $filters = Resolver::sanitize_filter_state( $filters );
+        }
 
         $page     = max( 1, (int) $request->get_param( 'page' ) );
         $per_page = max( 1, min( 100, (int) $request->get_param( 'per_page' ) ) );

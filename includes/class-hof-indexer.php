@@ -214,11 +214,48 @@ final class Indexer implements Bootable {
         $this->delete_object( $object_id );
 
         $rows = $this->gather_rows( $object_id, $object_type );
+
+        // Visual DNA v2 — one extra synthetic row per object carrying the
+        // dominant-color LAB extracted from the featured image. Skipped
+        // silently when there's no thumbnail or extraction fails.
+        if ( $object_type === 'post' ) {
+            $lab_row = $this->visual_dna_row( $object_id );
+            if ( $lab_row !== null ) {
+                $rows[] = $lab_row;
+            }
+        }
+
         if ( empty( $rows ) ) {
             return;
         }
 
         $this->bulk_insert( $rows );
+    }
+
+    /**
+     * Build the synthetic _visual_dna_lab row for an object, or null when
+     * extraction fails / there's no featured image. Extracted lazily — the
+     * editor + GD work only runs when a thumbnail exists.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function visual_dna_row( int $object_id ): ?array {
+        static $extractor = null;
+        if ( $extractor === null ) {
+            $extractor = new \HookedOnFacets\VisualDna\ColorExtractor();
+        }
+        $lab = $extractor->extract_from_post( $object_id );
+        if ( $lab === null ) {
+            return null;
+        }
+        return [
+            'object_id'   => $object_id,
+            'object_type' => 'post',
+            'facet_name'  => '_visual_dna_lab',
+            'lab_l'       => $lab['L'],
+            'lab_a'       => $lab['a'],
+            'lab_b'       => $lab['b'],
+        ];
     }
 
     public function delete_object( int $object_id ): void {
@@ -540,14 +577,35 @@ final class Indexer implements Bootable {
         global $wpdb;
         $table = $wpdb->prefix . Activator::TABLE;
 
+        // Fill in defaults so visual_dna_row's narrow shape coexists with the
+        // full facet-row shape in the same INSERT.
+        $defaults = [
+            'object_type'   => 'post',
+            'facet_source'  => '',
+            'facet_value'   => '',
+            'facet_display' => '',
+            'facet_numeric' => null,
+            'lab_l'         => null,
+            'lab_a'         => null,
+            'lab_b'         => null,
+            'term_id'       => null,
+            'parent_id'     => null,
+            'depth'         => 0,
+        ];
+
         foreach ( array_chunk( $rows, self::INSERT_CHUNK ) as $chunk ) {
             $value_clauses = [];
             $params        = [];
 
             foreach ( $chunk as $row ) {
+                $row += $defaults;
+
                 $value_clauses[] = sprintf(
-                    '(%%d, %%s, %%s, %%s, %%s, %%s, %s, %s, %s, %%d)',
+                    '(%%d, %%s, %%s, %%s, %%s, %%s, %s, %s, %s, %s, %s, %s, %%d)',
                     $row['facet_numeric'] !== null ? '%f' : 'NULL',
+                    $row['lab_l']         !== null ? '%f' : 'NULL',
+                    $row['lab_a']         !== null ? '%f' : 'NULL',
+                    $row['lab_b']         !== null ? '%f' : 'NULL',
                     $row['term_id']       !== null ? '%d' : 'NULL',
                     $row['parent_id']     !== null ? '%d' : 'NULL'
                 );
@@ -559,13 +617,16 @@ final class Indexer implements Bootable {
                 $params[] = $row['facet_value'];
                 $params[] = $row['facet_display'];
                 if ( $row['facet_numeric'] !== null ) { $params[] = $row['facet_numeric']; }
+                if ( $row['lab_l']         !== null ) { $params[] = $row['lab_l']; }
+                if ( $row['lab_a']         !== null ) { $params[] = $row['lab_a']; }
+                if ( $row['lab_b']         !== null ) { $params[] = $row['lab_b']; }
                 if ( $row['term_id']       !== null ) { $params[] = $row['term_id']; }
                 if ( $row['parent_id']     !== null ) { $params[] = $row['parent_id']; }
                 $params[] = $row['depth'];
             }
 
             $sql = "INSERT INTO {$table}
-                    (object_id, object_type, facet_name, facet_source, facet_value, facet_display, facet_numeric, term_id, parent_id, depth)
+                    (object_id, object_type, facet_name, facet_source, facet_value, facet_display, facet_numeric, lab_l, lab_a, lab_b, term_id, parent_id, depth)
                     VALUES " . implode( ', ', $value_clauses );
 
             $wpdb->query( $wpdb->prepare( $sql, $params ) );

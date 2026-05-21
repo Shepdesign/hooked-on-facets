@@ -21,7 +21,7 @@ final class Activator {
     public const TABLE = 'hof_index';
 
     /** Bump when the schema changes; triggers re-run of dbDelta on upgrade. */
-    public const DB_VERSION = '1.1.0';
+    public const DB_VERSION = '1.2.0';
 
     /** Option key storing the installed schema version. */
     public const DB_VERSION_OPTION = 'hof_db_version';
@@ -72,6 +72,12 @@ final class Activator {
             facet_value     VARCHAR(191)     NOT NULL DEFAULT '',
             facet_display   VARCHAR(191)     NOT NULL DEFAULT '',
             facet_numeric   DECIMAL(20,6)             DEFAULT NULL,
+            -- Visual DNA v2: per-product dominant-color LAB triplet. Populated
+            -- only on the synthetic '_visual_dna_lab' row written by the
+            -- indexer's color extractor. NULL on every other row.
+            lab_l           DECIMAL(8,4)              DEFAULT NULL,
+            lab_a           DECIMAL(8,4)              DEFAULT NULL,
+            lab_b           DECIMAL(8,4)              DEFAULT NULL,
             term_id         BIGINT UNSIGNED           DEFAULT NULL,
             parent_id       BIGINT UNSIGNED           DEFAULT NULL,
             depth           TINYINT UNSIGNED NOT NULL DEFAULT 0,
@@ -83,7 +89,10 @@ final class Activator {
             KEY facet_numeric_range (facet_name, facet_numeric, object_id),
             KEY object_facet        (object_id, facet_name),
             KEY object_type         (object_type, object_id),
-            KEY term_lookup         (term_id)
+            KEY term_lookup         (term_id),
+            -- Visual DNA lookup — narrow to the single synthetic facet_name
+            -- so the resolver only scans rows that actually carry LAB data.
+            KEY visual_dna_lookup   (facet_name, lab_l)
         ) {$charset};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';

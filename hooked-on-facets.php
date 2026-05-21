@@ -126,5 +126,14 @@ add_action( 'init', static function (): void {
 }, 0 );
 
 add_action( 'plugins_loaded', static function (): void {
+    // Auto-run dbDelta if the installed schema version is older than the
+    // constant — covers in-place upgrades that don't re-trigger the
+    // activation hook (composer-deployed updates, git pulls in dev, etc.).
+    $installed = (string) get_option( \HookedOnFacets\Activator::DB_VERSION_OPTION, '' );
+    if ( $installed !== \HookedOnFacets\Activator::DB_VERSION ) {
+        \HookedOnFacets\Activator::install_index_table();
+        update_option( \HookedOnFacets\Activator::DB_VERSION_OPTION, \HookedOnFacets\Activator::DB_VERSION, true );
+    }
+
     \HookedOnFacets\Plugin::instance()->boot();
 }, 5 );

@@ -44,8 +44,15 @@ final class Resolver {
      * @return array{ids: ?int[], counts: array<string, array<string, mixed>>}
      */
     public function resolve( array $filter_state ): array {
+        // resolve_ids handles _visual_ids internally — but counts shouldn't
+        // see it (drill-down counts treat each non-self filter as a facet
+        // restriction, and _visual_ids would just be silently skipped, but
+        // stripping it is clearer).
+        $counts_state = $filter_state;
+        unset( $counts_state['_visual_ids'] );
+
         $ids    = $this->resolve_ids( $filter_state );
-        $counts = $this->resolve_counts( $filter_state );
+        $counts = $this->resolve_counts( $counts_state );
 
         return [
             'ids'    => $ids,
@@ -68,16 +75,38 @@ final class Resolver {
         global $wpdb;
         $table = $wpdb->prefix . Activator::TABLE;
 
-        $parts = $this->build_filter_subquery( $filter_state, $table );
-        if ( $parts === null ) {
-            return null;
+        // Visual DNA v2 restriction lives under a reserved key, not as a
+        // configured facet. Pull it out before building the facet subquery
+        // and apply it as an intersection + ordering at the end.
+        $visual_ids = [];
+        if ( isset( $filter_state['_visual_ids'] ) && is_array( $filter_state['_visual_ids'] ) ) {
+            $visual_ids = $filter_state['_visual_ids'];
+            unset( $filter_state['_visual_ids'] );
         }
 
-        $started = microtime( true );
-        $rows    = $wpdb->get_col( $wpdb->prepare( $parts['sql'], $parts['params'] ) );
-        $this->recorder?->record_resolver_ms( ( microtime( true ) - $started ) * 1000 );
+        $parts = $this->build_filter_subquery( $filter_state, $table );
 
-        return array_map( 'intval', $rows );
+        $ids = null;
+        if ( $parts !== null ) {
+            $started = microtime( true );
+            $rows    = $wpdb->get_col( $wpdb->prepare( $parts['sql'], $parts['params'] ) );
+            $this->recorder?->record_resolver_ms( ( microtime( true ) - $started ) * 1000 );
+            $ids = array_map( 'intval', $rows );
+        }
+
+        if ( ! empty( $visual_ids ) ) {
+            if ( $ids === null ) {
+                return $visual_ids;
+            }
+            $match_set = array_fill_keys( $ids, true );
+            $ordered   = [];
+            foreach ( $visual_ids as $id ) {
+                if ( isset( $match_set[ $id ] ) ) $ordered[] = $id;
+            }
+            return $ordered;
+        }
+
+        return $ids;
     }
 
     /**
@@ -98,6 +127,29 @@ final class Resolver {
             }
             $key = sanitize_key( $facet_name );
             if ( $key === '' ) {
+                continue;
+            }
+
+            // Reserved key — Visual DNA v2 ordered ID restriction. Carried
+            // through as `_visual_ids` (with the leading underscore marking
+            // it as an internal control, not a real facet name).
+            if ( $key === '_visual_ids' ) {
+                $ids = [];
+                if ( is_array( $value ) ) {
+                    foreach ( $value as $v ) {
+                        $id = (int) $v;
+                        if ( $id > 0 ) $ids[] = $id;
+                    }
+                } elseif ( is_string( $value ) && $value !== '' ) {
+                    // CSV form for URL-driven state — `?hof[_visual_ids]=12,34,56`
+                    foreach ( explode( ',', $value ) as $v ) {
+                        $id = (int) $v;
+                        if ( $id > 0 ) $ids[] = $id;
+                    }
+                }
+                if ( ! empty( $ids ) ) {
+                    $clean[ '_visual_ids' ] = $ids;
+                }
                 continue;
             }
 
