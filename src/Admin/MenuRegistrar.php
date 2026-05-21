@@ -110,8 +110,15 @@ final class MenuRegistrar implements Bootable {
         // WP concatenates [wp_add_inline_script 'before'] + [main src tag] +
         // ['after'] into the $tag handed to this filter. Replace ONLY the
         // src tag so the inline window.hofAdmin bootstrap survives.
+        //
+        // WP 6.x rendered `<script src="…" id="…"></script>` (src first);
+        // WP 7.0 swapped to `<script id="…" src="…"></script>`. The old
+        // regex anchored on `<script src=`, so on 7.0 the module rewrite
+        // became a no-op and our ES bundle loaded as a classic script —
+        // colliding with the top-level `let wp = …` declarations across
+        // core's wp-includes/js/dist scripts.
         $module = '<script type="module" src="' . esc_url( $src ) . '"></script>';
-        $pattern = '#<script\s+src=(["\'])' . preg_quote( $src, '#' ) . '\1[^>]*></script>#';
+        $pattern = '#<script\b[^>]*\bsrc=(["\'])' . preg_quote( $src, '#' ) . '\1[^>]*></script>#';
         $replaced = preg_replace( $pattern, $module, $tag, 1 );
         return $replaced ?? $tag;
     }
