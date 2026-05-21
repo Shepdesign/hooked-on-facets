@@ -10,8 +10,8 @@
         "preview": "vite preview"
     },
     "devDependencies": {
-        "@vitejs/plugin-react": "^4.3.4",
-        "vite": "^5.4.10"
+        "@vitejs/plugin-react": "^6.0.2",
+        "vite": "^8.0.14"
     },
     "dependencies": {
         "@tabler/icons-react": "^3.44.0",
