@@ -801,3 +801,84 @@
 .hof-2d-readout-sep {
     color: var(--hof-muted);
 }
+
+/* ── AI search facet ────────────────────────────────────────────────────── */
+
+.hof-facet-ai-search {
+    /* Gradient hint that this is the AI flavor — soft purple wash on the
+       card surface. Falls back gracefully if color-mix isn't supported. */
+    background: linear-gradient(
+        135deg,
+        color-mix(in oklab, var(--hof-primary) 4%, var(--hof-surface)),
+        var(--hof-surface) 60%
+    );
+}
+
+.hof-ai-search-form {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.hof-ai-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--hof-primary);
+    font-size: 0.875rem;
+    pointer-events: none;
+    line-height: 1;
+}
+
+.hof-ai-search-input {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 12px 9px 30px;
+    border: 0.5px solid var(--hof-border);
+    border-radius: 8px;
+    background: var(--hof-surface);
+    color: var(--hof-text);
+    font-size: 0.9375rem;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.hof-ai-search-input:focus {
+    outline: none;
+    border-color: var(--hof-primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 18%, transparent);
+}
+
+.hof-ai-search-btn {
+    padding: 8px 16px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--hof-primary);
+    color: var(--hof-on-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 160ms ease;
+}
+
+.hof-ai-search-btn:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--hof-primary) 88%, black);
+}
+
+.hof-ai-search-btn:disabled,
+.hof-ai-search-btn.is-loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.hof-ai-search-status {
+    margin: 8px 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+.hof-ai-search-status[data-hof-ai-status-kind="ok"]      { color: var(--hof-primary); }
+.hof-ai-search-status[data-hof-ai-status-kind="warn"]    { color: var(--hof-muted); }
+.hof-ai-search-status[data-hof-ai-status-kind="error"]   { color: var(--hof-danger); }
+.hof-ai-search-status[data-hof-ai-status-kind="loading"] { color: var(--hof-muted); font-style: italic; }
