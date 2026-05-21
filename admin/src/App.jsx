@@ -10,6 +10,7 @@ import {
     IconTools,
 } from '@tabler/icons-react';
 import { saveFacets } from './api.js';
+import { countInvalid } from './validation.js';
 import Sidebar from './components/Sidebar.jsx';
 import FacetEditor from './components/FacetEditor.jsx';
 import TokensPanel from './components/TokensPanel.jsx';
@@ -73,11 +74,67 @@ export default function App({ bootstrap }) {
 
     const deleteSelected = () => {
         if (selectedIdx === null) return;
-        const f = facets[selectedIdx];
+        deleteAt(selectedIdx);
+    };
+
+    const deleteAt = (idx) => {
+        const f = facets[idx];
+        if (!f) return;
         if (!window.confirm(`Delete facet "${f.label || f.name || '(unnamed)'}"?`)) return;
-        const next = facets.filter((_, i) => i !== selectedIdx);
+        const next = facets.filter((_, i) => i !== idx);
         setFacets(next);
-        setSelectedIdx(next.length > 0 ? Math.max(0, selectedIdx - 1) : null);
+        if (selectedIdx === idx) {
+            setSelectedIdx(next.length > 0 ? Math.max(0, idx - 1) : null);
+        } else if (selectedIdx !== null && idx < selectedIdx) {
+            setSelectedIdx(selectedIdx - 1);
+        }
+        setDirty(true);
+    };
+
+    const duplicateAt = (idx) => {
+        const src = facets[idx];
+        if (!src) return;
+        const baseName = src.name || 'facet';
+        let candidate  = `${baseName}-copy`;
+        const taken    = new Set(facets.map((f) => f.name));
+        let n = 2;
+        while (taken.has(candidate)) {
+            candidate = `${baseName}-copy-${n++}`;
+        }
+        const clone = {
+            ...src,
+            name:  candidate,
+            label: src.label ? `${src.label} (copy)` : '',
+            // Deep-clone the settings object so editing the copy doesn't
+            // mutate the source.
+            settings: src.settings && typeof src.settings === 'object'
+                ? JSON.parse(JSON.stringify(src.settings))
+                : {},
+        };
+        const next = [...facets.slice(0, idx + 1), clone, ...facets.slice(idx + 1)];
+        setFacets(next);
+        setSelectedIdx(idx + 1);
+        setDirty(true);
+    };
+
+    const reorder = (fromIdx, toIdx) => {
+        if (fromIdx === toIdx) return;
+        const next = [...facets];
+        const [moved] = next.splice(fromIdx, 1);
+        next.splice(toIdx, 0, moved);
+        setFacets(next);
+        // Keep the selected facet selected by tracking its new index.
+        if (selectedIdx === fromIdx) {
+            setSelectedIdx(toIdx);
+        } else if (selectedIdx !== null) {
+            // Selection drifted because the moved row passed over it.
+            const lo = Math.min(fromIdx, toIdx);
+            const hi = Math.max(fromIdx, toIdx);
+            if (selectedIdx >= lo && selectedIdx <= hi) {
+                if (fromIdx < toIdx) setSelectedIdx(selectedIdx - 1);
+                else                  setSelectedIdx(selectedIdx + 1);
+            }
+        }
         setDirty(true);
     };
 
@@ -161,19 +218,30 @@ export default function App({ bootstrap }) {
                         />
                     )}
 
-                    {view === 'facets' && (
+                    {view === 'facets' && (() => {
+                        const invalidCount = countInvalid(facets);
+                        const saveLabel = saving
+                            ? 'Saving…'
+                            : invalidCount > 0
+                                ? `Fix ${invalidCount} issue${invalidCount === 1 ? '' : 's'}`
+                                : dirty
+                                    ? 'Save changes'
+                                    : 'Saved';
+                        const saveDisabled = saving || !dirty || invalidCount > 0;
+                        return (
                         <div className="hof-view-facets">
                             <div className="hof-view-header">
                                 <h2 className="hof-view-title">Facets</h2>
                                 <div className="hof-view-actions">
                                     {error && <span className="hof-error" role="alert">{error}</span>}
                                     <button
-                                        className="hof-btn hof-btn-primary"
-                                        disabled={!dirty || saving}
+                                        className={`hof-btn hof-btn-primary ${invalidCount > 0 ? 'hof-btn-blocked' : ''}`}
+                                        disabled={saveDisabled}
                                         onClick={save}
                                         type="button"
+                                        title={invalidCount > 0 ? 'Fix the validation issues before saving' : ''}
                                     >
-                                        {saving ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
+                                        {saveLabel}
                                     </button>
                                 </div>
                             </div>
@@ -183,6 +251,9 @@ export default function App({ bootstrap }) {
                                     selectedIdx={selectedIdx}
                                     onSelect={setSelectedIdx}
                                     onAdd={addFacet}
+                                    onDuplicate={duplicateAt}
+                                    onDelete={deleteAt}
+                                    onReorder={reorder}
                                 />
                                 <section className="hof-facets-content">
                                     {selected ? (
@@ -203,7 +274,8 @@ export default function App({ bootstrap }) {
                                 </section>
                             </div>
                         </div>
-                    )}
+                        );
+                    })()}
 
                     {view === 'tokens' && <TokensPanel tokens={bootstrap.tokens || {}} />}
 

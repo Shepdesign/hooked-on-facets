@@ -1,3 +1,5 @@
+import { validateFacet } from '../validation.js';
+
 const KINDS = [
     { value: 'taxonomy', label: 'Taxonomy',  hint: 'e.g. product_cat, category, product_tag' },
     { value: 'meta',     label: 'Post meta', hint: 'e.g. _price, _stock_status' },
@@ -45,13 +47,16 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
         onChange({ settings: { ...settings, ...patch } });
     };
 
+    // Live validation. Keys: name / label / kind / source / settings.<key>
+    const issues = validateFacet(facet, allFacets);
+
     return (
         <div className="hof-editor">
             <div className="hof-editor-grid">
                 <section className="hof-editor-form">
                     <h2 className="hof-editor-title">Edit facet</h2>
 
-                    <label className="hof-field">
+                    <label className={`hof-field ${issues.name ? 'is-invalid' : ''}`}>
                         <span className="hof-field-label">Slug</span>
                         <input
                             className="hof-input"
@@ -59,13 +64,18 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                             value={facet.name}
                             onChange={(e) => onChange({ name: sanitizeSlug(e.target.value) })}
                             placeholder="brand"
+                            aria-invalid={issues.name ? 'true' : 'false'}
                         />
-                        <span className="hof-field-help">
-                            URL-safe identifier used in <code>?hof[slug]=…</code>. Lowercase, hyphens and underscores only.
-                        </span>
+                        {issues.name ? (
+                            <span className="hof-field-error">{issues.name}</span>
+                        ) : (
+                            <span className="hof-field-help">
+                                URL-safe identifier used in <code>?hof[slug]=…</code>. Lowercase, hyphens and underscores only.
+                            </span>
+                        )}
                     </label>
 
-                    <label className="hof-field">
+                    <label className={`hof-field ${issues.label ? 'is-invalid' : ''}`}>
                         <span className="hof-field-label">Label</span>
                         <input
                             className="hof-input"
@@ -73,7 +83,9 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                             value={facet.label}
                             onChange={(e) => onChange({ label: e.target.value })}
                             placeholder="Brand"
+                            aria-invalid={issues.label ? 'true' : 'false'}
                         />
+                        {issues.label && <span className="hof-field-error">{issues.label}</span>}
                     </label>
 
                     {!isView && (
@@ -91,7 +103,7 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                 </select>
                             </label>
 
-                            <label className="hof-field">
+                            <label className={`hof-field ${issues.source ? 'is-invalid' : ''}`}>
                                 <span className="hof-field-label">Source</span>
                                 <input
                                     className="hof-input"
@@ -99,8 +111,11 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                     value={facet.source || ''}
                                     onChange={(e) => onChange({ source: e.target.value })}
                                     placeholder={kindDef.hint}
+                                    aria-invalid={issues.source ? 'true' : 'false'}
                                 />
-                                <span className="hof-field-help">{kindDef.hint}</span>
+                                {issues.source
+                                    ? <span className="hof-field-error">{issues.source}</span>
+                                    : <span className="hof-field-help">{kindDef.hint}</span>}
                             </label>
                         </>
                     )}
@@ -176,12 +191,13 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
 
                     {facet.display === 'two_d_slider' && (
                         <>
-                            <label className="hof-field">
+                            <label className={`hof-field ${issues['settings.x_facet'] ? 'is-invalid' : ''}`}>
                                 <span className="hof-field-label">X axis (range facet)</span>
                                 <select
                                     className="hof-input"
                                     value={settings.x_facet || ''}
                                     onChange={(e) => updateSettings({ x_facet: e.target.value })}
+                                    aria-invalid={issues['settings.x_facet'] ? 'true' : 'false'}
                                 >
                                     <option value="">— pick a facet —</option>
                                     {rangeFacets.map((f) => (
@@ -191,20 +207,23 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                         </option>
                                     ))}
                                 </select>
-                                {rangeFacets.length === 0 && (
-                                    <span className="hof-field-help hof-field-warn">
-                                        No range-display facets configured. Create at least two range
-                                        facets first, then come back here.
-                                    </span>
-                                )}
+                                {issues['settings.x_facet']
+                                    ? <span className="hof-field-error">{issues['settings.x_facet']}</span>
+                                    : rangeFacets.length === 0 && (
+                                        <span className="hof-field-help hof-field-warn">
+                                            No range-display facets configured. Create at least two range
+                                            facets first, then come back here.
+                                        </span>
+                                    )}
                             </label>
 
-                            <label className="hof-field">
+                            <label className={`hof-field ${issues['settings.y_facet'] ? 'is-invalid' : ''}`}>
                                 <span className="hof-field-label">Y axis (range facet)</span>
                                 <select
                                     className="hof-input"
                                     value={settings.y_facet || ''}
                                     onChange={(e) => updateSettings({ y_facet: e.target.value })}
+                                    aria-invalid={issues['settings.y_facet'] ? 'true' : 'false'}
                                 >
                                     <option value="">— pick a facet —</option>
                                     {rangeFacets.map((f) => (
@@ -214,10 +233,8 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                         </option>
                                     ))}
                                 </select>
-                                {settings.x_facet && settings.y_facet && settings.x_facet === settings.y_facet && (
-                                    <span className="hof-field-help hof-field-warn">
-                                        X and Y must reference different facets.
-                                    </span>
+                                {issues['settings.y_facet'] && (
+                                    <span className="hof-field-error">{issues['settings.y_facet']}</span>
                                 )}
                             </label>
                         </>
@@ -290,12 +307,13 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                     )}
 
                     {facet.display === 'visual_dna' && (
-                        <label className="hof-field">
+                        <label className={`hof-field ${issues['settings.target_facet'] ? 'is-invalid' : ''}`}>
                             <span className="hof-field-label">Target color facet</span>
                             <select
                                 className="hof-input"
                                 value={settings.target_facet || ''}
                                 onChange={(e) => updateSettings({ target_facet: e.target.value })}
+                                aria-invalid={issues['settings.target_facet'] ? 'true' : 'false'}
                             >
                                 <option value="">— pick a color facet —</option>
                                 {colorTargetFacets.map((f) => (
@@ -304,12 +322,14 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                     </option>
                                 ))}
                             </select>
-                            {colorTargetFacets.length === 0 && (
-                                <span className="hof-field-help hof-field-warn">
-                                    No color-bearing facets configured. Add a checkbox, dropdown, or
-                                    swatch facet for a color taxonomy first.
-                                </span>
-                            )}
+                            {issues['settings.target_facet']
+                                ? <span className="hof-field-error">{issues['settings.target_facet']}</span>
+                                : colorTargetFacets.length === 0 && (
+                                    <span className="hof-field-help hof-field-warn">
+                                        No color-bearing facets configured. Add a checkbox, dropdown, or
+                                        swatch facet for a color taxonomy first.
+                                    </span>
+                                )}
                             <span className="hof-field-help">
                                 Color terms get their hex from the term's <code>swatch_color</code> meta
                                 (same as the swatch facet uses), falling back to a built-in name table

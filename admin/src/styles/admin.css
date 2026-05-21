@@ -337,17 +337,14 @@ body.toplevel_page_hooked-on-facets .wrap {
 
 .hof-sidebar-item {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     width: 100%;
-    text-align: left;
     background: transparent;
-    border: 0;
-    padding: calc(var(--hof-space) * 2) calc(var(--hof-space) * 3);
-    cursor: pointer;
     border-left: 2px solid transparent;
     color: var(--hof-text);
     font: inherit;
+    position: relative;
+    will-change: transform;
 }
 
 .hof-sidebar-item:hover {
@@ -359,14 +356,116 @@ body.toplevel_page_hooked-on-facets .wrap {
     border-left-color: var(--hof-primary);
 }
 
+.hof-sidebar-item.is-dragging {
+    background: color-mix(in oklab, #534AB7 12%, var(--hof-bg));
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 2;
+    cursor: grabbing;
+}
+
+.hof-sidebar-item.is-invalid {
+    border-left-color: #e0364f;
+}
+
+.hof-sidebar-grip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--hof-muted);
+    cursor: grab;
+    touch-action: none;
+    opacity: 0.4;
+    transition: opacity 120ms ease;
+}
+
+.hof-sidebar-item:hover .hof-sidebar-grip,
+.hof-sidebar-grip:focus-visible {
+    opacity: 1;
+    outline: none;
+}
+
+.hof-sidebar-grip:active {
+    cursor: grabbing;
+}
+
+.hof-sidebar-row-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    padding: calc(var(--hof-space) * 2) calc(var(--hof-space) * 2);
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+    min-width: 0;
+}
+
 .hof-sidebar-label {
     font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
 }
 
 .hof-sidebar-meta {
     font-size: 0.75rem;
     color: var(--hof-muted);
     margin-top: 2px;
+}
+
+.hof-sidebar-invalid {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 4px;
+    color: #e0364f;
+    cursor: help;
+}
+
+.hof-sidebar-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding-right: calc(var(--hof-space) * 2);
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+
+.hof-sidebar-item:hover .hof-sidebar-row-actions,
+.hof-sidebar-item:focus-within .hof-sidebar-row-actions {
+    opacity: 1;
+}
+
+.hof-sidebar-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    border-radius: 4px;
+    color: var(--hof-muted);
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.hof-sidebar-action:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--hof-text);
+}
+
+.hof-sidebar-action-danger:hover {
+    background: rgba(224, 54, 79, 0.12);
+    color: #e0364f;
 }
 
 /* ── Content / editor ─────────────────────────────────────────────────── */
@@ -467,6 +566,26 @@ body.toplevel_page_hooked-on-facets .wrap {
 
 .hof-field-warn {
     color: var(--hof-danger);
+}
+
+.hof-field-error {
+    color: #e0364f;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.hof-field.is-invalid .hof-input,
+.hof-field.is-invalid select.hof-input {
+    border-color: #e0364f;
+    box-shadow: 0 0 0 3px rgba(224, 54, 79, 0.12);
+}
+
+.hof-btn-blocked,
+.hof-btn-primary:disabled.hof-btn-blocked {
+    background: #e0364f;
+    color: #fff;
+    opacity: 1;
+    cursor: not-allowed;
 }
 
 /* All field rules are scoped to #hof-admin-root so they beat WP's
