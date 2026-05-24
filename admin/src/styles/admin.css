@@ -264,6 +264,10 @@ body.toplevel_page_hooked-on-facets .wrap {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    /* Wrap action row onto its own line when title + buttons can't fit
+       side by side, instead of squishing the button labels. */
+    flex-wrap: wrap;
+    gap: var(--hof-space);
     margin-bottom: 14px;
 }
 
@@ -278,17 +282,38 @@ body.toplevel_page_hooked-on-facets .wrap {
 .hof-view-actions {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--hof-space);
 }
 
 .hof-facets-pane {
+    /* Container queries adapt to the pane's actual width, not the viewport.
+       Matters because the WP admin sidebar (collapsed vs expanded), our
+       SPA nav, and any future plugin-side widgets all eat horizontal space
+       — viewport-only media queries fired at the wrong moment. */
+    container-type: inline-size;
+    container-name: facets-pane;
+
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr);
     gap: 18px;
     align-items: start;
 }
 
+/* Below ~720px container width, stack the facet list above the editor
+   instead of squeezing it into a side rail. */
+@container facets-pane (max-width: 720px) {
+    .hof-facets-pane {
+        grid-template-columns: 1fr;
+    }
+}
+
 .hof-facets-content {
+    /* Nested container so the editor inside can adapt to *its* width,
+       independent of the pane's overall constraints. */
+    container-type: inline-size;
+    container-name: facets-content;
+
     background: var(--hof-surface);
     border: 0.5px solid var(--hof-border);
     border-radius: var(--hof-radius-md);
@@ -500,12 +525,21 @@ body.toplevel_page_hooked-on-facets .wrap {
 
 .hof-editor-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    /* Preview shrinks gracefully (320 → 240px) with the container before
+       the layout collapses. clamp() keeps it usable at the small end and
+       caps growth at the large end so the form column gets priority on
+       very wide screens. */
+    grid-template-columns: minmax(0, 1fr) clamp(240px, 32cqi, 320px);
     gap: calc(var(--hof-space) * 4);
     align-items: start;
 }
 
-@media (max-width: 960px) {
+/* Stack form above preview when there's not enough room for both. Triggers
+   off the editor's container (.hof-facets-content), not the viewport — the
+   editor sits inside a nested sidebar + nav layout, and a viewport media
+   query consistently fired at the wrong moment (the old 960px breakpoint
+   left a "preview big, form cramped" zone roughly from 960–1100px). */
+@container facets-content (max-width: 640px) {
     .hof-editor-grid {
         grid-template-columns: 1fr;
     }
@@ -530,6 +564,16 @@ body.toplevel_page_hooked-on-facets .wrap {
     padding: calc(var(--hof-space) * 2.5);
     position: sticky;
     top: 0;
+}
+
+/* Sticky only makes sense when the preview sits alongside the form.
+   In the stacked layout the preview is below the form — sticky there
+   would pin it to the viewport top while the user scrolls the form,
+   which reads as "broken layout." */
+@container facets-content (max-width: 640px) {
+    .hof-editor-preview {
+        position: static;
+    }
 }
 
 .hof-editor-preview .hof-editor-subtitle {
