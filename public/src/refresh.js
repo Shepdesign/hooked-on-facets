@@ -156,7 +156,7 @@ function patchSwatch(current, incoming) {
     });
 }
 
-function patchSwiper(current, incoming) {
+export function patchSwiper(current, incoming) {
     incoming.querySelectorAll('[data-hof-swiper-value]').forEach((next) => {
         const value = next.getAttribute('data-hof-swiper-value');
         if (value === null) return;
