@@ -8,43 +8,127 @@
 
 .hof-facet,
 .hof-results {
+    /* ── Brand colors ────────────────────────────────────────────────── */
     --hof-primary:    #534AB7;
     --hof-on-primary: #F1EFE8;
+    --hof-accent:     #D85A30;   /* facet coral — used by swiper stamps + chip strip */
     --hof-surface:    #FFFFFF;
     --hof-bg:         #E6E3D9;
     --hof-border:     #D3D1C7;
     --hof-text:       #2C2C2A;
     --hof-muted:      #5F5E5A;
-    --hof-danger:     #D85A30;
-    --hof-radius-ui:  8px;
+    --hof-danger:     var(--hof-accent);
+
+    /* ── Spacing + radius scale ──────────────────────────────────────── */
     --hof-space:      8px;
+    --hof-radius-xs:   4px;       /* tiny — 2D rect, marquee */
+    --hof-radius-sm:   6px;       /* chip-x, tooltip, swipe stamp */
+    --hof-radius-md:   8px;       /* DEFAULT — inputs, wrapper */
+    --hof-radius-lg:  10px;       /* ask input/submit, swatch tile */
+    --hof-radius-xl:  16px;       /* swiper card, swiper done */
+    --hof-radius-pill: 999px;     /* toggle track, active-filter chip */
+    --hof-radius-ui:   var(--hof-radius-md);  /* legacy alias */
+
+    /* ── Typography ──────────────────────────────────────────────────── */
+    --hof-font-body:          inherit;
+    --hof-font-mono:          ui-monospace, "SF Mono", Menlo, monospace;
+    --hof-font-size-body:     0.9375rem;
+    --hof-font-size-sm:       0.875rem;
+    --hof-font-size-xs:       0.8125rem;
+    --hof-font-size-eyebrow:  0.6875rem;
+    --hof-line-height-body:   1.5;
+    --hof-line-height-tight:  1.2;
+
+    /* ── Eyebrow label (the small uppercase facet title) ─────────────── */
+    --hof-label-color:           var(--hof-muted);
+    --hof-label-font-size:       var(--hof-font-size-eyebrow);
+    --hof-label-font-weight:     600;
+    --hof-label-letter-spacing:  0.08em;
+    --hof-label-transform:       uppercase;
+
+    /* ── Count badge ─────────────────────────────────────────────────── */
+    --hof-count-color:       var(--hof-muted);
+    --hof-count-font-size:   var(--hof-font-size-sm);
+    --hof-count-font-weight: 400;
+
+    /* ── Shared input chrome (range, search, date, dropdown, ask) ────── */
+    --hof-input-bg:       var(--hof-surface);
+    --hof-input-border:   var(--hof-border);
+    --hof-input-border-w: 0.5px;
+    --hof-input-radius:   var(--hof-radius-md);
+    --hof-input-color:    var(--hof-text);
+    --hof-input-pad-y:    8px;
+    --hof-input-pad-x:    12px;
+
+    /* ── Focus ring ──────────────────────────────────────────────────── */
+    /* Two styles in use: a hard outline (range, search), and a soft glow
+       (dropdown, date, ask, toggle). Both pull from these tokens so
+       overriding the color in one place lights up everywhere. */
+    --hof-focus-ring:            var(--hof-primary);
+    --hof-focus-ring-w:          2px;
+    --hof-focus-ring-offset:     1px;
+    --hof-focus-ring-soft-w:     3px;
+    --hof-focus-ring-soft-alpha: 18%;
+
+    /* ── Shadow scale ────────────────────────────────────────────────── */
+    --hof-shadow-xs:    0 1px 2px rgba(28, 26, 22, 0.04);
+    --hof-shadow-sm:    0 1px 2px rgba(28, 26, 22, 0.06), 0 2px 6px rgba(28, 26, 22, 0.04);
+    --hof-shadow-md:    0 2px 4px rgba(28, 26, 22, 0.10), 0 10px 22px rgba(28, 26, 22, 0.10);
+    --hof-shadow-thumb: 0 1px 2px rgba(0, 0, 0, 0.18);
+
+    /* ── Surfaces ────────────────────────────────────────────────────── */
+    --hof-surface-elevated: var(--hof-surface);
+
+    /* ── Option row (checkbox / radio) ───────────────────────────────── */
+    --hof-option-gap:    var(--hof-space);
+    --hof-option-pad-y:  4px;
+    --hof-option-accent: var(--hof-primary);
+
+    /* ── Toggle ──────────────────────────────────────────────────────── */
+    --hof-toggle-track-w:    36px;
+    --hof-toggle-track-h:    20px;
+    --hof-toggle-track-off:  color-mix(in oklab, var(--hof-muted) 20%, var(--hof-surface));
+    --hof-toggle-track-on:   var(--hof-primary);
+    --hof-toggle-thumb-bg:   var(--hof-surface);
+    --hof-toggle-thumb-on:   var(--hof-on-primary);
+    --hof-toggle-thumb-size: 16px;
+
+    /* ── Hierarchy ───────────────────────────────────────────────────── */
+    --hof-hierarchy-indent:      18px;
+    --hof-hierarchy-guide-color: var(--hof-border);
+    --hof-hierarchy-guide-style: dashed;
+
+    /* ── Active-filters chip strip ───────────────────────────────────── */
+    --hof-chip-bg:        rgba(216, 90, 48, 0.08);
+    --hof-chip-bg-hover:  rgba(216, 90, 48, 0.16);
+    --hof-chip-border:    var(--hof-accent);
+    --hof-chip-radius:    var(--hof-radius-pill);
+
+    /* ── Swatch facet ────────────────────────────────────────────────── */
     --hof-swatch-min: 36px;
     --hof-swatch-max: 96px;
-
-    /* Swatch theming tokens — override these from a page builder's custom
-       CSS, theme.json, or the hof_public_css_tokens filter to skin the
-       facet without forking the bundle. */
     --hof-swatch-gap:        var(--hof-space);
-    --hof-swatch-radius:     calc(var(--hof-radius-ui) + 2px);
+    --hof-swatch-radius:     var(--hof-radius-lg);
     --hof-swatch-bg:         #EDEAE0;
-    --hof-swatch-shadow:     0 1px 2px rgba(28, 26, 22, 0.06), 0 2px 6px rgba(28, 26, 22, 0.04);
+    --hof-swatch-shadow:     var(--hof-shadow-sm);
     --hof-swatch-selected:   var(--hof-primary);
     --hof-swatch-selected-w: 2px;
     --hof-swatch-initial-color: var(--hof-muted);
-    --hof-swatch-hover-accent: var(--hof-swatch-selected);
+    --hof-swatch-hover-accent:  var(--hof-swatch-selected);
     --hof-swatch-tooltip-bg:    rgba(28, 26, 22, 0.92);
     --hof-swatch-tooltip-color: #F7F5EE;
 }
 
 .hof-facet {
     background: var(--hof-surface);
-    border: 0.5px solid var(--hof-border);
-    border-radius: var(--hof-radius-ui);
+    border: var(--hof-input-border-w) solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
     padding: calc(var(--hof-space) * 2);
     margin: 0 0 calc(var(--hof-space) * 2) 0;
     color: var(--hof-text);
-    font-size: 0.9375rem;
-    line-height: 1.5;
+    font-family: var(--hof-font-body);
+    font-size: var(--hof-font-size-body);
+    line-height: var(--hof-line-height-body);
 }
 
 .hof-facet * {
@@ -59,11 +143,11 @@
 
 .hof-facet-label {
     display: block;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--hof-muted);
+    font-size: var(--hof-label-font-size);
+    font-weight: var(--hof-label-font-weight);
+    letter-spacing: var(--hof-label-letter-spacing);
+    text-transform: var(--hof-label-transform);
+    color: var(--hof-label-color);
     margin-bottom: calc(var(--hof-space) * 1.25);
 }
 
@@ -85,13 +169,13 @@
 .hof-facet-option label {
     display: flex;
     align-items: center;
-    gap: var(--hof-space);
+    gap: var(--hof-option-gap);
     cursor: pointer;
-    padding: 4px 0;
+    padding: var(--hof-option-pad-y) 0;
 }
 
 .hof-facet-option input[type='checkbox'] {
-    accent-color: var(--hof-primary);
+    accent-color: var(--hof-option-accent);
     width: 16px;
     height: 16px;
     margin: 0;
@@ -103,9 +187,10 @@
 }
 
 .hof-facet-count {
-    color: var(--hof-muted);
+    color: var(--hof-count-color);
     font-variant-numeric: tabular-nums;
-    font-size: 0.875rem;
+    font-size: var(--hof-count-font-size);
+    font-weight: var(--hof-count-font-weight);
 }
 
 .hof-facet-empty {
@@ -123,17 +208,20 @@
 .hof-facet-range-inputs input {
     flex: 1;
     min-width: 0;
-    background: var(--hof-surface);
-    border: 0.5px solid var(--hof-border);
-    border-radius: var(--hof-radius-ui);
+    background: var(--hof-input-bg);
+    border: var(--hof-input-border-w) solid var(--hof-input-border);
+    border-radius: var(--hof-input-radius);
+    /* Range inputs run two side-by-side, so they're a notch tighter than
+       the standard input chrome. Tracks --hof-input-pad-* with a -2px
+       offset so the relationship survives token overrides. */
     padding: 6px 10px;
-    color: var(--hof-text);
+    color: var(--hof-input-color);
     font: inherit;
 }
 
 .hof-facet-range-inputs input:focus {
-    outline: 2px solid var(--hof-primary);
-    outline-offset: 1px;
+    outline: var(--hof-focus-ring-w) solid var(--hof-focus-ring);
+    outline-offset: var(--hof-focus-ring-offset);
     border-color: transparent;
 }
 
@@ -143,24 +231,24 @@
 
 .hof-facet-range-bounds {
     color: var(--hof-muted);
-    font-size: 0.8125rem;
+    font-size: var(--hof-font-size-xs);
     margin: 6px 0 0 0;
 }
 
 /* Search */
 .hof-facet-search input[type='search'] {
     width: 100%;
-    background: var(--hof-surface);
-    border: 0.5px solid var(--hof-border);
-    border-radius: var(--hof-radius-ui);
-    padding: 8px 12px;
-    color: var(--hof-text);
+    background: var(--hof-input-bg);
+    border: var(--hof-input-border-w) solid var(--hof-input-border);
+    border-radius: var(--hof-input-radius);
+    padding: var(--hof-input-pad-y) var(--hof-input-pad-x);
+    color: var(--hof-input-color);
     font: inherit;
 }
 
 .hof-facet-search input[type='search']:focus {
-    outline: 2px solid var(--hof-primary);
-    outline-offset: 1px;
+    outline: var(--hof-focus-ring-w) solid var(--hof-focus-ring);
+    outline-offset: var(--hof-focus-ring-offset);
     border-color: transparent;
 }
 
@@ -350,7 +438,7 @@
 }
 
 .hof-facet-swatch-input:focus-visible + .hof-facet-swatch-visual {
-    outline: 2px solid var(--hof-primary);
+    outline: var(--hof-focus-ring-w) solid var(--hof-focus-ring);
     outline-offset: 2px;
 }
 
@@ -367,6 +455,9 @@
     --hof-swiper-card-w: 240px;
     --hof-swiper-card-h: 300px;
     --hof-swiper-back-offset: 8px;
+    /* Default card background when neither --hof-swiper-color nor
+       --hof-swiper-image is supplied by the per-term meta. */
+    --hof-swiper-card-bg: #EEEDFE;
 }
 
 .hof-swiper-deck {
@@ -382,12 +473,12 @@
 .hof-swiper-card {
     position: absolute;
     inset: 0;
-    background: var(--hof-swiper-color, var(--hof-color-purple-50, #EEEDFE));
+    background: var(--hof-swiper-color, var(--hof-swiper-card-bg));
     background-image: var(--hof-swiper-image, none);
     background-size: cover;
     background-position: center;
-    border-radius: calc(var(--hof-radius-ui) * 2);
-    border: 0.5px solid var(--hof-border);
+    border-radius: var(--hof-radius-xl);
+    border: var(--hof-input-border-w) solid var(--hof-border);
     overflow: hidden;
     cursor: grab;
     transform:
@@ -413,7 +504,7 @@
 .hof-swiper-card-visual {
     position: absolute;
     inset: 0;
-    background: var(--hof-color-purple-50, #EEEDFE);
+    background: var(--hof-swiper-card-bg);
     z-index: -1;
 }
 
@@ -454,14 +545,14 @@
 
 .hof-swiper-stamp-right {
     right: 16px;
-    color: var(--hof-color-facet-coral, #D85A30);
+    color: var(--hof-accent);
     transform: rotate(12deg);
     opacity: clamp(0, calc(var(--hof-swipe-x, 0) / 80), 1);
 }
 
 .hof-swiper-stamp-left {
     left: 16px;
-    color: var(--hof-color-ink-500, #888780);
+    color: var(--hof-muted);
     transform: rotate(-12deg);
     opacity: clamp(0, calc(var(--hof-swipe-x, 0) * -1 / 80), 1);
 }
@@ -476,8 +567,8 @@
     justify-content: center;
     gap: var(--hof-space);
     background: var(--hof-surface);
-    border: 0.5px dashed var(--hof-border);
-    border-radius: calc(var(--hof-radius-ui) * 2);
+    border: var(--hof-input-border-w) dashed var(--hof-border);
+    border-radius: var(--hof-radius-xl);
     color: var(--hof-muted);
     text-align: center;
     margin: 0;
@@ -495,7 +586,7 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    border: 0.5px solid var(--hof-border);
+    border: var(--hof-input-border-w) solid var(--hof-border);
     background: var(--hof-surface);
     color: var(--hof-text);
     font-size: 1.25rem;
@@ -511,7 +602,7 @@
 }
 
 .hof-swiper-btn:focus-visible {
-    outline: 2px solid var(--hof-primary);
+    outline: var(--hof-focus-ring-w) solid var(--hof-focus-ring);
     outline-offset: 2px;
 }
 
@@ -521,15 +612,15 @@
     transform: none;
 }
 
-.hof-swiper-include { color: var(--hof-color-facet-coral, #D85A30); }
-.hof-swiper-skip    { color: var(--hof-color-ink-500, #888780); }
+.hof-swiper-include { color: var(--hof-accent); }
+.hof-swiper-skip    { color: var(--hof-muted); }
 
 .hof-swiper-reset {
     width: auto;
     height: auto;
     padding: 6px 14px;
-    border-radius: var(--hof-radius-ui);
-    font-size: 0.875rem;
+    border-radius: var(--hof-radius-md);
+    font-size: var(--hof-font-size-sm);
     box-shadow: none;
 }
 
@@ -602,8 +693,8 @@
 
 .hof-active-filters {
     background: var(--hof-surface);
-    border: 0.5px solid var(--hof-border);
-    border-radius: var(--hof-radius-ui);
+    border: var(--hof-input-border-w) solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
     padding: calc(var(--hof-space) * 1.5) calc(var(--hof-space) * 2);
     margin: 0 0 calc(var(--hof-space) * 2);
     display: flex;
@@ -622,7 +713,7 @@
 }
 
 .hof-active-filters-count strong {
-    color: var(--hof-color-facet-coral, #D85A30);
+    color: var(--hof-accent);
     font-variant-numeric: tabular-nums;
     font-weight: 600;
 }
@@ -635,11 +726,11 @@
 }
 
 .hof-active-filters-eyebrow {
-    font-family: var(--hof-font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+    font-family: var(--hof-font-mono);
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: var(--hof-muted, #888780);
+    color: var(--hof-muted);
     margin-right: 4px;
 }
 
@@ -648,9 +739,9 @@
     align-items: center;
     gap: 6px;
     padding: 5px 6px 5px 10px;
-    background: rgba(216, 90, 48, 0.08);
-    border: 0.5px solid var(--hof-color-facet-coral, #D85A30);
-    border-radius: 999px;
+    background: var(--hof-chip-bg);
+    border: var(--hof-input-border-w) solid var(--hof-chip-border);
+    border-radius: var(--hof-chip-radius);
     font-size: 12.5px;
     color: var(--hof-text);
     cursor: pointer;
@@ -658,7 +749,7 @@
 }
 
 .hof-active-filters-chip:hover {
-    background: rgba(216, 90, 48, 0.16);
+    background: var(--hof-chip-bg-hover);
 }
 
 .hof-active-filters-chip-label strong {
@@ -672,7 +763,7 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: var(--hof-color-facet-coral, #D85A30);
+    background: var(--hof-accent);
     color: #fff;
     font-size: 11px;
     line-height: 1;
@@ -681,7 +772,7 @@
 .hof-active-filters-clear {
     background: transparent;
     border: none;
-    color: var(--hof-primary, #534AB7);
+    color: var(--hof-primary);
     font-size: 12.5px;
     cursor: pointer;
     padding: 5px 10px;
@@ -691,14 +782,14 @@
 }
 
 .hof-active-filters-clear:hover {
-    color: var(--hof-color-facet-coral, #D85A30);
+    color: var(--hof-accent);
 }
 
 /* Reset link */
 .hof-reset {
     display: inline-block;
     color: var(--hof-muted);
-    font-size: 0.875rem;
+    font-size: var(--hof-font-size-sm);
     text-decoration: underline;
     text-underline-offset: 3px;
     cursor: pointer;
@@ -875,11 +966,13 @@
 .hof-ask-input {
     flex: 1;
     min-width: 0;
+    /* Bigger than the standard input chrome — conversational facet
+       wants more breathing room than a typical search box. */
     padding: 12px 12px 12px 36px;
-    border: 0.5px solid var(--hof-border);
-    border-radius: 10px;
-    background: var(--hof-surface);
-    color: var(--hof-text);
+    border: var(--hof-input-border-w) solid var(--hof-input-border);
+    border-radius: var(--hof-radius-lg);
+    background: var(--hof-input-bg);
+    color: var(--hof-input-color);
     font-size: 1rem;
     transition: border-color 160ms ease, box-shadow 160ms ease;
 }
@@ -895,8 +988,9 @@
 
 .hof-ask-input:focus {
     outline: none;
-    border-color: var(--hof-primary);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 18%, transparent);
+    border-color: var(--hof-focus-ring);
+    box-shadow: 0 0 0 var(--hof-focus-ring-soft-w)
+        color-mix(in oklab, var(--hof-focus-ring) var(--hof-focus-ring-soft-alpha), transparent);
 }
 
 /* Loading state — input gets a slow ring pulse. */
@@ -917,10 +1011,10 @@
     width: 40px;
     padding: 0;
     border: 0;
-    border-radius: 10px;
+    border-radius: var(--hof-radius-lg);
     background: var(--hof-primary);
     color: var(--hof-on-primary);
-    font-size: 0.875rem;
+    font-size: var(--hof-font-size-sm);
     cursor: pointer;
     transition: background 160ms ease, transform 120ms ease;
 }
@@ -979,11 +1073,11 @@
     align-items: center;
     gap: 6px;
     padding: 4px 8px 4px 10px;
-    border-radius: 999px;
+    border-radius: var(--hof-radius-pill);
     background: var(--hof-surface);
-    border: 0.5px solid var(--hof-border);
+    border: var(--hof-input-border-w) solid var(--hof-border);
     color: var(--hof-text);
-    font-size: 0.8125rem;
+    font-size: var(--hof-font-size-xs);
     cursor: pointer;
     transition:
         background 120ms ease,
@@ -1009,8 +1103,9 @@
 
 .hof-ask-chip:focus-visible {
     outline: none;
-    border-color: var(--hof-primary);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 22%, transparent);
+    border-color: var(--hof-focus-ring);
+    box-shadow: 0 0 0 var(--hof-focus-ring-soft-w)
+        color-mix(in oklab, var(--hof-focus-ring) 22%, transparent);
 }
 
 /* Exit animation — JS adds .is-exiting then waits for the transition. */
@@ -1136,20 +1231,21 @@
 
 .hof-facet-select {
     width: 100%;
-    padding: 8px 12px;
-    border: 0.5px solid var(--hof-border);
-    border-radius: 8px;
-    background: var(--hof-surface);
-    color: var(--hof-text);
-    font-size: 0.9375rem;
+    padding: var(--hof-input-pad-y) var(--hof-input-pad-x);
+    border: var(--hof-input-border-w) solid var(--hof-input-border);
+    border-radius: var(--hof-input-radius);
+    background: var(--hof-input-bg);
+    color: var(--hof-input-color);
+    font-size: var(--hof-font-size-body);
     cursor: pointer;
     transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .hof-facet-select:focus {
     outline: none;
-    border-color: var(--hof-primary);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 18%, transparent);
+    border-color: var(--hof-focus-ring);
+    box-shadow: 0 0 0 var(--hof-focus-ring-soft-w)
+        color-mix(in oklab, var(--hof-focus-ring) var(--hof-focus-ring-soft-alpha), transparent);
 }
 
 /* ── Toggle facet ───────────────────────────────────────────────────────── */
@@ -1176,10 +1272,10 @@
 .hof-toggle-track {
     position: relative;
     display: inline-block;
-    width: 36px;
-    height: 20px;
-    border-radius: 999px;
-    background: color-mix(in oklab, var(--hof-muted) 20%, var(--hof-surface));
+    width: var(--hof-toggle-track-w);
+    height: var(--hof-toggle-track-h);
+    border-radius: var(--hof-radius-pill);
+    background: var(--hof-toggle-track-off);
     transition: background 180ms ease;
 }
 
@@ -1187,35 +1283,37 @@
     position: absolute;
     top: 2px;
     left: 2px;
-    width: 16px;
-    height: 16px;
+    width: var(--hof-toggle-thumb-size);
+    height: var(--hof-toggle-thumb-size);
     border-radius: 50%;
-    background: var(--hof-surface);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+    background: var(--hof-toggle-thumb-bg);
+    box-shadow: var(--hof-shadow-thumb);
     transition: transform 180ms ease, background 180ms ease;
 }
 
 .hof-toggle-input:checked + .hof-toggle-track {
-    background: var(--hof-primary);
+    background: var(--hof-toggle-track-on);
 }
 
 .hof-toggle-input:checked + .hof-toggle-track .hof-toggle-thumb {
-    transform: translateX(16px);
-    background: var(--hof-on-primary);
+    /* Slide distance = track width − thumb width − 2× edge gap. */
+    transform: translateX(calc(var(--hof-toggle-track-w) - var(--hof-toggle-thumb-size) - 4px));
+    background: var(--hof-toggle-thumb-on);
 }
 
 .hof-toggle-input:focus-visible + .hof-toggle-track {
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 22%, transparent);
+    box-shadow: 0 0 0 var(--hof-focus-ring-soft-w)
+        color-mix(in oklab, var(--hof-focus-ring) 22%, transparent);
 }
 
 .hof-toggle-text {
     display: inline-flex;
     flex-direction: column;
-    line-height: 1.2;
+    line-height: var(--hof-line-height-tight);
 }
 
 .hof-toggle-text-main {
-    font-size: 0.9375rem;
+    font-size: var(--hof-font-size-body);
     color: var(--hof-text);
 }
 
@@ -1233,9 +1331,9 @@
 }
 
 .hof-hierarchy-children {
-    margin-left: 18px;
+    margin-left: var(--hof-hierarchy-indent);
     padding-left: 8px;
-    border-left: 1px dashed var(--hof-border);
+    border-left: 1px var(--hof-hierarchy-guide-style) var(--hof-hierarchy-guide-color);
 }
 
 .hof-hierarchy-row {
@@ -1278,18 +1376,19 @@
 /* Reuses .hof-facet-range-inputs from the numeric range facet for the row
    layout; the <input type="date"> elements style themselves natively. */
 .hof-facet-date-range .hof-facet-range-inputs input[type="date"] {
-    padding: 8px 10px;
-    border: 0.5px solid var(--hof-border);
-    border-radius: 8px;
-    background: var(--hof-surface);
-    color: var(--hof-text);
-    font-size: 0.9375rem;
+    padding: var(--hof-input-pad-y) calc(var(--hof-input-pad-x) - 2px);
+    border: var(--hof-input-border-w) solid var(--hof-input-border);
+    border-radius: var(--hof-input-radius);
+    background: var(--hof-input-bg);
+    color: var(--hof-input-color);
+    font-size: var(--hof-font-size-body);
 }
 
 .hof-facet-date-range .hof-facet-range-inputs input[type="date"]:focus {
     outline: none;
-    border-color: var(--hof-primary);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 18%, transparent);
+    border-color: var(--hof-focus-ring);
+    box-shadow: 0 0 0 var(--hof-focus-ring-soft-w)
+        color-mix(in oklab, var(--hof-focus-ring) var(--hof-focus-ring-soft-alpha), transparent);
 }
 
 /* ── Visual DNA facet ───────────────────────────────────────────────────── */
@@ -1330,7 +1429,7 @@
 }
 
 .hof-visual-dna-drop-text {
-    font-size: 0.8125rem;
+    font-size: var(--hof-font-size-xs);
     line-height: 1.4;
 }
 
@@ -1343,31 +1442,32 @@
 .hof-visual-dna-url {
     flex: 1;
     min-width: 0;
-    padding: 8px 12px;
-    border: 0.5px solid var(--hof-border);
-    border-radius: 8px;
-    background: var(--hof-surface);
-    color: var(--hof-text);
-    font-size: 0.875rem;
+    padding: var(--hof-input-pad-y) var(--hof-input-pad-x);
+    border: var(--hof-input-border-w) solid var(--hof-input-border);
+    border-radius: var(--hof-input-radius);
+    background: var(--hof-input-bg);
+    color: var(--hof-input-color);
+    font-size: var(--hof-font-size-sm);
     transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .hof-visual-dna-url:focus {
     outline: none;
-    border-color: var(--hof-primary);
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--hof-primary) 18%, transparent);
+    border-color: var(--hof-focus-ring);
+    box-shadow: 0 0 0 var(--hof-focus-ring-soft-w)
+        color-mix(in oklab, var(--hof-focus-ring) var(--hof-focus-ring-soft-alpha), transparent);
 }
 
 .hof-visual-dna-eyedrop {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 12px;
-    border: 0.5px solid var(--hof-border);
-    border-radius: 8px;
-    background: var(--hof-surface);
-    color: var(--hof-text);
-    font-size: 0.8125rem;
+    padding: var(--hof-input-pad-y) var(--hof-input-pad-x);
+    border: var(--hof-input-border-w) solid var(--hof-input-border);
+    border-radius: var(--hof-input-radius);
+    background: var(--hof-input-bg);
+    color: var(--hof-input-color);
+    font-size: var(--hof-font-size-xs);
     cursor: pointer;
     transition: background 160ms ease, border-color 160ms ease;
 }

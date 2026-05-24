@@ -30,7 +30,14 @@ final class AssetLoader implements Bootable {
     public function register_hooks(): void {
         add_action( 'wp_enqueue_scripts',  [ $this, 'enqueue' ] );
         add_filter( 'script_loader_tag',   [ $this, 'script_as_module' ], 10, 3 );
-        add_action( 'wp_head',             [ $this, 'print_token_block' ], 5 );
+        // Priority 20 — must run AFTER wp_print_styles (default 8) so the
+        // inline <style> block follows the bundled stylesheet in source
+        // order. CSS cascade: equal specificity, later wins → the filter's
+        // user-provided values override the bundle's defaults. At p5 (the
+        // previous value) the bundle was overwriting filter values, making
+        // hof_public_css_tokens effectively dead for any token the bundle
+        // also defined.
+        add_action( 'wp_head',             [ $this, 'print_token_block' ], 20 );
     }
 
     public function enqueue(): void {
@@ -128,17 +135,73 @@ final class AssetLoader implements Bootable {
          *
          * @param array<string, string> $tokens
          */
+        // The token contract is documented in SHEPDESIGN.md's "Theming" section.
+        // What's shipped here is the curated set people typically want to
+        // override (brand colors, radii, focus ring, label/count/input chrome).
+        // The CSS bundle defines ~50 more tokens with sensible defaults — any
+        // of them can be added to this filter from theme code without
+        // touching the bundle.
         $tokens = (array) apply_filters( 'hof_public_css_tokens', apply_filters( 'hof_admin_css_tokens', [
+            // Brand
             '--hof-primary'    => '#5b6cff',
             '--hof-on-primary' => '#ffffff',
+            '--hof-accent'     => '#e0364f',
             '--hof-surface'    => '#ffffff',
             '--hof-bg'         => '#f4f5fb',
             '--hof-border'     => '#e3e4ec',
             '--hof-text'       => '#1a1c2c',
             '--hof-muted'      => '#6b6e7f',
-            '--hof-danger'     => '#e0364f',
-            '--hof-radius-ui'  => '8px',
-            '--hof-space'      => '8px',
+            '--hof-danger'     => 'var(--hof-accent)',
+
+            // Spacing + radius scale
+            '--hof-space'        => '8px',
+            '--hof-radius-xs'    => '4px',
+            '--hof-radius-sm'    => '6px',
+            '--hof-radius-md'    => '8px',
+            '--hof-radius-lg'    => '10px',
+            '--hof-radius-xl'    => '16px',
+            '--hof-radius-pill'  => '999px',
+            '--hof-radius-ui'    => 'var(--hof-radius-md)',
+
+            // Typography
+            '--hof-font-body'         => 'inherit',
+            '--hof-font-size-body'    => '0.9375rem',
+            '--hof-font-size-sm'      => '0.875rem',
+            '--hof-font-size-xs'      => '0.8125rem',
+            '--hof-font-size-eyebrow' => '0.6875rem',
+
+            // Eyebrow label
+            '--hof-label-color'           => 'var(--hof-muted)',
+            '--hof-label-font-size'       => 'var(--hof-font-size-eyebrow)',
+            '--hof-label-font-weight'     => '600',
+            '--hof-label-letter-spacing'  => '0.08em',
+            '--hof-label-transform'       => 'uppercase',
+
+            // Count badge
+            '--hof-count-color'       => 'var(--hof-muted)',
+            '--hof-count-font-size'   => 'var(--hof-font-size-sm)',
+            '--hof-count-font-weight' => '400',
+
+            // Input chrome (range, search, date, dropdown, ask, visual-dna)
+            '--hof-input-bg'       => 'var(--hof-surface)',
+            '--hof-input-border'   => 'var(--hof-border)',
+            '--hof-input-border-w' => '0.5px',
+            '--hof-input-radius'   => 'var(--hof-radius-md)',
+            '--hof-input-color'    => 'var(--hof-text)',
+            '--hof-input-pad-y'    => '8px',
+            '--hof-input-pad-x'    => '12px',
+
+            // Focus ring
+            '--hof-focus-ring'            => 'var(--hof-primary)',
+            '--hof-focus-ring-w'          => '2px',
+            '--hof-focus-ring-offset'     => '1px',
+            '--hof-focus-ring-soft-w'     => '3px',
+            '--hof-focus-ring-soft-alpha' => '18%',
+
+            // Option row (checkbox / radio)
+            '--hof-option-gap'    => 'var(--hof-space)',
+            '--hof-option-pad-y'  => '4px',
+            '--hof-option-accent' => 'var(--hof-primary)',
         ] ) );
 
         if ( empty( $tokens ) ) {
