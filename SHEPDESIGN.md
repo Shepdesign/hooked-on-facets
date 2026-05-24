@@ -101,6 +101,48 @@ Three things make the 7× speedup work; do not change any of them lightly:
 
 All three are reproducible via `bin/benchmark.sh` on a seeded 100k dataset.
 
+## Theming — CSS variable contract
+
+Every visible chrome value on every facet — colors, radii, typography, focus rings, input padding, label/count styling, named shadow scale — is driven by a `--hof-*` CSS custom property. Defaults preserve the Shepdesign voice; consumers override either via raw CSS or via the `hof_public_css_tokens` PHP filter.
+
+### Naming convention
+
+- **Brand / palette**: `--hof-primary`, `--hof-on-primary`, `--hof-accent`, `--hof-surface`, `--hof-bg`, `--hof-border`, `--hof-text`, `--hof-muted`, `--hof-danger`
+- **Scales**: `--hof-radius-{xs|sm|md|lg|xl|pill}`, `--hof-font-size-{xs|sm|body|eyebrow}`, `--hof-shadow-{xs|sm|md|thumb}`, `--hof-line-height-{tight|body}`
+- **Named chrome (cross-facet)**: `--hof-input-{bg|border|border-w|radius|color|pad-x|pad-y}`, `--hof-label-{color|font-size|font-weight|letter-spacing|transform}`, `--hof-count-{color|font-size|font-weight}`, `--hof-option-{gap|pad-y|accent}`
+- **Focus**: `--hof-focus-ring`, `--hof-focus-ring-w`, `--hof-focus-ring-offset`, `--hof-focus-ring-soft-w`, `--hof-focus-ring-soft-alpha` (the soft glow used by dropdown/date/ask)
+- **Per-facet** (only where a facet has chrome the cross-facet tokens can't address): `--hof-swatch-*` (13), `--hof-swiper-*` (3), `--hof-toggle-{track|thumb}-*`, `--hof-hierarchy-{indent|guide-color|guide-style}`, `--hof-chip-{bg|bg-hover|border|radius}`
+
+### Two override paths
+
+```php
+// 1. PHP filter — the ~30 curated tokens are pre-registered. Override any
+// of them by returning a new value; add tokens to extend the surface.
+add_filter( 'hof_public_css_tokens', function ( $tokens ) {
+    $tokens['--hof-primary']   = '#0ea5e9';
+    $tokens['--hof-radius-md'] = '12px';
+    $tokens['--hof-shadow-sm'] = '0 0 0 1px rgba(0,0,0,0.05)';
+    return $tokens;
+} );
+```
+
+```css
+/* 2. Raw CSS — every token defined in the bundle is overridable here.
+   Scope to .hof-facet so the override beats the bundle's defaults. */
+.hof-facet, .hof-results {
+    --hof-primary: #0ea5e9;
+    --hof-input-radius: var(--hof-radius-lg);
+}
+```
+
+### Cascade gotcha — fixed in this PR
+
+`hof_public_css_tokens` was effectively dead for any token the bundled CSS also defined, because the inline `<style id="hof-tokens">` block fired at `wp_head:5` — *before* the bundle stylesheet enqueued at `:8`. CSS cascade with equal specificity means later-in-source wins, so the bundle's defaults overrode whatever the filter put down. `AssetLoader::register_hooks` now binds `print_token_block` at `wp_head:20`, after `wp_print_styles`. If you ever change that priority, the filter goes back to being decorative.
+
+### What's *not* tokenized
+
+Animation durations, structural micro-gaps (4–6px), specific rotation degrees on the swipe-stamp, the `[data-hof-swatch-weight]` resize calc, and other "this is the design's bones, not its skin" details. The intent is bounded customization — colors, scales, named chrome — not "every pixel is a knob."
+
 ## Page builder integrations
 
 Each page builder gets a single Bootable service in `src/Integrations/{Builder}.php` that no-ops when its builder isn't loaded. Assets the builder needs to load with its own class hierarchy (e.g. widgets extending `\Elementor\Widget_Base`) live in `integrations/{builder}/` and are `require_once`'d just-in-time from the bridge — autoload deliberately doesn't reach them because their parent classes only exist at runtime when the builder is active.
