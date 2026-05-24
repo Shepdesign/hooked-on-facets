@@ -32,6 +32,8 @@
     --hof-swatch-selected-w: 2px;
     --hof-swatch-initial-color: var(--hof-muted);
     --hof-swatch-hover-accent: var(--hof-swatch-selected);
+    --hof-swatch-tooltip-bg:    rgba(28, 26, 22, 0.92);
+    --hof-swatch-tooltip-color: #F7F5EE;
 }
 
 .hof-facet {
@@ -272,6 +274,45 @@
 .hof-facet-swatch-tile[data-hof-selected] .hof-facet-swatch-initial {
     color: var(--hof-swatch-selected);
     opacity: 0.95;
+}
+
+/* Hover/focus tooltip with full term name + count. Built off the tile's
+   data-hof-tooltip attribute so the source of truth lives in PHP and
+   refresh.js keeps it in sync after filter changes. Visible only on
+   mouse-capable devices — touch users would otherwise see a stuck
+   tooltip after every tap (no hover-out event). The visible <span> below
+   the tile already shows the term name; this surfaces the count too and
+   rescues low-count tiles whose label gets truncated at small sizes. */
+@media (hover: hover) {
+    .hof-facet-swatch-tile {
+        position: relative;
+    }
+
+    .hof-facet-swatch-tile[data-hof-tooltip]::after {
+        content: attr(data-hof-tooltip);
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translate(-50%, 4px);
+        background: var(--hof-swatch-tooltip-bg);
+        color: var(--hof-swatch-tooltip-color);
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        line-height: 1.2;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 140ms ease, transform 140ms ease;
+        z-index: 5;
+    }
+
+    .hof-facet-swatch-tile[data-hof-tooltip]:hover::after,
+    .hof-facet-swatch-tile[data-hof-tooltip]:focus-within::after {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
 }
 
 .hof-facet-swatch-text {

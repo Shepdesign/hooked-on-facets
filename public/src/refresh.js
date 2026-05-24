@@ -124,7 +124,7 @@ function swapFacets(doc) {
     });
 }
 
-function patchSwatch(current, incoming) {
+export function patchSwatch(current, incoming) {
     const incomingTiles = incoming.querySelectorAll('[data-hof-swatch-value]');
     incomingTiles.forEach((next) => {
         const value = next.getAttribute('data-hof-swatch-value');
@@ -143,10 +143,22 @@ function patchSwatch(current, incoming) {
             countEl.textContent = incomingCount.textContent;
         }
 
+        // Tooltip text embeds the count, so it must move with it. Also
+        // re-mirror aria-label on the input for the same reason — screen
+        // readers should hear the new count after a filter change.
+        const incomingTooltip = next.getAttribute('data-hof-tooltip');
+        if (incomingTooltip !== null) {
+            tile.setAttribute('data-hof-tooltip', incomingTooltip);
+        }
+        const incomingAria = next.querySelector('input[type="checkbox"]')?.getAttribute('aria-label');
+        const tileInput = tile.querySelector('input[type="checkbox"]');
+        if (tileInput && incomingAria !== null && incomingAria !== undefined) {
+            tileInput.setAttribute('aria-label', incomingAria);
+        }
+
         const incomingChecked = next.querySelector('input[type="checkbox"]')?.checked ?? false;
-        const tileChecked = tile.querySelector('input[type="checkbox"]');
-        if (tileChecked && tileChecked.checked !== incomingChecked) {
-            tileChecked.checked = incomingChecked;
+        if (tileInput && tileInput.checked !== incomingChecked) {
+            tileInput.checked = incomingChecked;
         }
         if (incomingChecked) {
             tile.setAttribute('data-hof-selected', '1');

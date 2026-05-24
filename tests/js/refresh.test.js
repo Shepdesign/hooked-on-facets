@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { patchSwiper } from '../../public/src/refresh.js';
+import { patchSwatch, patchSwiper } from '../../public/src/refresh.js';
 
 // Build a facet wrapper as either the live DOM copy (`current`) or the
 // freshly server-rendered copy (`incoming`). `included` controls whether
@@ -83,5 +83,114 @@ describe('patchSwiper — right-swipe reconcile', () => {
 
         expect(c.getAttribute('data-hof-swiped')).toBe('left');
         expect(c.querySelector('input').checked).toBe(false);
+    });
+});
+
+// ── patchSwatch ───────────────────────────────────────────────────────
+
+function buildSwatchFacet({ values, counts = {}, weights = {}, tooltips = {}, selected = [] } = {}) {
+    const selectedSet = new Set(selected);
+    const html = values.map((value) => {
+        const isSelected = selectedSet.has(value);
+        const count = counts[value] ?? 0;
+        const weight = weights[value];
+        const tooltip = tooltips[value] ?? `${value} · ${count}`;
+        const style = weight !== undefined ? `style="--hof-swatch-weight: ${weight};"` : '';
+        const aria = `aria-label="${value}, ${count} items"`;
+        return `
+            <label class="hof-facet-swatch-tile"
+                   ${style}
+                   data-hof-swatch-value="${value}"
+                   data-hof-tooltip="${tooltip}"
+                   ${isSelected ? 'data-hof-selected="1"' : ''}>
+                <input type="checkbox" name="hof[color][]" value="${value}" ${aria} ${isSelected ? 'checked' : ''}>
+                <span class="hof-facet-count" data-hof-count="${value}">${count}</span>
+            </label>
+        `;
+    }).join('');
+
+    const wrapper = document.createElement('div');
+    wrapper.setAttribute('data-hof-facet', 'color');
+    wrapper.setAttribute('data-hof-display', 'swatch');
+    wrapper.innerHTML = html;
+    return wrapper;
+}
+
+function tile(root, value) {
+    return root.querySelector(`[data-hof-swatch-value="${value}"]`);
+}
+
+describe('patchSwatch — counts and weight', () => {
+    it('updates count text from the incoming copy', () => {
+        const current  = buildSwatchFacet({ values: ['red'], counts: { red: 12 } });
+        const incoming = buildSwatchFacet({ values: ['red'], counts: { red: 3 } });
+
+        patchSwatch(current, incoming);
+
+        expect(tile(current, 'red').querySelector('[data-hof-count]').textContent).toBe('3');
+    });
+
+    it('updates --hof-swatch-weight so the tile resizes in place', () => {
+        const current  = buildSwatchFacet({ values: ['red'], weights: { red: 1 } });
+        const incoming = buildSwatchFacet({ values: ['red'], weights: { red: 0.25 } });
+
+        patchSwatch(current, incoming);
+
+        expect(tile(current, 'red').style.getPropertyValue('--hof-swatch-weight')).toBe('0.25');
+    });
+});
+
+describe('patchSwatch — tooltip + a11y sync with count', () => {
+    it('rewrites data-hof-tooltip when the count changes', () => {
+        const current = buildSwatchFacet({
+            values: ['red'],
+            counts: { red: 12 },
+            tooltips: { red: 'Red · 12' },
+        });
+        const incoming = buildSwatchFacet({
+            values: ['red'],
+            counts: { red: 3 },
+            tooltips: { red: 'Red · 3' },
+        });
+
+        patchSwatch(current, incoming);
+
+        // Tooltip surfaces full term + count on hover; stale text would
+        // claim 12 matches when the filter has narrowed to 3.
+        expect(tile(current, 'red').getAttribute('data-hof-tooltip')).toBe('Red · 3');
+    });
+
+    it('rewrites the input aria-label when the count changes', () => {
+        const current  = buildSwatchFacet({ values: ['red'], counts: { red: 12 } });
+        const incoming = buildSwatchFacet({ values: ['red'], counts: { red: 3 } });
+
+        patchSwatch(current, incoming);
+
+        expect(tile(current, 'red').querySelector('input').getAttribute('aria-label'))
+            .toBe('red, 3 items');
+    });
+});
+
+describe('patchSwatch — selected state', () => {
+    it('marks a previously unselected tile as selected when the server says so', () => {
+        const current  = buildSwatchFacet({ values: ['red'] });
+        const incoming = buildSwatchFacet({ values: ['red'], selected: ['red'] });
+
+        patchSwatch(current, incoming);
+
+        const t = tile(current, 'red');
+        expect(t.getAttribute('data-hof-selected')).toBe('1');
+        expect(t.querySelector('input').checked).toBe(true);
+    });
+
+    it('clears the selected attribute when the server has dropped the value', () => {
+        const current  = buildSwatchFacet({ values: ['red'], selected: ['red'] });
+        const incoming = buildSwatchFacet({ values: ['red'] });
+
+        patchSwatch(current, incoming);
+
+        const t = tile(current, 'red');
+        expect(t.getAttribute('data-hof-selected')).toBeNull();
+        expect(t.querySelector('input').checked).toBe(false);
     });
 });

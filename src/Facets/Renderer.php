@@ -785,15 +785,34 @@ final class Renderer {
                         ? ''
                         : mb_strtoupper( mb_substr( (string) $bucket['display'], 0, 1 ) );
                 ?>
+                    <?php
+                    $count_fmt = number_format_i18n( $count );
+                    // Tooltip surfaces full term name + count on hover/focus.
+                    // Crucial for the long-tail end of the deck where the
+                    // visible label below the tile truncates and the tile
+                    // itself shrinks toward --hof-swatch-min.
+                    $tooltip = sprintf( '%s · %s', $bucket['display'], $count_fmt );
+                    // Aria-label routes the same context to screen readers;
+                    // the visible <span class="hof-facet-swatch-name"> stays
+                    // as the primary readable label, this just adds count.
+                    $aria_label = sprintf(
+                        /* translators: 1: facet value display name, 2: matching-product count */
+                        _n( '%1$s, %2$s item', '%1$s, %2$s items', $count, 'hooked-on-facets' ),
+                        $bucket['display'],
+                        $count_fmt
+                    );
+                    ?>
                     <li class="hof-facet-swatch-item">
                         <label class="hof-facet-swatch-tile"
                                style="<?php echo esc_attr( $style ); ?>"
                                data-hof-swatch-value="<?php echo esc_attr( $value ); ?>"
+                               data-hof-tooltip="<?php echo esc_attr( $tooltip ); ?>"
                                <?php echo $checked ? 'data-hof-selected="1"' : ''; ?>>
                             <input type="checkbox"
                                    class="hof-facet-swatch-input screen-reader-text"
                                    name="hof[<?php echo esc_attr( $name ); ?>][]"
                                    value="<?php echo esc_attr( $value ); ?>"
+                                   aria-label="<?php echo esc_attr( $aria_label ); ?>"
                                    <?php checked( $checked ); ?>>
                             <span class="hof-facet-swatch-visual" aria-hidden="true">
                                 <?php if ( $initial !== '' ) : ?>
