@@ -50,11 +50,13 @@ A useful report contains:
 ## scope
 
 In scope:
+
 - The HOF plugin itself (PHP, JS, REST endpoints, admin UI)
 - HOF's interaction with WordPress core, WooCommerce, and listed dependencies
 - HOF's documentation/wiki where it provides exploitable misinformation
 
 Out of scope:
+
 - Vulnerabilities in WordPress core, WooCommerce, or unrelated third-party plugins (report those to their respective maintainers)
 - Vulnerabilities that require admin access to exploit (those are operational, not application, vulnerabilities)
 - Theoretical attacks without a concrete exploitation path
