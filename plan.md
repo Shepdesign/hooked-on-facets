@@ -110,13 +110,18 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 - **Docker stack: `wordpress:php8.2-apache` (latest 6.x).** Originally pinned to 6.4; bumped during benchmark setup because current WooCommerce requires 6.8+.
 - **`wp-cli` sidecar runs as uid 33** so it can write into the wp-content volume created by the wordpress container; also gets its own `WORDPRESS_DB_*` env block since wp-config.php's `getenv_docker()` fallback host is `mysql` (not our service name `db`).
 
+## Phase 2 — landed
+
+- [x] **Elementor bridge.** Facet placement widget + Query ID binding (default `hof`, filterable via `hof_elementor_query_ids`). Set the Query ID on a Loop Grid / Posts / Products widget and HOF filters its loop directly via `post__in`. Bridge no-ops when Elementor isn't loaded. Bootable service at `src/Integrations/Elementor.php`; widget class at `integrations/elementor/widgets/facet.php` (require_once'd just-in-time so PSR-4 doesn't try to load it without Elementor present).
+- [x] **Swipe Deck facet** — see SHEPDESIGN.md. Active filters chip strip pairs with it.
+
 ## Phase 2 candidates (not sequenced)
 
-1. First page builder bridge — **Elementor** (largest WC overlap)
-2. Two "wow" facets in priority order: **Visual Fluid Swatches → Swipe Deck**. (Venn / UpSet were attempted, shipped, and retired — see SHEPDESIGN.md.)
-3. Action Scheduler-backed incremental reindex
-4. CSS Variable Engine — full theming UI
-5. ACF/Meta Box source plugins
+1. **Visual Fluid Swatches** (the second "wow" facet)
+2. Action Scheduler-backed incremental reindex
+3. CSS Variable Engine — full theming UI
+4. ACF/Meta Box source plugins
+5. Additional page builder bridges — Divi, Bricks, Breakdance (mirror the Elementor pattern)
 
 ## Open questions
 

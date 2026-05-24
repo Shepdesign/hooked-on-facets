@@ -28,7 +28,7 @@ use HookedOnFacets\Telemetry\Recorder;
 
 defined( 'ABSPATH' ) || exit;
 
-final class Resolver {
+final class Resolver implements IdResolver {
 
     /** Per-request cache of normalized facet definitions, keyed by name. */
     private ?array $defs_by_name_cache = null;

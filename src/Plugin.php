@@ -132,6 +132,11 @@ final class Plugin {
 
         $this->bind( \HookedOnFacets\Integrations\WooCommerce::class, static fn() => new \HookedOnFacets\Integrations\WooCommerce() );
 
+        $this->bind( \HookedOnFacets\Integrations\Elementor::class, static fn( self $c ) => new \HookedOnFacets\Integrations\Elementor(
+            $c->make( \HookedOnFacets\Filter\Resolver::class ),
+            $c->make( \HookedOnFacets\Telemetry\Recorder::class ),
+        ) );
+
         $this->bind( \HookedOnFacets\Licensing\LicenseClient::class, static fn() => new \HookedOnFacets\Licensing\LicenseClient() );
 
         $this->bind( \HookedOnFacets\Licensing\LicenseManager::class, static fn( self $c ) => new \HookedOnFacets\Licensing\LicenseManager(
@@ -191,6 +196,7 @@ final class Plugin {
             \HookedOnFacets\Frontend\AssetLoader::class,
             \HookedOnFacets\Frontend\Shortcodes::class,
             \HookedOnFacets\Frontend\BlockRegistrar::class,
+            \HookedOnFacets\Integrations\Elementor::class,
             \HookedOnFacets\Cli\Commands::class,
         ];
     }

@@ -67,7 +67,8 @@ Output goes to `assets/dist/<name>/` with hashed filenames + `manifest.json`. PH
 | Core engine class named in the blueprint (Activator, Indexer, QueryHook) | `includes/class-hof-*.php`, run `composer dump-autoload` |
 | New facet type (checkbox, range, search, etc.) | `src/Facets/` |
 | REST endpoint | `src/Api/` |
-| Page builder bridge (Elementor, Divi, Bricks, Breakdance) | `integrations/{builder}/` |
+| Page builder bridge — service class | `src/Integrations/{Builder}.php` (Bootable, guards on builder presence) |
+| Page builder bridge — assets (widget files, templates) | `integrations/{builder}/` (require_once'd just-in-time) |
 | Gutenberg block | `integrations/gutenberg/blocks/{name}/` |
 | Admin SPA component / screen | `admin/src/` |
 | Frontend facet runtime component | `public/src/components/` |
@@ -100,6 +101,23 @@ Three things make the 7× speedup work; do not change any of them lightly:
 
 All three are reproducible via `bin/benchmark.sh` on a seeded 100k dataset.
 
+## Page builder integrations
+
+Each page builder gets a single Bootable service in `src/Integrations/{Builder}.php` that no-ops when its builder isn't loaded. Assets the builder needs to load with its own class hierarchy (e.g. widgets extending `\Elementor\Widget_Base`) live in `integrations/{builder}/` and are `require_once`'d just-in-time from the bridge — autoload deliberately doesn't reach them because their parent classes only exist at runtime when the builder is active.
+
+### Elementor — Query ID convention
+
+The Elementor bridge is opt-in by **Query ID**, not magic detection. Users set a Query ID (default `hof`) on their Loop Grid / Posts / Products widget, and the bridge hooks `elementor/query/{id}` to apply `post__in` from the URL's `?hof[*]` state directly. Multiple bound loops or a different naming convention can be configured via the `hof_elementor_query_ids` filter.
+
+The bridge doesn't piggyback on QueryHook's `pre_get_posts` path because Elementor calls `$query->query($args)` *after* the `elementor/query/{id}` action fires, and `WP_Query::query()` resets query_vars from `$args` — so a `$query->set('hof_facet_target', …)` flag would be discarded. Setting `post__in` directly is robust and matches Elementor's own documented mutation pattern.
+
 ## Tests
 
-PHPUnit lives under `tests/php/`; Vitest under `tests/js/`. Neither is wired up yet — add when the first non-trivial unit appears.
+- **PHP** — PHPUnit 11 + Brain Monkey (no live WordPress; WP funcs are stubbed per test). `composer test`. Tests live under `tests/php/`; WP-class stubs (`WP_Query` and friends) live under `tests/stubs/` so composer's PSR-4 scan doesn't flag them.
+- **JS** — Vitest 4 + jsdom. `npm test` / `npm run test:watch`. Tests live under `tests/js/`.
+
+Both suites gate CI (no `|| true`, no `continue-on-error`). Add tests when a unit's behavior is non-trivial or worth pinning against regression — runtime modules that own client-visible state (the swipe deck, refresh reconciliation) earn coverage; thin glue layers don't.
+
+## Final classes need narrow interfaces for testing
+
+Production classes that other services depend on are marked `final` for the usual reasons (sealed surface, no surprise subclass overrides). The flip side: Mockery can't mock final classes. When a consumer only needs a small slice of a final class's API, extract a tiny interface for that slice and have the concrete class `implements` it. Examples: {@see \HookedOnFacets\Filter\IdResolver} (just `resolve_ids`), {@see \HookedOnFacets\Telemetry\LoopHookRecorder} (just `record_loop_hook`). Consumers depend on the interface; the DI container still resolves to the concrete class.
