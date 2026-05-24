@@ -1,26 +1,70 @@
 import { validateFacet } from '../validation.js';
 
 const KINDS = [
-    { value: 'taxonomy', label: 'Taxonomy',  hint: 'e.g. product_cat, category, product_tag' },
-    { value: 'meta',     label: 'Post meta', hint: 'e.g. _price, _stock_status' },
-    { value: 'field',    label: 'Post field', hint: 'e.g. post_title, post_author' },
-    { value: 'view',     label: 'View (no source)', hint: 'Orchestrates other facets — no source needed.' },
+    { value: 'taxonomy', label: 'Taxonomy',           hint: 'e.g. product_cat, category, product_tag' },
+    { value: 'meta',     label: 'Post meta',          hint: 'e.g. _price, _stock_status' },
+    { value: 'field',    label: 'Post field',         hint: 'e.g. post_title, post_author' },
+    { value: 'view',     label: 'Display-only (no filter)', hint: "Doesn't filter on its own — drives other facets via the URL state." },
 ];
 
-const DISPLAYS = [
-    { value: 'checkbox',     label: 'Checkbox list' },
-    { value: 'radio',        label: 'Radio (single-select)' },
-    { value: 'dropdown',     label: 'Dropdown' },
-    { value: 'toggle',       label: 'Toggle' },
-    { value: 'hierarchy',    label: 'Hierarchy (nested taxonomy)' },
-    { value: 'range',        label: 'Range slider' },
-    { value: 'date_range',   label: 'Date range' },
-    { value: 'search',       label: 'Search box' },
-    { value: 'swatch',       label: 'Fluid swatches' },
-    { value: 'swiper',       label: 'Swipe deck' },
-    { value: 'ask',          label: 'Ask' },
-    { value: 'visual_dna',   label: 'Visual DNA' },
+// Display picker — grouped by what the shopper actually does with it,
+// so a non-developer admin can scan the list and pick the right one.
+// Internal slugs (visual_dna, ask) stay for stored-config back-compat;
+// only the UI labels change.
+const DISPLAY_GROUPS = [
+    {
+        group: 'Select',
+        hint: 'Pick one or more options.',
+        items: [
+            { value: 'checkbox',  label: 'Checkbox list' },
+            { value: 'radio',     label: 'Radio (single-select)' },
+            { value: 'dropdown',  label: 'Dropdown' },
+            { value: 'hierarchy', label: 'Hierarchy (nested taxonomy)' },
+        ],
+    },
+    {
+        group: 'Range',
+        hint: 'Pick between two values.',
+        items: [
+            { value: 'range',      label: 'Range slider' },
+            { value: 'date_range', label: 'Date range' },
+        ],
+    },
+    {
+        group: 'Boolean',
+        hint: 'On or off.',
+        items: [
+            { value: 'toggle', label: 'Toggle' },
+        ],
+    },
+    {
+        group: 'Text',
+        hint: 'Type to filter.',
+        items: [
+            { value: 'search', label: 'Search box' },
+        ],
+    },
+    {
+        group: 'Visual',
+        hint: 'Swipeable, tappable, or color-driven.',
+        items: [
+            { value: 'swatch', label: 'Fluid swatches' },
+            { value: 'swiper', label: 'Swipe deck' },
+        ],
+    },
+    {
+        group: 'Display-only (no filter)',
+        hint: "Doesn't filter on its own — sends shoppers' input to other facets.",
+        items: [
+            { value: 'ask',        label: 'Natural-language search' },
+            { value: 'visual_dna', label: 'Color match (drop an image)' },
+        ],
+    },
 ];
+
+// Flat lookup used by the rest of the file — switching/validation
+// shouldn't care which group a display lives in.
+const DISPLAYS = DISPLAY_GROUPS.flatMap((g) => g.items);
 
 // Displays that don't have a source — they orchestrate other facets.
 const VIEW_DISPLAYS = new Set(['ask', 'visual_dna']);
@@ -138,8 +182,12 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                 onChange(patch);
                             }}
                         >
-                            {DISPLAYS.map((d) => (
-                                <option key={d.value} value={d.value}>{d.label}</option>
+                            {DISPLAY_GROUPS.map((g) => (
+                                <optgroup key={g.group} label={g.group}>
+                                    {g.items.map((d) => (
+                                        <option key={d.value} value={d.value}>{d.label}</option>
+                                    ))}
+                                </optgroup>
                             ))}
                         </select>
                         {facet.display === 'swatch' && facet.kind !== 'taxonomy' && (
