@@ -63,11 +63,18 @@ jobs:
 
       - name: Lint (PHPCS)
         if: steps.detect.outputs.found == 'true'
-        run: composer run-script lint --if-it-exists || true
+        # composer doesn't ship an "if script exists" flag; check the
+        # script list ourselves so the step no-ops cleanly until lint lands.
+        run: |
+          if composer run-script --list 2>/dev/null | grep -qE '^[[:space:]]*lint[[:space:]]'; then
+            composer run-script lint
+          else
+            echo "::notice::No 'lint' composer script — skipping."
+          fi
 
       - name: Test (PHPUnit)
         if: steps.detect.outputs.found == 'true'
-        run: composer run-script test --if-it-exists
+        run: composer run-script test
 
   # --------------------------------------------------------------------------
   javascript:
