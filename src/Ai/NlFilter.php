@@ -152,7 +152,7 @@ final class NlFilter {
             $type    = $info['type'] ?? null;
 
             // Skip view facets — they orchestrate other facets but aren't themselves filter targets.
-            if ( $kind === 'view' || $display === 'two_d_slider' || $display === 'ask' ) {
+            if ( $kind === 'view' || $display === 'ask' ) {
                 continue;
             }
 

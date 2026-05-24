@@ -7,7 +7,7 @@
 const SLUG_RE = /^[a-z][a-z0-9_-]*$/;
 
 // Displays that don't have a source (view facets) — must reference another facet.
-const VIEW_DISPLAYS = new Set(['two_d_slider', 'ask', 'visual_dna']);
+const VIEW_DISPLAYS = new Set(['ask', 'visual_dna']);
 
 // Displays Visual DNA can target.
 const COLOR_TARGET_DISPLAYS = new Set([
@@ -51,14 +51,6 @@ export function validateFacet(facet, allFacets) {
     const settings = (facet.settings && typeof facet.settings === 'object' && !Array.isArray(facet.settings))
         ? facet.settings
         : {};
-
-    if (facet.display === 'two_d_slider') {
-        if (!settings.x_facet) issues['settings.x_facet'] = 'Pick an X axis facet.';
-        if (!settings.y_facet) issues['settings.y_facet'] = 'Pick a Y axis facet.';
-        if (settings.x_facet && settings.x_facet === settings.y_facet) {
-            issues['settings.y_facet'] = 'X and Y must be different facets.';
-        }
-    }
 
     if (facet.display === 'visual_dna') {
         if (!settings.target_facet) {

@@ -18,13 +18,12 @@ const DISPLAYS = [
     { value: 'search',       label: 'Search box' },
     { value: 'swatch',       label: 'Fluid swatches' },
     { value: 'swiper',       label: 'Swipe deck' },
-    { value: 'two_d_slider', label: '2D slider' },
     { value: 'ask',          label: 'Ask' },
     { value: 'visual_dna',   label: 'Visual DNA' },
 ];
 
 // Displays that don't have a source — they orchestrate other facets.
-const VIEW_DISPLAYS = new Set(['two_d_slider', 'ask', 'visual_dna']);
+const VIEW_DISPLAYS = new Set(['ask', 'visual_dna']);
 
 // Displays that visual_dna can target (color-bearing displays).
 const COLOR_TARGET_DISPLAYS = new Set(['checkbox', 'radio', 'dropdown', 'swatch', 'swiper']);
@@ -35,7 +34,6 @@ const sanitizeSlug = (raw) =>
 export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] }) {
     const kindDef = KINDS.find((k) => k.value === facet.kind) || KINDS[0];
     const isView  = VIEW_DISPLAYS.has(facet.display);
-    const rangeFacets = allFacets.filter((f) => f.display === 'range' && f.name !== facet.name);
     const colorTargetFacets = allFacets.filter((f) =>
         COLOR_TARGET_DISPLAYS.has(f.display) && f.name !== facet.name
     );
@@ -167,12 +165,6 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                 Non-taxonomy sources still work but cards will be label-only.
                             </span>
                         )}
-                        {facet.display === 'two_d_slider' && (
-                            <span className="hof-field-help">
-                                Drag a rectangle on a 2D plane to range-filter two numeric facets at once.
-                                Pick the x and y axes below.
-                            </span>
-                        )}
                         {facet.display === 'ask' && (
                             <span className="hof-field-help">
                                 A conversational, multi-turn facet. Each turn calls Anthropic and
@@ -188,57 +180,6 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                             </span>
                         )}
                     </label>
-
-                    {facet.display === 'two_d_slider' && (
-                        <>
-                            <label className={`hof-field ${issues['settings.x_facet'] ? 'is-invalid' : ''}`}>
-                                <span className="hof-field-label">X axis (range facet)</span>
-                                <select
-                                    className="hof-input"
-                                    value={settings.x_facet || ''}
-                                    onChange={(e) => updateSettings({ x_facet: e.target.value })}
-                                    aria-invalid={issues['settings.x_facet'] ? 'true' : 'false'}
-                                >
-                                    <option value="">— pick a facet —</option>
-                                    {rangeFacets.map((f) => (
-                                        <option key={f.name} value={f.name}>
-                                            {f.label || f.name}{' '}
-                                            <code>({f.name})</code>
-                                        </option>
-                                    ))}
-                                </select>
-                                {issues['settings.x_facet']
-                                    ? <span className="hof-field-error">{issues['settings.x_facet']}</span>
-                                    : rangeFacets.length === 0 && (
-                                        <span className="hof-field-help hof-field-warn">
-                                            No range-display facets configured. Create at least two range
-                                            facets first, then come back here.
-                                        </span>
-                                    )}
-                            </label>
-
-                            <label className={`hof-field ${issues['settings.y_facet'] ? 'is-invalid' : ''}`}>
-                                <span className="hof-field-label">Y axis (range facet)</span>
-                                <select
-                                    className="hof-input"
-                                    value={settings.y_facet || ''}
-                                    onChange={(e) => updateSettings({ y_facet: e.target.value })}
-                                    aria-invalid={issues['settings.y_facet'] ? 'true' : 'false'}
-                                >
-                                    <option value="">— pick a facet —</option>
-                                    {rangeFacets.map((f) => (
-                                        <option key={f.name} value={f.name}>
-                                            {f.label || f.name}{' '}
-                                            <code>({f.name})</code>
-                                        </option>
-                                    ))}
-                                </select>
-                                {issues['settings.y_facet'] && (
-                                    <span className="hof-field-error">{issues['settings.y_facet']}</span>
-                                )}
-                            </label>
-                        </>
-                    )}
 
                     {facet.display === 'ask' && (
                         <label className="hof-field">
@@ -439,29 +380,6 @@ function FacetPreview({ facet }) {
         );
     }
 
-    if (facet.display === 'two_d_slider') {
-        const settings = (facet.settings && typeof facet.settings === 'object') ? facet.settings : {};
-        const ready = !!settings.x_facet && !!settings.y_facet && settings.x_facet !== settings.y_facet;
-        return (
-            <div className="hof-preview">
-                <div className="hof-preview-label">{label}</div>
-                <div className="hof-preview-2d">
-                    <div className="hof-preview-2d-plane">
-                        <div className="hof-preview-2d-rect" />
-                    </div>
-                    <p className="hof-preview-2d-axes">
-                        <span>x: <code>{settings.x_facet || '—'}</code></span>
-                        <span>y: <code>{settings.y_facet || '—'}</code></span>
-                    </p>
-                </div>
-                <p className="hof-preview-note">
-                    {ready
-                        ? 'Shoppers drag a rectangle on this plane; both axes update at once.'
-                        : 'Pick the x and y range facets to wire this up.'}
-                </p>
-            </div>
-        );
-    }
 
     if (facet.display === 'visual_dna') {
         const settings = (facet.settings && typeof facet.settings === 'object') ? facet.settings : {};

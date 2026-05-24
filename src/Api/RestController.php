@@ -443,7 +443,7 @@ final class RestController implements Bootable {
         $allowed_displays = [
             'checkbox', 'radio', 'dropdown', 'toggle', 'hierarchy',
             'range', 'date_range', 'search', 'swatch', 'swiper',
-            'two_d_slider', 'ask', 'visual_dna',
+            'ask', 'visual_dna',
         ];
 
         $clean = [];
@@ -499,17 +499,6 @@ final class RestController implements Bootable {
         // View facets carry display-specific orchestration settings, not the
         // swiper sandbox knobs. Dispatch on display so each shape gets its
         // own allowlist.
-        if ( $display === 'two_d_slider' ) {
-            $out = [];
-            if ( isset( $raw['x_facet'] ) && is_scalar( $raw['x_facet'] ) ) {
-                $out['x_facet'] = sanitize_key( (string) $raw['x_facet'] );
-            }
-            if ( isset( $raw['y_facet'] ) && is_scalar( $raw['y_facet'] ) ) {
-                $out['y_facet'] = sanitize_key( (string) $raw['y_facet'] );
-            }
-            return array_filter( $out, static fn( $v ) => $v !== '' );
-        }
-
         if ( $display === 'ask' ) {
             $out = [];
             if ( isset( $raw['placeholder'] ) && is_scalar( $raw['placeholder'] ) ) {
