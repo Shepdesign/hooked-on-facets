@@ -12,6 +12,7 @@ import { refresh } from './refresh.js';
 import { initSwiper } from './swiper.js';
 import { initAsk } from './ask.js';
 import { initVisualDna } from './visual-dna.js';
+import { initPagination } from './pagination.js';
 
 const store = new Store();
 store.hydrateFromUrl();
@@ -19,6 +20,7 @@ store.hydrateFromUrl();
 initSwiper();
 initAsk(store);
 initVisualDna(store);
+initPagination();
 
 const DEBOUNCE_MS = 250;
 

@@ -53,6 +53,13 @@ const DISPLAY_GROUPS = [
         ],
     },
     {
+        group: 'Navigation',
+        hint: "Doesn't filter — moves shoppers through pages of results.",
+        items: [
+            { value: 'pagination', label: 'Pagination (numbered)' },
+        ],
+    },
+    {
         group: 'Display-only (no filter)',
         hint: "Doesn't filter on its own — sends shoppers' input to other facets.",
         items: [
@@ -66,8 +73,9 @@ const DISPLAY_GROUPS = [
 // shouldn't care which group a display lives in.
 const DISPLAYS = DISPLAY_GROUPS.flatMap((g) => g.items);
 
-// Displays that don't have a source — they orchestrate other facets.
-const VIEW_DISPLAYS = new Set(['ask', 'visual_dna']);
+// Displays that don't have a source — they orchestrate other facets
+// (ask, visual_dna) or render result-region navigation (pagination).
+const VIEW_DISPLAYS = new Set(['ask', 'visual_dna', 'pagination']);
 
 // Displays that visual_dna can target (color-bearing displays).
 const COLOR_TARGET_DISPLAYS = new Set(['checkbox', 'radio', 'dropdown', 'swatch', 'swiper']);
@@ -227,6 +235,14 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                 Pick the color facet to drive below.
                             </span>
                         )}
+                        {facet.display === 'pagination' && (
+                            <span className="hof-field-help">
+                                Numbered « 1 2 3 » nav for the results region. Reads <code>paged</code>
+                                from the URL and respects every other current query arg
+                                (filters survive pagination). Click handler is SPA-style — no full
+                                page reloads.
+                            </span>
+                        )}
                     </label>
 
                     {facet.display === 'ask' && (
@@ -325,6 +341,65 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                 for common terms like <code>red</code>, <code>navy</code>, <code>olive</code>.
                             </span>
                         </label>
+                    )}
+
+                    {facet.display === 'pagination' && (
+                        <>
+                            <label className="hof-field">
+                                <span className="hof-field-label">Per page (optional)</span>
+                                <input
+                                    className="hof-input"
+                                    type="number"
+                                    min="1"
+                                    value={settings.per_page || ''}
+                                    onChange={(e) => {
+                                        const v = e.target.value === '' ? null : Math.max(1, parseInt(e.target.value, 10) || 1);
+                                        updateSettings({ per_page: v });
+                                    }}
+                                    placeholder={`Default: WP "Posts per page" setting`}
+                                />
+                                <span className="hof-field-help">
+                                    Leave blank to use WordPress's <code>posts_per_page</code> option
+                                    (Settings → Reading). Override here if this loop should paginate at a
+                                    different rate than the rest of the site.
+                                </span>
+                            </label>
+
+                            <label className="hof-field">
+                                <span className="hof-field-label">Neighbors visible</span>
+                                <input
+                                    className="hof-input"
+                                    type="number"
+                                    min="0"
+                                    max="5"
+                                    value={settings.neighbors ?? 2}
+                                    onChange={(e) => updateSettings({ neighbors: Math.max(0, Math.min(5, parseInt(e.target.value, 10) || 0)) })}
+                                />
+                                <span className="hof-field-help">
+                                    How many page numbers show on each side of the current page.
+                                    Higher = wider nav; lower = more compact. 2 is a sensible default
+                                    that fits in most narrow sidebars without wrapping.
+                                </span>
+                            </label>
+
+                            <label className="hof-field hof-field-inline">
+                                <input
+                                    type="checkbox"
+                                    checked={settings.show_first_last !== false}
+                                    onChange={(e) => updateSettings({ show_first_last: e.target.checked })}
+                                />
+                                <span>Show first/last buttons (« »)</span>
+                            </label>
+
+                            <label className="hof-field hof-field-inline">
+                                <input
+                                    type="checkbox"
+                                    checked={settings.show_prev_next !== false}
+                                    onChange={(e) => updateSettings({ show_prev_next: e.target.checked })}
+                                />
+                                <span>Show prev/next buttons (‹ ›)</span>
+                            </label>
+                        </>
                     )}
 
                     <div className="hof-editor-actions">
@@ -478,6 +553,32 @@ function FacetPreview({ facet }) {
                 <p className="hof-preview-note">
                     Conversational. Each chip is removable — taps update both the filter and the
                     model's next-turn context. Configure the key in Settings → Ask.
+                </p>
+            </div>
+        );
+    }
+
+    if (facet.display === 'pagination') {
+        const settings = (facet.settings && typeof facet.settings === 'object') ? facet.settings : {};
+        const showFL = settings.show_first_last !== false;
+        const showPN = settings.show_prev_next !== false;
+        return (
+            <div className="hof-preview">
+                <div className="hof-preview-label">{label}</div>
+                <div className="hof-preview-pagination">
+                    {showFL && <span className="hof-preview-page">«</span>}
+                    {showPN && <span className="hof-preview-page">‹</span>}
+                    <span className="hof-preview-page">1</span>
+                    <span className="hof-preview-page hof-preview-page-current">2</span>
+                    <span className="hof-preview-page">3</span>
+                    <span className="hof-preview-page-gap">…</span>
+                    <span className="hof-preview-page">12</span>
+                    {showPN && <span className="hof-preview-page">›</span>}
+                    {showFL && <span className="hof-preview-page">»</span>}
+                </div>
+                <p className="hof-preview-note">
+                    Shows on the live site when results span more than one page. Click a number to
+                    jump — filters survive the page change.
                 </p>
             </div>
         );

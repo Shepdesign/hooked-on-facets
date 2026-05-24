@@ -61,6 +61,7 @@ final class Renderer {
             'hierarchy'   => $this->render_hierarchy( $facet, (array) $current_value, $counts ),
             'ask'         => $this->render_ask( $facet ),
             'visual_dna'  => $this->render_visual_dna( $facet ),
+            'pagination'  => $this->render_pagination( $facet ),
             // Retired displays — fall through to checkbox so stored configs
             // pointing at them don't crash the page:
             //   - 'venn' / 'upset' (matrix UX confused users; the active
@@ -1322,6 +1323,167 @@ final class Renderer {
             'khaki'   => '#bdb76b',
             'charcoal'=> '#36454f',
         ];
+    }
+
+    /**
+     * Pagination — numbered nav with optional first/last and prev/next.
+     *
+     * A view facet that doesn't filter on its own; it reads the current
+     * URL's `paged` var, computes total pages from either the active HOF
+     * filter result or `$wp_query->found_posts`, and renders « 1 2 … N »
+     * links that preserve every other URL param via `add_query_arg`.
+     *
+     * Click handling lives in public/src/pagination.js — clicks get
+     * intercepted, the URL is pushState'd, and refresh.js re-fetches.
+     *
+     * Settings:
+     *   per_page         (int|null)   override; null = use WP `posts_per_page`
+     *   neighbors        (int)        numbers shown around current; default 2
+     *   show_first_last  (bool)       default true
+     *   show_prev_next   (bool)       default true
+     *
+     * @param array<string, mixed> $facet
+     */
+    private function render_pagination( array $facet ): string {
+        $settings        = is_array( $facet['settings'] ?? null ) ? $facet['settings'] : [];
+        $per_page        = isset( $settings['per_page'] ) ? max( 1, (int) $settings['per_page'] ) : 0;
+        if ( $per_page === 0 ) {
+            $per_page = max( 1, (int) get_option( 'posts_per_page', 10 ) );
+        }
+        $neighbors       = isset( $settings['neighbors'] )       ? max( 0, min( 5, (int) $settings['neighbors'] ) ) : 2;
+        $show_first_last = ! isset( $settings['show_first_last'] ) || (bool) $settings['show_first_last'];
+        $show_prev_next  = ! isset( $settings['show_prev_next'] )  || (bool) $settings['show_prev_next'];
+
+        // Total matched count — try HOF resolver first (it's the source of
+        // truth when filters are active); fall back to the main query's
+        // found_posts when no filters are applied.
+        $total = $this->total_results_for_pagination();
+        if ( $total <= $per_page ) {
+            return ''; // No pagination needed (or one page, or no results).
+        }
+
+        $total_pages = (int) ceil( $total / $per_page );
+        $current     = max( 1, (int) get_query_var( 'paged' ) );
+        if ( $current === 1 && ! get_query_var( 'paged' ) ) {
+            // get_query_var('paged') is 0 on page 1 of archives — normalize.
+            $current = max( 1, (int) get_query_var( 'page' ) ?: 1 );
+        }
+        $current = max( 1, min( $total_pages, $current ) );
+
+        $pages = $this->pagination_page_list( $current, $total_pages, $neighbors );
+
+        ob_start();
+        ?>
+        <nav class="hof-facet hof-facet-pagination"
+             data-hof-facet="<?php echo esc_attr( $facet['name'] ); ?>"
+             data-hof-display="pagination"
+             data-hof-current="<?php echo (int) $current; ?>"
+             data-hof-total="<?php echo (int) $total_pages; ?>"
+             aria-label="<?php esc_attr_e( 'Results pagination', 'hooked-on-facets' ); ?>">
+            <ol class="hof-pagination-list">
+                <?php if ( $show_first_last && $current > 2 ) : ?>
+                    <li><a class="hof-pagination-btn hof-pagination-first"
+                           data-hof-page="1"
+                           href="<?php echo esc_url( $this->pagination_url( 1 ) ); ?>"
+                           aria-label="<?php esc_attr_e( 'First page', 'hooked-on-facets' ); ?>">«</a></li>
+                <?php endif; ?>
+
+                <?php if ( $show_prev_next && $current > 1 ) : ?>
+                    <li><a class="hof-pagination-btn hof-pagination-prev"
+                           data-hof-page="<?php echo (int) ( $current - 1 ); ?>"
+                           href="<?php echo esc_url( $this->pagination_url( $current - 1 ) ); ?>"
+                           aria-label="<?php esc_attr_e( 'Previous page', 'hooked-on-facets' ); ?>">‹</a></li>
+                <?php endif; ?>
+
+                <?php foreach ( $pages as $page ) : ?>
+                    <?php if ( $page === '…' ) : ?>
+                        <li class="hof-pagination-gap" aria-hidden="true">…</li>
+                    <?php else : ?>
+                        <li>
+                            <?php if ( $page === $current ) : ?>
+                                <span class="hof-pagination-btn hof-pagination-num is-current"
+                                      aria-current="page"><?php echo (int) $page; ?></span>
+                            <?php else : ?>
+                                <a class="hof-pagination-btn hof-pagination-num"
+                                   data-hof-page="<?php echo (int) $page; ?>"
+                                   href="<?php echo esc_url( $this->pagination_url( (int) $page ) ); ?>"
+                                   aria-label="<?php echo esc_attr( sprintf( /* translators: %d: page number */ __( 'Page %d', 'hooked-on-facets' ), (int) $page ) ); ?>"><?php echo (int) $page; ?></a>
+                            <?php endif; ?>
+                        </li>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+
+                <?php if ( $show_prev_next && $current < $total_pages ) : ?>
+                    <li><a class="hof-pagination-btn hof-pagination-next"
+                           data-hof-page="<?php echo (int) ( $current + 1 ); ?>"
+                           href="<?php echo esc_url( $this->pagination_url( $current + 1 ) ); ?>"
+                           aria-label="<?php esc_attr_e( 'Next page', 'hooked-on-facets' ); ?>">›</a></li>
+                <?php endif; ?>
+
+                <?php if ( $show_first_last && $current < $total_pages - 1 ) : ?>
+                    <li><a class="hof-pagination-btn hof-pagination-last"
+                           data-hof-page="<?php echo (int) $total_pages; ?>"
+                           href="<?php echo esc_url( $this->pagination_url( $total_pages ) ); ?>"
+                           aria-label="<?php esc_attr_e( 'Last page', 'hooked-on-facets' ); ?>">»</a></li>
+                <?php endif; ?>
+            </ol>
+        </nav>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Build the page-number list with ellipsis for gaps.
+     * Example for current=5, total=10, neighbors=2 → [1, '…', 3, 4, 5, 6, 7, '…', 10]
+     *
+     * @return array<int, int|string>
+     */
+    private function pagination_page_list( int $current, int $total, int $neighbors ): array {
+        $pages = [];
+        $start = max( 1, $current - $neighbors );
+        $end   = min( $total, $current + $neighbors );
+
+        if ( $start > 1 ) {
+            $pages[] = 1;
+            if ( $start > 2 ) $pages[] = '…';
+        }
+        for ( $i = $start; $i <= $end; $i++ ) {
+            $pages[] = $i;
+        }
+        if ( $end < $total ) {
+            if ( $end < $total - 1 ) $pages[] = '…';
+            $pages[] = $total;
+        }
+        return $pages;
+    }
+
+    /**
+     * URL for page N, preserving every other current query arg (including
+     * ?hof[*] filters). Uses WP's permalink-aware get_pagenum_link so the
+     * resulting URL respects /shop/page/2/ vs ?paged=2 style.
+     */
+    private function pagination_url( int $page ): string {
+        return (string) get_pagenum_link( $page );
+    }
+
+    private function total_results_for_pagination(): int {
+        // Active HOF filters: use resolver — it's the source of truth.
+        $state = Resolver::parse_request_filters();
+        if ( ! empty( $state ) ) {
+            $ids = $this->resolver->resolve_ids( $state );
+            if ( is_array( $ids ) ) {
+                return count( $ids );
+            }
+        }
+
+        // No filters: fall back to the global query's found_posts. May not
+        // be set in every render context (sidebar widgets that render before
+        // the loop) — return 0 in that case, which suppresses the nav.
+        global $wp_query;
+        if ( $wp_query instanceof \WP_Query ) {
+            return (int) $wp_query->found_posts;
+        }
+        return 0;
     }
 
     // ── Internals ───────────────────────────────────────────────────────────
