@@ -10,6 +10,9 @@ pnpm-debug.log*
 # Vite build output
 /assets/dist/
 
+# PHPUnit cache
+/.phpunit.cache/
+
 # OS / WP logs
 *.log
 .DS_Store

@@ -26,7 +26,7 @@ use HookedOnFacets\Contracts\Bootable;
 
 defined( 'ABSPATH' ) || exit;
 
-final class Recorder implements Bootable {
+final class Recorder implements Bootable, LoopHookRecorder {
 
     public const OPTION = 'hof_telemetry';
 

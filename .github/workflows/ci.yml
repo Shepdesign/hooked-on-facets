@@ -67,7 +67,7 @@ jobs:
 
       - name: Test (PHPUnit)
         if: steps.detect.outputs.found == 'true'
-        run: composer run-script test --if-it-exists || true
+        run: composer run-script test --if-it-exists
 
   # --------------------------------------------------------------------------
   javascript:
