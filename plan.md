@@ -14,6 +14,7 @@ Ship a faceted-filtering plugin that is measurably faster than FacetWP on a 100,
 ## In scope for Phase 1
 
 ### Foundation
+
 - [x] Plugin bootstrap (`hooked-on-facets.php`) with PHP/WP/Composer gates
 - [x] Activator + `wp_hof_index` schema (narrow EAV)
 - [ ] Deactivator (flush rewrite rules + scheduled events; preserve index data)
@@ -21,6 +22,7 @@ Ship a faceted-filtering plugin that is measurably faster than FacetWP on a 100,
 - [ ] `HookedOnFacets\Plugin` container with lazy service registration
 
 ### Indexer (HOF Turbo Indexer)
+
 - [ ] Synchronous full reindex via WP-CLI: `wp hof reindex`
 - [ ] Synchronous reindex from admin button
 - [ ] Incremental: hook `save_post`, `deleted_post`, `set_object_terms`
@@ -28,32 +30,38 @@ Ship a faceted-filtering plugin that is measurably faster than FacetWP on a 100,
 - [ ] Numeric normalization (pre-cast into `facet_numeric` for range queries)
 
 ### Auto-Hook Engine
+
 - [ ] WP_Query interceptor on `pre_get_posts` for main + flagged secondary queries
 - [ ] Gutenberg Query Loop block detection
 - [ ] Shortcode `[hof_facet name="..."]` and matching Gutenberg block `hof/facet`
 - [ ] Manual binding override (block attribute / shortcode arg)
 
 ### Facet types (3 in MVP)
+
 - [ ] **Checkbox** — taxonomy terms with live counts that update as filters apply
 - [ ] **Range slider** — numeric meta, uses `facet_numeric` column
 - [ ] **Search box** — debounced LIKE against indexed `facet_display`
 
 ### Admin SPA
+
 - [ ] React 18 + Vite, mounted on a top-level WP admin page
 - [ ] CRUD for facets: name, source, type, label, display options
 - [ ] Live preview pane
 - [ ] CSS variable tokens panel (read-only display in MVP — full editor in P2)
 
 ### Public runtime
+
 - [ ] AJAX filter via REST, URL-state synced (`?hof[brand]=acme&hof[price]=10-50`)
 - [ ] No full page reload on filter change
 - [ ] Server-rendered initial state matches client (no flash on load)
 
 ### REST API
+
 - [ ] `GET  /wp-json/hof/v1/facets` — list configured facets
 - [ ] `POST /wp-json/hof/v1/filter` — run filter, return matched IDs + facet counts in one round trip
 
 ### Performance gates (acceptance criteria)
+
 - [x] **p95 ≤ 50ms** on 100k products with 5-facet intersect — **achieved 54.5ms** against a deliberately non-selective benchmark filter; effectively at the gate within Docker/MySQL run-to-run noise (3ms spread between p50 and p99). Realistic filters narrow more aggressively and project under 30ms.
 - [x] **Full reindex ≤ 60s** for 100k products — **achieved 19.4s** after Phase 1.5 bulk-rebuild (was 300s on the per-object path; ~15× speedup, gate clears by 3×). The bulk path issues one JOIN'd SELECT per facet per batch instead of `get_the_terms()` / `get_post_meta()` per post, precomputes the term-depth map once per taxonomy, and keyset-paginates. Incremental `save_post` updates still flow through the WP-API-aware per-object path so plugin filters keep working.
 - [x] **One grouped query per facet** for counts — confirmed: `resolve()` runs `1 + N` queries, verified via `SAVEQUERIES`.
@@ -73,6 +81,7 @@ Each row is a measured `bin/benchmark.sh` run, p95 over 200 iterations after a 1
 The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg alone scans 80k rows because the test filter `price BETWEEN $55–$455` matches 80% of catalog. Sub-50ms on this exact synthetic filter would require `mysqli_poll` parallel leg execution (~100 lines, bypasses `$wpdb`, opens N connections per request) — not warranted before real production traffic data exists.
 
 ### Dev stack
+
 - [x] `docker-compose.yml` — WP 6.4 + PHP 8.2 + MySQL 8 + auto-installed WooCommerce
 - [x] `composer.json` — PSR-4 + classmap hybrid autoload
 - [x] `vite.config.js` — multi-entry build for admin SPA and public runtime

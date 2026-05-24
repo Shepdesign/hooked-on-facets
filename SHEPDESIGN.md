@@ -83,6 +83,7 @@ Don't ship code on the filter hot path that:
 - Bypasses the index table — if a facet can't be served from `wp_hof_index`, fix the indexer, don't fall back to live WP queries
 
 **Achieved Phase 1 baseline** (100k products, 500k index rows, 5-facet intersect, Docker MySQL 8):
+
 - `resolve_ids()` p95: **54.5 ms** (the gate is 50 ms; remaining gap is bounded by the benchmark's non-selective price leg)
 - `resolve()` full p95: **308 ms** (1 ids query + 5 count queries, same SQL shape)
 - Reindex 100k: **19.4 s** with bulk-rebuild (Phase 1.5 — was 300 s on the per-object path; 60 s gate now passes by 3×)
