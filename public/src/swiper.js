@@ -16,18 +16,19 @@
 const THRESHOLD = 80;          // px past start to count as a commit
 const ROTATE_PER_PX = 1 / 20;  // 1deg per 20px of horizontal travel
 
-export function initSwiper(root = document) {
+export function initSwiper(root = document, { signal } = {}) {
+    const opts = signal ? { signal } : undefined;
     root.querySelectorAll('[data-hof-display="swiper"]').forEach(updateDeckPositions);
 
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('click', onClick);
-    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('pointerdown', onPointerDown, opts);
+    document.addEventListener('click', onClick, opts);
+    document.addEventListener('keydown', onKeyDown, opts);
     // After refresh.js patches a swiper, fix up positions in case the
     // included-set changed underneath us.
     document.addEventListener('hof:refresh', (e) => {
         if (e.detail?.phase !== 'end') return;
         document.querySelectorAll('[data-hof-display="swiper"]').forEach(updateDeckPositions);
-    });
+    }, opts);
 }
 
 function onPointerDown(e) {
