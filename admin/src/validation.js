@@ -6,8 +6,9 @@
 
 const SLUG_RE = /^[a-z][a-z0-9_-]*$/;
 
-// Displays that don't have a source (view facets) — must reference another facet.
-const VIEW_DISPLAYS = new Set(['ask', 'visual_dna']);
+// Displays that don't have a source (view facets) — orchestrators (ask,
+// visual_dna) or pure navigation (pagination).
+const VIEW_DISPLAYS = new Set(['ask', 'visual_dna', 'pagination']);
 
 // Displays Visual DNA can target.
 const COLOR_TARGET_DISPLAYS = new Set([

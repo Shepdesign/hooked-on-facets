@@ -443,7 +443,7 @@ final class RestController implements Bootable {
         $allowed_displays = [
             'checkbox', 'radio', 'dropdown', 'toggle', 'hierarchy',
             'range', 'date_range', 'search', 'swatch', 'swiper',
-            'ask', 'visual_dna',
+            'ask', 'visual_dna', 'pagination',
         ];
 
         $clean = [];
@@ -505,6 +505,26 @@ final class RestController implements Bootable {
                 $out['placeholder'] = sanitize_text_field( (string) $raw['placeholder'] );
             }
             return array_filter( $out, static fn( $v ) => $v !== '' );
+        }
+
+        if ( $display === 'pagination' ) {
+            $out = [];
+            // null/empty per_page → fall back to WP posts_per_page at render
+            // time; explicit zero is treated the same as null.
+            if ( isset( $raw['per_page'] ) && is_numeric( $raw['per_page'] ) ) {
+                $n = max( 0, (int) $raw['per_page'] );
+                if ( $n > 0 ) $out['per_page'] = $n;
+            }
+            if ( isset( $raw['neighbors'] ) && is_numeric( $raw['neighbors'] ) ) {
+                $out['neighbors'] = max( 0, min( 5, (int) $raw['neighbors'] ) );
+            }
+            if ( isset( $raw['show_first_last'] ) ) {
+                $out['show_first_last'] = (bool) $raw['show_first_last'];
+            }
+            if ( isset( $raw['show_prev_next'] ) ) {
+                $out['show_prev_next'] = (bool) $raw['show_prev_next'];
+            }
+            return $out;
         }
 
         if ( $display === 'toggle' ) {

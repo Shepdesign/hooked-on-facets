@@ -809,6 +809,117 @@
     opacity: 0.55;
 }
 
+/* ── Pagination ─────────────────────────────────────────────────────────── */
+
+/* Wrapper drops the .hof-facet card chrome — pagination is a nav control,
+   not a filter card. Renderer still emits .hof-facet for token inheritance,
+   so we re-zero the visuals here. */
+.hof-facet-pagination {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: calc(var(--hof-space) * 2) 0;
+}
+
+.hof-pagination-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+}
+
+.hof-pagination-list li {
+    margin: 0;
+    padding: 0;
+}
+
+.hof-pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: var(--hof-radius-pill);
+    border: var(--hof-input-border-w) solid transparent;
+    background: transparent;
+    color: var(--hof-text);
+    font-size: var(--hof-font-size-sm);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        background 140ms ease,
+        border-color 140ms ease,
+        color 140ms ease,
+        transform 120ms ease;
+}
+
+.hof-pagination-btn:hover {
+    background: color-mix(in oklab, var(--hof-primary) 8%, var(--hof-surface));
+    border-color: color-mix(in oklab, var(--hof-primary) 18%, var(--hof-border));
+}
+
+.hof-pagination-btn:focus-visible {
+    outline: none;
+    border-color: var(--hof-focus-ring);
+    box-shadow: 0 0 0 var(--hof-focus-ring-soft-w)
+        color-mix(in oklab, var(--hof-focus-ring) var(--hof-focus-ring-soft-alpha), transparent);
+}
+
+.hof-pagination-btn:active {
+    transform: scale(0.96);
+}
+
+/* Current page — accent pill. aria-current="page" doubles as the selector
+   so screen readers also pick up the state semantically. */
+.hof-pagination-btn.is-current,
+.hof-pagination-btn[aria-current="page"] {
+    background: var(--hof-primary);
+    border-color: var(--hof-primary);
+    color: var(--hof-on-primary);
+    cursor: default;
+}
+
+.hof-pagination-btn.is-current:hover {
+    background: var(--hof-primary);
+    border-color: var(--hof-primary);
+}
+
+/* Prev/next/first/last lean on text-style chevrons — same chrome as
+   numbers but slightly wider for the wider arrow glyphs. */
+.hof-pagination-first,
+.hof-pagination-last,
+.hof-pagination-prev,
+.hof-pagination-next {
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--hof-muted);
+}
+
+.hof-pagination-first:hover,
+.hof-pagination-last:hover,
+.hof-pagination-prev:hover,
+.hof-pagination-next:hover {
+    color: var(--hof-primary);
+}
+
+/* Ellipsis gap — non-interactive spacer between distant page numbers. */
+.hof-pagination-gap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 36px;
+    color: var(--hof-muted);
+    font-size: var(--hof-font-size-sm);
+}
+
 /* ── Ask facet ──────────────────────────────────────────────────────────── */
 
 .hof-facet-ask {

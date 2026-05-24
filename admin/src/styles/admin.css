@@ -2164,3 +2164,54 @@ body.toplevel_page_hooked-on-facets .wrap {
     border-radius: 50%;
     border: 0.5px solid #D3D1C7;
 }
+
+/* ── Pagination preview (admin only — mirrors public chrome) ────────────── */
+
+.hof-preview-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    margin: 6px 0;
+}
+
+.hof-preview-page {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #FFFFFF;
+    border: 0.5px solid #D3D1C7;
+    color: #2C2C2A;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.hof-preview-page-current {
+    background: #534AB7;
+    border-color: #534AB7;
+    color: #F1EFE8;
+}
+
+.hof-preview-page-gap {
+    color: #5F5E5A;
+    font-size: 0.8125rem;
+    padding: 0 4px;
+}
+
+/* ── Inline checkbox field (used by pagination settings) ────────────────── */
+
+.hof-field-inline {
+    flex-direction: row !important;
+    align-items: center;
+    gap: 8px;
+}
+
+.hof-field-inline input[type="checkbox"] {
+    margin: 0;
+    flex-shrink: 0;
+}
