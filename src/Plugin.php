@@ -142,6 +142,11 @@ final class Plugin {
             $c->make( \HookedOnFacets\Telemetry\Recorder::class ),
         ) );
 
+        $this->bind( \HookedOnFacets\Integrations\Breakdance::class, static fn( self $c ) => new \HookedOnFacets\Integrations\Breakdance(
+            $c->make( \HookedOnFacets\Filter\Resolver::class ),
+            $c->make( \HookedOnFacets\Telemetry\Recorder::class ),
+        ) );
+
         $this->bind( \HookedOnFacets\Licensing\LicenseClient::class, static fn() => new \HookedOnFacets\Licensing\LicenseClient() );
 
         $this->bind( \HookedOnFacets\Licensing\LicenseManager::class, static fn( self $c ) => new \HookedOnFacets\Licensing\LicenseManager(
@@ -203,6 +208,7 @@ final class Plugin {
             \HookedOnFacets\Frontend\BlockRegistrar::class,
             \HookedOnFacets\Integrations\Elementor::class,
             \HookedOnFacets\Integrations\Bricks::class,
+            \HookedOnFacets\Integrations\Breakdance::class,
             \HookedOnFacets\Cli\Commands::class,
         ];
     }
