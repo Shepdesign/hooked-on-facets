@@ -159,6 +159,17 @@ Bricks has no dedicated "Query ID" field, so the bridge opts a query loop in by 
 
 Boot timing differs from Elementor, which matters: **Bricks ships as a theme**, loaded on `after_setup_theme` — *after* HOF's `plugins_loaded:5` boot — so `class_exists('\Bricks\Elements')` is false when `register_hooks()` runs. The bridge splits accordingly: the `bricks/posts/query_vars` filter is passive (inert until Bricks fires it during a render) so it registers at boot with no presence check; element registration genuinely needs `\Bricks\Elements`, so it defers to `init` priority 11 (after Bricks registers its own elements) and gates on presence there. The placement element file (`integrations/bricks/elements/facet.php`, extending `\Bricks\Element`) is included by `\Bricks\Elements::register_element()`, the Bricks-side analog of the just-in-time `require_once` pattern.
 
+### Breakdance — Array Query recipe
+
+Breakdance is the exception to the "single Bootable bridge with a clean query hook" shape. It documents **no scoped query-binding filter** — no `elementor/query/{id}`, no `bricks/posts/query_vars`. Its Post Loop Builder is customized in the builder (Custom / Text / Array query), and the only PHP injection point is the user-authored **Array Query**. So the binding is a documented recipe, not a hook: the bridge exposes a global template tag, `hof_breakdance_query_args( $base_args )`, that the user returns from a loop's Array Query. It merges HOF's URL-derived `post__in` (or the `[0]` no-results sentinel) into the user's base args when `?hof[*]` filters are active, and returns them untouched otherwise.
+
+Two deliberate departures from the other bridges:
+
+- **No presence gate.** There's nothing to register *against* Breakdance, and the helper is an inert function definition until Breakdance's Array Query calls it, so `register_hooks()` loads `integrations/breakdance/helpers.php` unconditionally. The real logic lives in `Breakdance::query_args()` so it's unit-testable with a mocked resolver; the global function is a thin delegate.
+- **No native placement element (deferred).** Breakdance elements are Element-Studio directory bundles registered via `\Breakdance\ElementStudio\registerSaveLocation()`, not a registerable PHP class. Until that format is authored and validated against a live Breakdance install, placement uses the existing `[hof_facet]` shortcode inside a Breakdance Shortcode/Code element.
+
+If Breakdance later ships a scoped query filter, the binding should move to that hook and this recipe becomes a fallback.
+
 ## Tests
 
 - **PHP** — PHPUnit 11 + Brain Monkey (no live WordPress; WP funcs are stubbed per test). `composer test`. Tests live under `tests/php/`; WP-class stubs (`WP_Query` and friends) live under `tests/stubs/` so composer's PSR-4 scan doesn't flag them.
