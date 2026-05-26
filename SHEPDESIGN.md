@@ -153,6 +153,12 @@ The Elementor bridge is opt-in by **Query ID**, not magic detection. Users set a
 
 The bridge doesn't piggyback on QueryHook's `pre_get_posts` path because Elementor calls `$query->query($args)` *after* the `elementor/query/{id}` action fires, and `WP_Query::query()` resets query_vars from `$args` — so a `$query->set('hof_facet_target', …)` flag would be discarded. Setting `post__in` directly is robust and matches Elementor's own documented mutation pattern.
 
+### Bricks — CSS-class binding
+
+Bricks has no dedicated "Query ID" field, so the bridge opts a query loop in by **CSS class**: tag the loop element (Style → CSS classes) with `hof` and the bridge hooks `bricks/posts/query_vars` to apply `post__in` from the URL's `?hof[*]` state. Unlike Elementor's by-reference `WP_Query` mutation, this Bricks filter passes the query args by value and expects them returned. A class (rather than the element's CSS ID) is the binding key because it's repeatable across loops and doesn't force a unique HTML `id`. The match list is filterable via `hof_bricks_query_ids` — same `_query_ids` naming as Elementor, even though Bricks applies the identifier as a class.
+
+Boot timing differs from Elementor, which matters: **Bricks ships as a theme**, loaded on `after_setup_theme` — *after* HOF's `plugins_loaded:5` boot — so `class_exists('\Bricks\Elements')` is false when `register_hooks()` runs. The bridge splits accordingly: the `bricks/posts/query_vars` filter is passive (inert until Bricks fires it during a render) so it registers at boot with no presence check; element registration genuinely needs `\Bricks\Elements`, so it defers to `init` priority 11 (after Bricks registers its own elements) and gates on presence there. The placement element file (`integrations/bricks/elements/facet.php`, extending `\Bricks\Element`) is included by `\Bricks\Elements::register_element()`, the Bricks-side analog of the just-in-time `require_once` pattern.
+
 ## Tests
 
 - **PHP** — PHPUnit 11 + Brain Monkey (no live WordPress; WP funcs are stubbed per test). `composer test`. Tests live under `tests/php/`; WP-class stubs (`WP_Query` and friends) live under `tests/stubs/` so composer's PSR-4 scan doesn't flag them.

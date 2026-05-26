@@ -113,6 +113,7 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 ## Phase 2 — landed
 
 - [x] **Elementor bridge.** Facet placement widget + Query ID binding (default `hof`, filterable via `hof_elementor_query_ids`). Set the Query ID on a Loop Grid / Posts / Products widget and HOF filters its loop directly via `post__in`. Bridge no-ops when Elementor isn't loaded. Bootable service at `src/Integrations/Elementor.php`; widget class at `integrations/elementor/widgets/facet.php` (require_once'd just-in-time so PSR-4 doesn't try to load it without Elementor present).
+- [x] **Bricks bridge.** Facet placement element + query binding by CSS class (default `hof`, filterable via `hof_bricks_query_ids`). Tag a query-loop element with the class and HOF filters its loop via `post__in` through the `bricks/posts/query_vars` filter. Bridge no-ops when Bricks isn't loaded; because Bricks is a *theme* (loads after `plugins_loaded`), element registration defers to `init:11` while the passive query filter registers at boot. Bootable service at `src/Integrations/Bricks.php`; element class at `integrations/bricks/elements/facet.php`.
 - [x] **Swipe Deck facet** — see SHEPDESIGN.md. Active filters chip strip pairs with it.
 
 ## Phase 2 candidates (not sequenced)
@@ -121,7 +122,7 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 2. Action Scheduler-backed incremental reindex
 3. CSS Variable Engine — full theming UI
 4. ACF/Meta Box source plugins
-5. Additional page builder bridges — Divi, Bricks, Breakdance (mirror the Elementor pattern)
+5. Remaining page builder bridges — Divi, Breakdance (mirror the Elementor/Bricks pattern; Bricks landed)
 
 ## Open questions
 
