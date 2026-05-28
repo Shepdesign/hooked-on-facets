@@ -88,6 +88,7 @@ final class MenuRegistrar implements Bootable {
                 'telemetry'          => $this->load_telemetry_snapshot(),
                 'version'            => HOF_VERSION,
                 'woocommerceActive'  => function_exists( 'WC' ) || class_exists( \WooCommerce::class ),
+                'acfActive'          => function_exists( 'acf_get_field_groups' ) && function_exists( 'acf_get_fields' ),
             ] )
         );
 
