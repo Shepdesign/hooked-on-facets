@@ -616,10 +616,12 @@ final class RestController implements Bootable {
     }
 
     public function reindex( \WP_REST_Request $request ): \WP_REST_Response {
-        // Background mode — queue chunked job via wp_cron and return
-        // immediately so the admin doesn't tie up PHP-FPM for large catalogs.
+        // Background mode — queue a chunked job (Action Scheduler when
+        // available, else wp_cron) and return immediately so the admin doesn't
+        // tie up PHP-FPM for large catalogs. The Indexer owns the decision of
+        // whether a background run is viable here.
         $mode = (string) ( $request->get_param( 'mode' ) ?? 'background' );
-        if ( $mode === 'background' && ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) ) {
+        if ( $mode === 'background' && $this->indexer->can_run_background() ) {
             $job = $this->indexer->queue_reindex_all();
             return new \WP_REST_Response( array_merge( [
                 'mode' => 'background',
@@ -627,8 +629,8 @@ final class RestController implements Bootable {
             ], $this->collect_index_stats() ), 202 );
         }
 
-        // Synchronous fallback — original behavior. Used by CLI + when cron
-        // is disabled (per DISABLE_WP_CRON) or `mode=sync` is explicit.
+        // Synchronous fallback — original behavior. Used by CLI + when no
+        // background scheduler is available or `mode=sync` is explicit.
         if ( function_exists( 'set_time_limit' ) ) {
             @set_time_limit( 0 );
         }

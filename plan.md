@@ -34,7 +34,7 @@ Ship a faceted-filtering plugin that is measurably faster than FacetWP on a 100,
 - [x] Incremental: `save_post`, `deleted_post`, `set_object_terms`
 - [x] Index source declarations: `taxonomy`, `meta`, `field`
 - [x] Numeric normalization — pre-cast into `facet_numeric DECIMAL(20,6)` for range queries
-- [x] **Bonus:** background reindex via `wp_cron` (`hof_background_reindex`, self-chaining chunks). This is the first cut of what the plan called "Action Scheduler-backed reindex" — see Pending for the AS upgrade.
+- [x] **Background reindex** — chunked, self-chaining job under hook `hof_background_reindex`. Prefers **Action Scheduler** (group `hooked-on-facets`; its own async runner means it works even when WP-Cron is disabled, retries, and shows in Tools → Scheduled Actions), falling back to `wp_cron` when AS isn't loaded. `Indexer::can_run_background()` gates the REST background-vs-sync choice.
 
 ### Auto-Hook Engine — `includes/class-hof-query-hook.php`
 
@@ -132,9 +132,8 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 
 ### Phase 2 candidates (not sequenced)
 
-1. **Action Scheduler-backed reindex** — upgrade the existing `wp_cron` background reindex to Action Scheduler for retry semantics, admin visibility, and not depending on site traffic to tick cron.
-2. **ACF / Meta Box / Pods source plugins** — let facets index custom-field data from these plugins, not just core taxonomies / post meta.
-3. **Native builder placement — remaining** — Breakdance Element-Studio bundle (still deferred; placement uses the shortcode). Divi's native module is authored but its Visual Builder rendering needs validation against a live Divi install. Migrate either bridge's query binding to a scoped hook if the builder ships one.
+1. **ACF / Meta Box / Pods source plugins** — let facets index custom-field data from these plugins, not just core taxonomies / post meta.
+2. **Native builder placement — remaining** — Breakdance Element-Studio bundle (still deferred; placement uses the shortcode). Divi's native module is authored but its Visual Builder rendering needs validation against a live Divi install. Migrate either bridge's query binding to a scoped hook if the builder ships one.
 
 ### Deferred wow-kit facets (designed, never built)
 
@@ -156,7 +155,7 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 - **Index storage: narrow EAV.** Best perf for multi-facet intersect at scale; proven by FacetWP and re-confirmed by our own 7× benchmark on this layout.
 - **Resolver SQL: `INTERSECT` chain with `USE INDEX` hints.** Each facet leg runs as a covering index range scan on `facet_lookup (facet_name, facet_value, object_id)` for IN-list filters or `facet_numeric_range (facet_name, facet_numeric, object_id)` for `BETWEEN` filters. **Requires MySQL 8.0.31+** for `INTERSECT`. The trailing `object_id` (covering), the range-leg `USE INDEX` hint, and `INTERSECT` (vs `UNION ALL` + `GROUP BY HAVING`) are each load-bearing — see SHEPDESIGN.md.
 - **Two-namespace autoload.** `includes/` (classmap, legacy WP filenames — `Activator`, `Indexer`, `QueryHook`, `Deactivator`) + `src/` (PSR-4 modern). Everything else lives in `src/`.
-- **Indexing: synchronous in the hot path; `wp_cron` for full background rebuilds.** Incremental `save_post` updates intentionally stay on the per-object WP-API path so plugin filters (e.g. ACF, custom term meta) keep working. Action Scheduler is the next upgrade.
+- **Indexing: synchronous in the hot path; chunked background job for full rebuilds.** The background job prefers Action Scheduler (wp_cron fallback). Incremental `save_post` updates intentionally stay on the per-object WP-API path so plugin filters (e.g. ACF, custom term meta) keep working.
 - **Docker stack: `wordpress:php8.2-apache` (latest 6.x).** Bumped from the original 6.4 pin because current WooCommerce requires 6.8+.
 - **`wp-cli` sidecar runs as uid 33** so it can write into the wp-content volume; gets its own `WORDPRESS_DB_*` env block since wp-config's `getenv_docker()` fallback host is `mysql`, not our service name `db`.
 - **Page-builder binding is opt-in, not magic detection.** Elementor by Query ID, Bricks by CSS class, Breakdance by Array Query recipe — each documented in SHEPDESIGN.md.

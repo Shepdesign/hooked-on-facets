@@ -11,12 +11,15 @@
  *
  * When opted in, drops:
  *   - the wp_hof_index table
- *   - the `hof_facets`, `hof_db_version`, `hof_uninstall_remove_data` options
+ *   - the `hof_facets`, `hof_db_version`, `hof_uninstall_remove_data`,
+ *     `hof_background_reindex_state` options
  *   - the `hof_facet_counts` transient
- *   - any scheduled `hof_reindex_batch` events
+ *   - any scheduled `hof_background_reindex` events (Action Scheduler + wp_cron)
  *
  * Runs in isolation — no plugin classes are autoloaded here, so this file
- * intentionally uses only WP core APIs and raw $wpdb.
+ * intentionally uses only WP core APIs and raw $wpdb. Hook / option names are
+ * literals here on purpose (the Indexer class isn't loaded); keep them in sync
+ * with HookedOnFacets\Indexer.
  *
  * @package HookedOnFacets
  */
@@ -40,12 +43,15 @@ $table = $wpdb->prefix . 'hof_index';
 $wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 
 // Remove plugin options.
-foreach ( [ 'hof_facets', 'hof_db_version', 'hof_uninstall_remove_data' ] as $option ) {
+foreach ( [ 'hof_facets', 'hof_db_version', 'hof_uninstall_remove_data', 'hof_background_reindex_state' ] as $option ) {
     delete_option( $option );
 }
 
 // Drop any short-lived caches we own.
 delete_transient( 'hof_facet_counts' );
 
-// Clear scheduled events.
-wp_clear_scheduled_hook( 'hof_reindex_batch' );
+// Clear any pending background-reindex chunks under both schedulers.
+if ( function_exists( 'as_unschedule_all_actions' ) ) {
+    as_unschedule_all_actions( 'hof_background_reindex', array(), 'hooked-on-facets' );
+}
+wp_clear_scheduled_hook( 'hof_background_reindex' );
