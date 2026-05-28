@@ -94,20 +94,38 @@ final class AcfTest extends TestCase {
 
     // ── skips ────────────────────────────────────────────────────────────
 
-    public function test_skips_multi_value_date_and_structural_types(): void {
+    public function test_maps_multi_value_string_fields_to_checkbox(): void {
         $this->mockWpdb();
         $this->feedFields( [
-            [ 'name' => 'tags_multi', 'label' => 'Tags',     'type' => 'select', 'multiple' => 1 ],
-            [ 'name' => 'colors',     'label' => 'Colors',   'type' => 'checkbox' ],
-            [ 'name' => 'cats',       'label' => 'Cats',     'type' => 'taxonomy' ],
-            [ 'name' => 'related',    'label' => 'Related',  'type' => 'relationship' ],
-            [ 'name' => 'launch',     'label' => 'Launch',   'type' => 'date_picker' ],
-            [ 'name' => 'specs',      'label' => 'Specs',    'type' => 'repeater' ],
-            [ 'name' => 'hero',       'label' => 'Hero',     'type' => 'image' ],
+            [ 'name' => 'tags_multi', 'label' => 'Tags',   'type' => 'select', 'multiple' => 1 ],
+            [ 'name' => 'colors',     'label' => 'Colors', 'type' => 'checkbox' ],
+        ] );
+
+        $byName = [];
+        foreach ( ( new Acf() )->suggest() as $f ) {
+            $byName[ $f['name'] ] = $f;
+        }
+
+        // The indexer's serialized-array adapter explodes these into buckets,
+        // so a checkbox facet is the right fit.
+        self::assertSame( 'checkbox', $byName['tags_multi']['display'] );
+        self::assertSame( 'checkbox', $byName['colors']['display'] );
+        self::assertSame( 'meta',     $byName['colors']['kind'] );
+    }
+
+    public function test_skips_id_array_date_and_structural_types(): void {
+        $this->mockWpdb();
+        $this->feedFields( [
+            [ 'name' => 'cats',    'label' => 'Cats',    'type' => 'taxonomy' ],
+            [ 'name' => 'related', 'label' => 'Related', 'type' => 'relationship' ],
+            [ 'name' => 'author',  'label' => 'Author',  'type' => 'post_object' ],
+            [ 'name' => 'launch',  'label' => 'Launch',  'type' => 'date_picker' ],
+            [ 'name' => 'specs',   'label' => 'Specs',   'type' => 'repeater' ],
+            [ 'name' => 'hero',    'label' => 'Hero',    'type' => 'image' ],
         ] );
 
         self::assertSame( [], ( new Acf() )->suggest(),
-            'Multi-value, date, and structural ACF types are deferred — none should be suggested.' );
+            'ID-array, date, and structural ACF types are deferred — none should be suggested.' );
     }
 
     public function test_skips_fields_already_configured(): void {
