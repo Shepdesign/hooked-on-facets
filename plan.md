@@ -102,9 +102,10 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 
 ## Phase 2 — landed
 
-### Page-builder bridges (`src/Integrations/`)
+### Builder & source integrations (`src/Integrations/`)
 
 - [x] **WooCommerce** first-class integration — inspects the live store and suggests facet configs (`product_cat` → hierarchy, `pa_color` → swatch, `_price` → range, etc.) via `GET /integrations/woocommerce/suggest`. Skips empty attributes so the suggestion list isn't noisy.
+- [x] **ACF source (scalar fields)** — discovers registered ACF field groups and suggests facet configs via `GET /integrations/acf/suggest`, mapping field type → display (select-single → dropdown, radio/button_group → radio, true_false → toggle, number/range → range, text/textarea/email/url → search). ACF stores values as post meta, so these are plain `meta`-kind facets — no new indexer path. Only suggests fields whose meta is in use. **Deferred:** multi-value/serialized types (checkbox, multi-select, taxonomy, relationship — need the indexer's serialized-array adapter) and date types (`Ymd` storage needs date normalization).
 - [x] **Elementor bridge** — facet placement widget + Query ID binding (default `hof`, filterable via `hof_elementor_query_ids`). Binds a Loop Grid / Posts / Products widget's loop via `post__in`. No-ops when Elementor isn't loaded.
 - [x] **Bricks bridge** — facet placement element + query binding by CSS class (default `hof`, filterable via `hof_bricks_query_ids`). Tag a query-loop element with the class; binds via `bricks/posts/query_vars`. Because Bricks is a *theme* (loads after `plugins_loaded`), element registration defers to `init:11` while the passive query filter registers at boot.
 - [x] **Breakdance bridge (binding only)** — no scoped query hook exists, so binding is a recipe: the global `hof_breakdance_query_args( $base_args )` template tag, returned from a Post Loop Builder's **Array Query**, merges HOF's URL-derived `post__in`. Placement uses the `[hof_facet]` shortcode. **Deferred:** native Element-Studio placement element.
@@ -132,7 +133,7 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 
 ### Phase 2 candidates (not sequenced)
 
-1. **ACF / Meta Box / Pods source plugins** — let facets index custom-field data from these plugins, not just core taxonomies / post meta.
+1. **Custom-field sources — remaining** — ACF scalar fields land via the suggestion provider (above). Still to do: the indexer's serialized-array adapter so ACF multi-value fields (checkbox, multi-select, taxonomy, relationship) index, ACF date normalization, and equivalent suggestion providers for Meta Box and Pods.
 2. **Native builder placement — remaining** — Breakdance Element-Studio bundle (still deferred; placement uses the shortcode). Divi's native module is authored but its Visual Builder rendering needs validation against a live Divi install. Migrate either bridge's query binding to a scoped hook if the builder ships one.
 
 ### Deferred wow-kit facets (designed, never built)

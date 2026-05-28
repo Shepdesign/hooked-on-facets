@@ -143,6 +143,12 @@ add_filter( 'hof_public_css_tokens', function ( $tokens ) {
 
 Animation durations, structural micro-gaps (4–6px), specific rotation degrees on the swipe-stamp, the `[data-hof-swatch-weight]` resize calc, and other "this is the design's bones, not its skin" details. The intent is bounded customization — colors, scales, named chrome — not "every pixel is a knob."
 
+## Source integrations (suggestion providers)
+
+WooCommerce (`src/Integrations/WooCommerce.php`) and ACF (`src/Integrations/Acf.php`) are *suggestion providers*, not bridges: each exposes `is_active()` + `suggest( $existing )` returning ready-to-merge facet configs, surfaced through `GET /integrations/{name}/suggest` and a per-source button in the admin (gated on a `bootstrap` flag — `woocommerceActive` / `acfActive`). They inspect what the site actually has and only propose facets backed by real data, so the admin doesn't hand-type meta keys or guess display types. They're plain injected services (not `Bootable` — no hooks), wired into `RestController` via the container.
+
+**ACF is meta underneath.** ACF stores each field's value in post meta keyed by the field name, so an ACF facet is just a `meta`-kind facet pointed at that key — no new indexer path. The provider only suggests the field types that store a single scalar and therefore index correctly through the existing meta path (select-single → dropdown, radio → radio, true_false → toggle, number → range, text → search). **Deferred on purpose:** multi-value types (checkbox, multi-select, taxonomy, relationship) store serialized arrays the indexer skips (see `Indexer::bulk_rows_from_meta`), and date types store `Ymd`, which the range path reads as a raw integer rather than a timestamp. Both need indexer-side work before they can be suggested without mis-indexing. When that lands, the same provider gains the new types and (for multi-value) the indexer learns to explode the serialized array into rows.
+
 ## Page builder integrations
 
 Each page builder gets a single Bootable service in `src/Integrations/{Builder}.php` that no-ops when its builder isn't loaded. Assets the builder needs to load with its own class hierarchy (e.g. widgets extending `\Elementor\Widget_Base`) live in `integrations/{builder}/` and are `require_once`'d just-in-time from the bridge — autoload deliberately doesn't reach them because their parent classes only exist at runtime when the builder is active.

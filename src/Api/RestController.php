@@ -22,6 +22,7 @@ use HookedOnFacets\Ai\Settings as AiSettings;
 use HookedOnFacets\Contracts\Bootable;
 use HookedOnFacets\Filter\Resolver;
 use HookedOnFacets\Indexer;
+use HookedOnFacets\Integrations\Acf;
 use HookedOnFacets\Integrations\WooCommerce;
 use HookedOnFacets\Licensing\LicenseManager;
 use HookedOnFacets\Telemetry\Recorder;
@@ -40,6 +41,7 @@ final class RestController implements Bootable {
         private readonly ?AiSettings $ai_settings = null,
         private readonly ?LicenseManager $license = null,
         private readonly ?WooCommerce $woocommerce = null,
+        private readonly ?Acf $acf = null,
     ) {}
 
     public function register_hooks(): void {
@@ -203,6 +205,12 @@ final class RestController implements Bootable {
             'callback'            => [ $this, 'suggest_woocommerce_facets' ],
             'permission_callback' => static fn() => current_user_can( 'manage_options' ),
         ] );
+
+        register_rest_route( self::NAMESPACE_V1, '/integrations/acf/suggest', [
+            'methods'             => \WP_REST_Server::READABLE,
+            'callback'            => [ $this, 'suggest_acf_facets' ],
+            'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+        ] );
     }
 
     public function suggest_woocommerce_facets( \WP_REST_Request $request ): \WP_REST_Response {
@@ -217,6 +225,21 @@ final class RestController implements Bootable {
         return new \WP_REST_Response( [
             'available' => true,
             'facets'    => $this->woocommerce->suggest( $existing ),
+        ], 200 );
+    }
+
+    public function suggest_acf_facets( \WP_REST_Request $request ): \WP_REST_Response {
+        if ( ! $this->acf || ! $this->acf->is_active() ) {
+            return new \WP_REST_Response( [
+                'available' => false,
+                'reason'    => 'Advanced Custom Fields not active on this site.',
+                'facets'    => [],
+            ], 200 );
+        }
+        $existing = (array) get_option( Indexer::OPTION_FACETS, [] );
+        return new \WP_REST_Response( [
+            'available' => true,
+            'facets'    => $this->acf->suggest( $existing ),
         ], 200 );
     }
 

@@ -104,6 +104,35 @@ export default function App({ bootstrap }) {
         }
     };
 
+    const addAcfFacets = async () => {
+        const restUrl = bootstrap?.restUrl || '';
+        const nonce   = bootstrap?.nonce || '';
+        try {
+            const res  = await fetch(`${restUrl}integrations/acf/suggest`, {
+                headers: { 'X-WP-Nonce': nonce },
+            });
+            const data = await res.json();
+            if (!data?.available) {
+                alert(data?.reason || 'Advanced Custom Fields not detected on this site.');
+                return;
+            }
+            const suggested = Array.isArray(data.facets) ? data.facets : [];
+            if (suggested.length === 0) {
+                alert('No new ACF facets to add — your existing facets already cover the indexable fields.');
+                return;
+            }
+            setFacets((prev) => {
+                const next = [...prev, ...suggested];
+                setSelectedIdx(prev.length); // jump to the first new one
+                return next;
+            });
+            setDirty(true);
+            setView('facets');
+        } catch (e) {
+            alert('Could not fetch ACF suggestions: ' + (e?.message || 'unknown'));
+        }
+    };
+
     const deleteSelected = () => {
         if (selectedIdx === null) return;
         deleteAt(selectedIdx);
@@ -273,6 +302,16 @@ export default function App({ bootstrap }) {
                                             title="Add suggested facets based on the active WooCommerce store"
                                         >
                                             + WooCommerce facets
+                                        </button>
+                                    )}
+                                    {bootstrap?.acfActive && (
+                                        <button
+                                            className="hof-btn"
+                                            onClick={addAcfFacets}
+                                            type="button"
+                                            title="Add suggested facets based on your Advanced Custom Fields"
+                                        >
+                                            + ACF facets
                                         </button>
                                     )}
                                     {error && <span className="hof-error" role="alert">{error}</span>}
