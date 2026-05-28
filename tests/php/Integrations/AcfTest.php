@@ -113,10 +113,30 @@ final class AcfTest extends TestCase {
         self::assertSame( 'meta',     $byName['colors']['kind'] );
     }
 
+    public function test_maps_taxonomy_field_with_save_terms_to_taxonomy_facet(): void {
+        $this->mockWpdb();
+        // Taxonomy-kind data check goes through taxonomy_in_use(), not meta.
+        Functions\when( 'taxonomy_exists' )->justReturn( true );
+        Functions\when( 'wp_count_terms' )->justReturn( 7 );
+
+        $this->feedFields( [
+            [ 'name' => 'genre', 'label' => 'Genre', 'type' => 'taxonomy', 'taxonomy' => 'genre', 'save_terms' => 1 ],
+        ] );
+
+        $facets = ( new Acf() )->suggest();
+
+        self::assertCount( 1, $facets );
+        self::assertSame( 'taxonomy', $facets[0]['kind'],
+            'A Save-Terms taxonomy field is served by the existing taxonomy index path.' );
+        self::assertSame( 'genre',    $facets[0]['source'], 'Source is the taxonomy slug, not the meta key.' );
+        self::assertSame( 'checkbox', $facets[0]['display'] );
+    }
+
     public function test_skips_id_array_date_and_structural_types(): void {
         $this->mockWpdb();
         $this->feedFields( [
-            [ 'name' => 'cats',    'label' => 'Cats',    'type' => 'taxonomy' ],
+            // Taxonomy field with Save Terms OFF — term IDs live in meta only.
+            [ 'name' => 'cats',    'label' => 'Cats',    'type' => 'taxonomy', 'taxonomy' => 'cats_tax' ],
             [ 'name' => 'related', 'label' => 'Related', 'type' => 'relationship' ],
             [ 'name' => 'author',  'label' => 'Author',  'type' => 'post_object' ],
             [ 'name' => 'launch',  'label' => 'Launch',  'type' => 'date_picker' ],
@@ -125,7 +145,7 @@ final class AcfTest extends TestCase {
         ] );
 
         self::assertSame( [], ( new Acf() )->suggest(),
-            'ID-array, date, and structural ACF types are deferred — none should be suggested.' );
+            'ID-array (incl. Save-Terms-off taxonomy), date, and structural ACF types are deferred.' );
     }
 
     public function test_skips_fields_already_configured(): void {
