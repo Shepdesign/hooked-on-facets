@@ -116,7 +116,7 @@ final class Indexer implements Bootable {
      * instead of WP get_the_terms/get_post_meta loops. The incremental
      * save_post path (reindex_object) is unchanged.
      *
-     * @param callable|null $progress Called as $progress(int $count) after each batch.
+     * @param callable|null $progress Called as $progress(int $done, int $total) after each batch.
      * @return int Total objects indexed.
      */
     public function reindex_all( ?callable $progress = null ): int {
@@ -137,7 +137,7 @@ final class Indexer implements Bootable {
      * incremental updates (save_post, set_object_terms) still go through
      * reindex_object() and pick up those filters.
      *
-     * @param callable|null $progress Called as $progress(int $count) after each batch.
+     * @param callable|null $progress Called as $progress(int $done, int $total) after each batch.
      * @return int Total objects indexed.
      */
     public function bulk_reindex_all( ?callable $progress = null ): int {
@@ -177,6 +177,14 @@ final class Indexer implements Bootable {
         $types_placeholders = implode( ', ', array_fill( 0, count( $types ), '%s' ) );
         $count              = 0;
         $last_id            = 0;
+
+        // Total up front so the progress callback can report done/total (used
+        // to size the wp-cli progress bar). One COUNT — same as queue_reindex_all.
+        $total = (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->posts}
+             WHERE post_status = 'publish' AND post_type IN ({$types_placeholders})",
+            $types
+        ) );
 
         while ( true ) {
             // Keyset pagination — beats LIMIT/OFFSET at scale (no growing offset cost).
@@ -223,7 +231,7 @@ final class Indexer implements Bootable {
 
             $count += count( $post_ids );
             if ( $progress ) {
-                $progress( $count );
+                $progress( $count, $total );
             }
         }
 
