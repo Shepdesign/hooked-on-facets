@@ -31,6 +31,10 @@ require_once dirname( __DIR__ ) . '/stubs/WP_Query.php';
 // target to call into without a live Bricks theme.
 require_once dirname( __DIR__ ) . '/stubs/Bricks.php';
 
+// \ET_Builder_Module stub so the Divi bridge's module registration can
+// construct its FacetModule subclass without a live Divi builder.
+require_once dirname( __DIR__ ) . '/stubs/ET_Builder_Module.php';
+
 // HOF_PLUGIN_DIR is read by the Bricks bridge when registering its element.
 if ( ! defined( 'HOF_PLUGIN_DIR' ) ) {
     define( 'HOF_PLUGIN_DIR', dirname( __DIR__, 2 ) . '/' );
