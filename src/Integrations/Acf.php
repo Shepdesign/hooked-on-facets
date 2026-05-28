@@ -12,12 +12,12 @@
  * path is needed for the scalar field types. The value this integration adds
  * is discovery (which fields exist) and mapping (field type → facet display).
  *
- * Scope — scalar field types only. The indexer's meta path is scalar-only
- * (it skips serialized values; see Indexer::bulk_rows_from_meta), so we only
- * suggest field types that store a single scalar value and therefore index
- * correctly today:
+ * Field type → facet display:
  *
  *   select (single) → dropdown
+ *   select (multi),
+ *   checkbox        → checkbox  (serialized array of scalars; the indexer's
+ *                                normalize_meta_values() explodes it into buckets)
  *   radio,
  *   button_group    → radio
  *   true_false      → toggle  (true_value '1')
@@ -26,9 +26,9 @@
  *   email, url      → search
  *
  * Deliberately NOT suggested (deferred):
- *   - Multi-value types — checkbox, multi-select, taxonomy, relationship,
- *     post_object, user, gallery — store serialized arrays the indexer skips.
- *     These need the indexer's serialized-array adapter first.
+ *   - ID-array types — taxonomy, relationship, post_object, user — store a
+ *     serialized array of IDs. The adapter would explode them into raw-ID
+ *     buckets; useful display needs ID → name resolution first.
  *   - Date types — date_picker / date_time_picker store `Ymd`, which the
  *     range path reads as a raw integer rather than a timestamp; suggesting a
  *     date_range facet would mis-scale until the indexer normalizes ACF dates.
@@ -149,12 +149,16 @@ final class Acf {
 
         switch ( $type ) {
             case 'select':
-                // ACF stores a serialized array when "multiple" is on — that's
-                // the deferred multi-value case, so only single selects map.
-                if ( ! empty( $field['multiple'] ) ) {
-                    return null;
-                }
-                $cfg['display'] = 'dropdown';
+                // Single select → dropdown. Multi-select stores a serialized
+                // array of the chosen scalar values, which the indexer's
+                // serialized-array adapter explodes into buckets → checkbox.
+                $cfg['display'] = empty( $field['multiple'] ) ? 'dropdown' : 'checkbox';
+                return $cfg;
+
+            case 'checkbox':
+                // Always multi-value: a serialized array of chosen scalar
+                // values, exploded by the indexer's adapter into buckets.
+                $cfg['display'] = 'checkbox';
                 return $cfg;
 
             case 'radio':

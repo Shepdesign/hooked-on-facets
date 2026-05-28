@@ -361,28 +361,23 @@ final class Indexer implements Bootable {
 
         $rows = [];
         foreach ( $values as $value ) {
-            if ( ! is_scalar( $value ) ) {
-                continue; // Serialized arrays/objects need a custom adapter (Phase 2).
+            // get_post_meta() auto-unserializes, so a multi-value field (ACF
+            // checkbox / multi-select) arrives here as an array. Explode it
+            // into one row per scalar element via normalize_meta_values().
+            foreach ( $this->normalize_meta_values( $value, $is_date ) as $nv ) {
+                $rows[] = [
+                    'object_id'     => $object_id,
+                    'object_type'   => $object_type,
+                    'facet_name'    => $facet_name,
+                    'facet_source'  => $meta_key,
+                    'facet_value'   => $nv['value'],
+                    'facet_display' => $nv['value'],
+                    'facet_numeric' => $nv['numeric'],
+                    'term_id'       => null,
+                    'parent_id'     => null,
+                    'depth'         => 0,
+                ];
             }
-            $string = (string) $value;
-            if ( $string === '' ) {
-                continue;
-            }
-
-            $numeric = $this->resolve_numeric( $string, $is_date );
-
-            $rows[] = [
-                'object_id'     => $object_id,
-                'object_type'   => $object_type,
-                'facet_name'    => $facet_name,
-                'facet_source'  => $meta_key,
-                'facet_value'   => substr( $string, 0, 191 ),
-                'facet_display' => substr( $string, 0, 191 ),
-                'facet_numeric' => $numeric,
-                'term_id'       => null,
-                'parent_id'     => null,
-                'depth'         => 0,
-            ];
         }
         return $rows;
     }
@@ -488,23 +483,27 @@ final class Indexer implements Bootable {
             if ( $value === '' ) {
                 continue;
             }
-            // Mirror rows_from_meta(): scalar-only. Serialized values get the
-            // `a:`/`O:` prefix and are skipped — they need a custom adapter.
-            if ( is_serialized( $value ) ) {
-                continue;
+            // The bulk path reads raw meta_value (no auto-unserialize), so a
+            // multi-value field arrives as a serialized string. Decode it and
+            // funnel through the same normalize_meta_values() as the per-object
+            // path so incremental and bulk reindex produce identical rows.
+            // maybe_unserialize() only does work for genuinely serialized
+            // values, so scalar meta keeps the fast path.
+            $decoded = is_serialized( $value ) ? maybe_unserialize( $value ) : $value;
+            foreach ( $this->normalize_meta_values( $decoded, $is_date ) as $nv ) {
+                $rows[] = [
+                    'object_id'     => (int) $r['post_id'],
+                    'object_type'   => 'post',
+                    'facet_name'    => $facet_name,
+                    'facet_source'  => $meta_key,
+                    'facet_value'   => $nv['value'],
+                    'facet_display' => $nv['value'],
+                    'facet_numeric' => $nv['numeric'],
+                    'term_id'       => null,
+                    'parent_id'     => null,
+                    'depth'         => 0,
+                ];
             }
-            $rows[] = [
-                'object_id'     => (int) $r['post_id'],
-                'object_type'   => 'post',
-                'facet_name'    => $facet_name,
-                'facet_source'  => $meta_key,
-                'facet_value'   => substr( $value, 0, 191 ),
-                'facet_display' => substr( $value, 0, 191 ),
-                'facet_numeric' => $this->resolve_numeric( $value, $is_date ),
-                'term_id'       => null,
-                'parent_id'     => null,
-                'depth'         => 0,
-            ];
         }
         return $rows;
     }
@@ -563,6 +562,43 @@ final class Indexer implements Bootable {
      * seconds so the existing range resolver path works unchanged. Unparseable
      * dates return null so a single bad row doesn't poison the index.
      */
+    /**
+     * Normalize a decoded meta value into facet value/numeric tuples.
+     *
+     * A scalar yields one tuple. A (serialized) array — ACF checkbox and
+     * multi-select store these — yields one tuple per scalar element, so each
+     * selected option becomes its own index row / bucket. Empty strings are
+     * dropped; non-scalar elements are skipped — that includes nested
+     * arrays/objects and ID arrays needing name resolution (ACF taxonomy /
+     * relationship / post_object), which are a separate deferred adapter.
+     *
+     * Both meta gatherers funnel through here so incremental (per-object) and
+     * bulk reindex emit identical rows. The bulk path passes the
+     * maybe_unserialize()'d value; the per-object path passes the value
+     * get_post_meta() already auto-decoded.
+     *
+     * @return array<int, array{value: string, numeric: float|null}>
+     */
+    public function normalize_meta_values( mixed $decoded, bool $is_date = false ): array {
+        $items = is_array( $decoded ) ? $decoded : [ $decoded ];
+
+        $out = [];
+        foreach ( $items as $item ) {
+            if ( ! is_scalar( $item ) ) {
+                continue;
+            }
+            $string = (string) $item;
+            if ( $string === '' ) {
+                continue;
+            }
+            $out[] = [
+                'value'   => substr( $string, 0, 191 ),
+                'numeric' => $this->resolve_numeric( $string, $is_date ),
+            ];
+        }
+        return $out;
+    }
+
     private function resolve_numeric( string $value, bool $is_date ): ?float {
         if ( $is_date ) {
             // Pure numeric values (existing epochs / unix timestamps) pass through.
