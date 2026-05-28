@@ -161,7 +161,12 @@ final class Indexer implements Bootable {
             if ( ! $name || ! $source || ! isset( $by_kind[ $kind ] ) ) {
                 continue;
             }
-            $by_kind[ $kind ][] = [ 'name' => $name, 'source' => $source, 'display' => $display ];
+            $by_kind[ $kind ][] = [
+                'name'    => $name,
+                'source'  => $source,
+                'display' => $display,
+                'resolve' => $this->resolve_kind( $facet ),
+            ];
         }
 
         // Precompute term_id → depth maps, one per indexed taxonomy.
@@ -213,10 +218,14 @@ final class Indexer implements Bootable {
                 ) );
             }
             foreach ( $by_kind['meta'] as $f ) {
-                $rows = array_merge( $rows, $this->bulk_rows_from_meta(
-                    $post_ids, $f['name'], $f['source'],
-                    ( $f['display'] ?? '' ) === 'date_range'
-                ) );
+                $rows = array_merge( $rows, ( $f['resolve'] ?? null ) !== null
+                    ? $this->bulk_rows_from_meta_resolved(
+                        $post_ids, $f['name'], $f['source'], $f['resolve']
+                    )
+                    : $this->bulk_rows_from_meta(
+                        $post_ids, $f['name'], $f['source'],
+                        ( $f['display'] ?? '' ) === 'date_range'
+                    ) );
             }
             foreach ( $by_kind['field'] as $f ) {
                 $rows = array_merge( $rows, $this->bulk_rows_from_field(
@@ -319,10 +328,13 @@ final class Indexer implements Bootable {
             }
 
             $is_date = ( $facet['display'] ?? '' ) === 'date_range';
+            $resolve = $this->resolve_kind( $facet );
 
             $rows = array_merge( $rows, match ( $kind ) {
                 'taxonomy' => $this->rows_from_taxonomy( $object_id, $object_type, $name, $source ),
-                'meta'     => $this->rows_from_meta( $object_id, $object_type, $name, $source, $is_date ),
+                'meta'     => $resolve !== null
+                    ? $this->rows_from_meta_resolved( $object_id, $object_type, $name, $source, $resolve )
+                    : $this->rows_from_meta( $object_id, $object_type, $name, $source, $is_date ),
                 'field'    => $this->rows_from_field( $object_id, $object_type, $name, $source, $is_date ),
                 default    => [],
             } );
@@ -570,6 +582,186 @@ final class Indexer implements Bootable {
      * seconds so the existing range resolver path works unchanged. Unparseable
      * dates return null so a single bad row doesn't poison the index.
      */
+    /**
+     * Resolution kind for a meta facet whose stored values are IDs that need
+     * mapping to a human label, or null for a plain scalar/multi-value facet.
+     *
+     * Driven by the facet's `settings.resolve`. Currently only 'post' (ACF
+     * relationship / post_object — arrays of post IDs). 'term' (taxonomy
+     * fields stored as IDs without "Save Terms") is a planned follow-up.
+     *
+     * @param array<string, mixed> $facet
+     */
+    private function resolve_kind( array $facet ): ?string {
+        $settings = $facet['settings'] ?? [];
+        $resolve  = is_array( $settings ) ? (string) ( $settings['resolve'] ?? '' ) : '';
+        return $resolve === 'post' ? 'post' : null;
+    }
+
+    /**
+     * Flatten a decoded meta value into a list of positive integer IDs.
+     *
+     * ACF relationship stores a serialized array of post-ID strings; a single
+     * post_object stores a scalar ID. Both land here as the get_post_meta() /
+     * maybe_unserialize() output. Non-numeric / non-positive entries drop out.
+     *
+     * @return int[]
+     */
+    public function extract_ids( mixed $decoded ): array {
+        $items = is_array( $decoded ) ? $decoded : [ $decoded ];
+
+        $ids = [];
+        foreach ( $items as $item ) {
+            if ( ! is_scalar( $item ) ) {
+                continue;
+            }
+            $id = (int) $item;
+            if ( $id > 0 ) {
+                $ids[] = $id;
+            }
+        }
+        return array_values( array_unique( $ids ) );
+    }
+
+    /**
+     * Resolve a set of target IDs to facet value/display pairs in one query.
+     *
+     * For 'post': value is the post ID (stable filter key — same role the
+     * slug plays for a taxonomy facet) and display is the post title. IDs that
+     * no longer resolve (deleted posts) are simply absent from the map, so the
+     * caller drops them.
+     *
+     * @param int[] $ids
+     * @return array<int, array{value: string, display: string, term_id: ?int}>
+     */
+    private function resolve_targets( array $ids, string $resolve ): array {
+        if ( empty( $ids ) || $resolve !== 'post' ) {
+            return [];
+        }
+
+        global $wpdb;
+        $ids_placeholders = implode( ', ', array_fill( 0, count( $ids ), '%d' ) );
+        $records = $wpdb->get_results( $wpdb->prepare(
+            "SELECT ID, post_title FROM {$wpdb->posts} WHERE ID IN ({$ids_placeholders})",
+            $ids
+        ), ARRAY_A );
+
+        $map = [];
+        foreach ( (array) $records as $r ) {
+            $id    = (int) $r['ID'];
+            $title = (string) $r['post_title'];
+            $map[ $id ] = [
+                'value'   => (string) $id,
+                'display' => substr( $title !== '' ? $title : (string) $id, 0, 191 ),
+                'term_id' => null,
+            ];
+        }
+        return $map;
+    }
+
+    /**
+     * Per-object gatherer for an ID-resolved meta facet (incremental path).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function rows_from_meta_resolved( int $object_id, string $object_type, string $facet_name, string $meta_key, string $resolve ): array {
+        $ids = [];
+        foreach ( (array) get_post_meta( $object_id, $meta_key, false ) as $value ) {
+            $ids = array_merge( $ids, $this->extract_ids( $value ) );
+        }
+        $ids = array_values( array_unique( $ids ) );
+        if ( empty( $ids ) ) {
+            return [];
+        }
+
+        $map  = $this->resolve_targets( $ids, $resolve );
+        $rows = [];
+        foreach ( $ids as $id ) {
+            if ( ! isset( $map[ $id ] ) ) {
+                continue;
+            }
+            $rows[] = [
+                'object_id'     => $object_id,
+                'object_type'   => $object_type,
+                'facet_name'    => $facet_name,
+                'facet_source'  => $meta_key,
+                'facet_value'   => $map[ $id ]['value'],
+                'facet_display' => $map[ $id ]['display'],
+                'facet_numeric' => null,
+                'term_id'       => $map[ $id ]['term_id'],
+                'parent_id'     => null,
+                'depth'         => 0,
+            ];
+        }
+        return $rows;
+    }
+
+    /**
+     * Bulk gatherer for an ID-resolved meta facet. Collects every target ID
+     * across the batch, resolves them in one query, then builds rows — same
+     * one-query-per-facet-per-batch shape as bulk_rows_from_taxonomy().
+     *
+     * @param int[] $post_ids
+     * @return array<int, array<string, mixed>>
+     */
+    private function bulk_rows_from_meta_resolved( array $post_ids, string $facet_name, string $meta_key, string $resolve ): array {
+        global $wpdb;
+        $ids_placeholders = implode( ', ', array_fill( 0, count( $post_ids ), '%d' ) );
+
+        $records = $wpdb->get_results( $wpdb->prepare(
+            "SELECT post_id, meta_value
+             FROM {$wpdb->postmeta}
+             WHERE meta_key = %s
+             AND post_id IN ({$ids_placeholders})",
+            array_merge( [ $meta_key ], $post_ids )
+        ), ARRAY_A );
+
+        if ( empty( $records ) ) {
+            return [];
+        }
+
+        // First pass: decode each post's referenced IDs and collect the union.
+        $by_post = [];
+        $targets = [];
+        foreach ( $records as $r ) {
+            $ids = $this->extract_ids( maybe_unserialize( (string) $r['meta_value'] ) );
+            if ( empty( $ids ) ) {
+                continue;
+            }
+            $by_post[ (int) $r['post_id'] ] = $ids;
+            foreach ( $ids as $id ) {
+                $targets[ $id ] = true;
+            }
+        }
+        if ( empty( $targets ) ) {
+            return [];
+        }
+
+        $map = $this->resolve_targets( array_keys( $targets ), $resolve );
+
+        $rows = [];
+        foreach ( $by_post as $pid => $ids ) {
+            foreach ( $ids as $id ) {
+                if ( ! isset( $map[ $id ] ) ) {
+                    continue;
+                }
+                $rows[] = [
+                    'object_id'     => $pid,
+                    'object_type'   => 'post',
+                    'facet_name'    => $facet_name,
+                    'facet_source'  => $meta_key,
+                    'facet_value'   => $map[ $id ]['value'],
+                    'facet_display' => $map[ $id ]['display'],
+                    'facet_numeric' => null,
+                    'term_id'       => $map[ $id ]['term_id'],
+                    'parent_id'     => null,
+                    'depth'         => 0,
+                ];
+            }
+        }
+        return $rows;
+    }
+
     /**
      * Normalize a decoded meta value into facet value/numeric tuples.
      *
@@ -942,7 +1134,12 @@ final class Indexer implements Bootable {
             if ( ! $name || ! $source || ! isset( $by_kind[ $kind ] ) ) {
                 continue;
             }
-            $by_kind[ $kind ][] = [ 'name' => $name, 'source' => $source, 'display' => $display ];
+            $by_kind[ $kind ][] = [
+                'name'    => $name,
+                'source'  => $source,
+                'display' => $display,
+                'resolve' => $this->resolve_kind( $f ),
+            ];
         }
 
         $depth_maps = [];
@@ -959,10 +1156,14 @@ final class Indexer implements Bootable {
             ) );
         }
         foreach ( $by_kind['meta'] as $f ) {
-            $rows = array_merge( $rows, $this->bulk_rows_from_meta(
-                $post_ids, $f['name'], $f['source'],
-                ( $f['display'] ?? '' ) === 'date_range'
-            ) );
+            $rows = array_merge( $rows, ( $f['resolve'] ?? null ) !== null
+                ? $this->bulk_rows_from_meta_resolved(
+                    $post_ids, $f['name'], $f['source'], $f['resolve']
+                )
+                : $this->bulk_rows_from_meta(
+                    $post_ids, $f['name'], $f['source'],
+                    ( $f['display'] ?? '' ) === 'date_range'
+                ) );
         }
         foreach ( $by_kind['field'] as $f ) {
             $rows = array_merge( $rows, $this->bulk_rows_from_field(

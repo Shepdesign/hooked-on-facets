@@ -28,12 +28,18 @@
  *                     option is on (ACF then writes to wp_term_relationships,
  *                     so the existing taxonomy index path serves it). Save-
  *                     Terms-off fields store term IDs in meta only — deferred.
+ *   relationship,
+ *   post_object     → checkbox, with settings.resolve = 'post'. These store a
+ *                     serialized array of post IDs; the indexer resolves the
+ *                     IDs to post titles at index time (value = ID, display =
+ *                     title), so the buckets read as post names.
  *
  * Deliberately NOT suggested (deferred):
- *   - ID-array types — relationship, post_object, user (and Save-Terms-off
- *     taxonomy) — store a serialized array of IDs. The indexer's adapter would
- *     explode them into raw-ID buckets; useful display needs ID → name
- *     resolution first.
+ *   - user fields — serialized array of user IDs; needs user (not post)
+ *     resolution, a separate lookup.
+ *   - Save-Terms-off taxonomy — term IDs in meta; needs term resolution.
+ *   - All of the above could ride the same resolve mechanism once 'user' and
+ *     'term' resolution kinds land alongside 'post'.
  *   - Date types — date_picker / date_time_picker store `Ymd`, which the
  *     range path reads as a raw integer rather than a timestamp; suggesting a
  *     date_range facet would mis-scale until the indexer normalizes ACF dates.
@@ -185,6 +191,15 @@ final class Acf {
                 $cfg['kind']    = 'taxonomy';
                 $cfg['source']  = $taxonomy;
                 $cfg['display'] = 'checkbox';
+                return $cfg;
+
+            case 'relationship':
+            case 'post_object':
+                // Serialized array of post IDs (a single post_object may store
+                // a scalar ID). The indexer resolves IDs → post titles at index
+                // time when settings.resolve = 'post'.
+                $cfg['display']  = 'checkbox';
+                $cfg['settings'] = [ 'resolve' => 'post' ];
                 return $cfg;
 
             case 'radio':
