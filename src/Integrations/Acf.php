@@ -24,11 +24,16 @@
  *   number, range   → range
  *   text, textarea,
  *   email, url      → search
+ *   taxonomy        → taxonomy facet, but only when the field's "Save Terms"
+ *                     option is on (ACF then writes to wp_term_relationships,
+ *                     so the existing taxonomy index path serves it). Save-
+ *                     Terms-off fields store term IDs in meta only — deferred.
  *
  * Deliberately NOT suggested (deferred):
- *   - ID-array types — taxonomy, relationship, post_object, user — store a
- *     serialized array of IDs. The adapter would explode them into raw-ID
- *     buckets; useful display needs ID → name resolution first.
+ *   - ID-array types — relationship, post_object, user (and Save-Terms-off
+ *     taxonomy) — store a serialized array of IDs. The indexer's adapter would
+ *     explode them into raw-ID buckets; useful display needs ID → name
+ *     resolution first.
  *   - Date types — date_picker / date_time_picker store `Ymd`, which the
  *     range path reads as a raw integer rather than a timestamp; suggesting a
  *     date_range facet would mis-scale until the indexer normalizes ACF dates.
@@ -86,7 +91,13 @@ final class Acf {
             if ( isset( $taken[ $cfg['name'] ] ) || isset( $seen[ $cfg['name'] ] ) ) {
                 continue;
             }
-            if ( ! $this->meta_in_use( (string) $cfg['source'] ) ) {
+            // Only suggest facets with real data. A taxonomy-kind facet (ACF
+            // taxonomy field with Save Terms on) is backed by terms, not meta,
+            // so it checks the taxonomy rather than a postmeta key.
+            $has_data = ( $cfg['kind'] === 'taxonomy' )
+                ? $this->taxonomy_in_use( (string) $cfg['source'] )
+                : $this->meta_in_use( (string) $cfg['source'] );
+            if ( ! $has_data ) {
                 continue;
             }
             $seen[ $cfg['name'] ] = true;
@@ -161,6 +172,21 @@ final class Acf {
                 $cfg['display'] = 'checkbox';
                 return $cfg;
 
+            case 'taxonomy':
+                // With "Save Terms" on, ACF writes the selected terms to
+                // wp_term_relationships, so a plain taxonomy-kind facet serves
+                // them through the existing taxonomy index path — no meta-ID
+                // resolution needed. Without it, the terms live only as IDs in
+                // meta; that's the deferred ID → name case, so skip.
+                $taxonomy = (string) ( $field['taxonomy'] ?? '' );
+                if ( $taxonomy === '' || empty( $field['save_terms'] ) ) {
+                    return null;
+                }
+                $cfg['kind']    = 'taxonomy';
+                $cfg['source']  = $taxonomy;
+                $cfg['display'] = 'checkbox';
+                return $cfg;
+
             case 'radio':
             case 'button_group':
                 $cfg['display'] = 'radio';
@@ -201,5 +227,12 @@ final class Acf {
             $meta_key
         ) );
         return $hit !== null;
+    }
+
+    private function taxonomy_in_use( string $taxonomy ): bool {
+        if ( ! taxonomy_exists( $taxonomy ) ) {
+            return false;
+        }
+        return (int) wp_count_terms( [ 'taxonomy' => $taxonomy, 'hide_empty' => true ] ) > 0;
     }
 }
