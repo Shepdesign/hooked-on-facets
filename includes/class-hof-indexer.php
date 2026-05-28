@@ -48,8 +48,15 @@ final class Indexer implements Bootable {
     /** Per-chunk size for background reindex jobs. */
     public const BACKGROUND_CHUNK = 200;
 
-    /** Cron hook the chunked reindex runs under. */
+    /**
+     * Hook the chunked reindex runs under. Fired by Action Scheduler when
+     * available, else by wp_cron — both dispatch via this WP action, so the
+     * same run_background_chunk() callback serves either scheduler.
+     */
     public const BACKGROUND_HOOK = 'hof_background_reindex';
+
+    /** Action Scheduler group — keeps HOF jobs filterable in Tools → Scheduled Actions. */
+    public const AS_GROUP = 'hooked-on-facets';
 
     /** wp_options key tracking background-reindex progress for /reindex/status. */
     public const BACKGROUND_STATE_OPTION = 'hof_background_reindex_state';
@@ -59,7 +66,7 @@ final class Indexer implements Bootable {
         add_action( 'deleted_post',     [ $this, 'on_post_delete' ], 10, 1 );
         add_action( 'set_object_terms', [ $this, 'on_object_terms_changed' ], 10, 4 );
 
-        // Background reindex: each scheduled event handles one chunk and
+        // Background reindex: each scheduled action handles one chunk and
         // re-schedules the next if work remains. Survives plugin upgrades.
         add_action( self::BACKGROUND_HOOK, [ $this, 'run_background_chunk' ], 10, 1 );
     }
@@ -722,17 +729,67 @@ final class Indexer implements Bootable {
         return apply_filters( 'hof_indexed_post_types', [ 'post', 'page', 'product' ] );
     }
 
-    // ── Background reindex (wp_cron-driven) ─────────────────────────────────
+    // ── Background reindex (Action Scheduler, wp_cron fallback) ─────────────
 
     /**
-     * Queue a full reindex to run asynchronously in chunks via wp_cron.
+     * Whether a chunked background reindex can run in this environment.
+     *
+     * Action Scheduler has its own async queue runner (loopback request +
+     * WP-CLI), so it works even when WP-Cron is disabled. Raw wp_cron
+     * scheduling only fires if WP-Cron is enabled. The REST layer asks this
+     * before choosing the background path over the synchronous fallback.
+     */
+    public function can_run_background(): bool {
+        if ( function_exists( 'as_enqueue_async_action' ) ) {
+            return true;
+        }
+        return ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON );
+    }
+
+    /**
+     * Schedule one chunk of the named job to run as soon as the queue allows.
+     *
+     * Prefers Action Scheduler's async queue — it retries, surfaces in
+     * Tools → Scheduled Actions, and doesn't wait on site traffic to tick
+     * wp_cron. Falls back to a +1s single wp_cron event when AS isn't loaded.
+     *
+     * Args are passed as a positional list (`[ $job_id ]`) so the same
+     * run_background_chunk( string $job_id ) callback receives the id under
+     * either scheduler — AS and wp_cron both spread the args array onto the
+     * action callback.
+     */
+    private function schedule_chunk( string $job_id ): void {
+        if ( function_exists( 'as_enqueue_async_action' ) ) {
+            as_enqueue_async_action( self::BACKGROUND_HOOK, [ $job_id ], self::AS_GROUP );
+            return;
+        }
+        wp_schedule_single_event( time() + 1, self::BACKGROUND_HOOK, [ $job_id ] );
+    }
+
+    /**
+     * Cancel any pending background-reindex chunks under both schedulers.
+     *
+     * Called when a fresh job is queued so a superseded job's chained chunks
+     * don't linger in the Action Scheduler store (the job_id guard in
+     * run_background_chunk already makes a stray run a no-op; this keeps the
+     * queue clean).
+     */
+    private function cancel_scheduled_chunks(): void {
+        if ( function_exists( 'as_unschedule_all_actions' ) ) {
+            as_unschedule_all_actions( self::BACKGROUND_HOOK, [], self::AS_GROUP );
+        }
+        wp_clear_scheduled_hook( self::BACKGROUND_HOOK );
+    }
+
+    /**
+     * Queue a full reindex to run asynchronously in chunks.
      *
      * Synchronous reindex is fine for small catalogs (<10k products), but
      * once you're north of that the admin button starts timing out PHP-FPM.
      * This path counts the total objects up front, wipes the index, then
-     * schedules per-chunk events at -1s intervals so the first chunk fires
-     * on the next wp_cron tick and subsequent chunks chain via
-     * `run_background_chunk`'s self-rescheduling.
+     * enqueues the first chunk; subsequent chunks chain via
+     * `run_background_chunk`'s self-rescheduling. Scheduling goes through
+     * Action Scheduler when present, wp_cron otherwise.
      *
      * Returns an array describing the queued job so the REST layer can
      * report it back to the admin polling UI.
@@ -753,6 +810,10 @@ final class Indexer implements Bootable {
         $chunks = $total > 0 ? (int) ceil( $total / $chunk_size ) : 0;
         $job_id = wp_generate_uuid4();
 
+        // Drop any chunks still queued from a previous job before we truncate,
+        // so they don't run against the new index with a stale job_id.
+        $this->cancel_scheduled_chunks();
+
         // Reset the index — same contract as synchronous bulk_reindex_all.
         $table = $wpdb->prefix . Activator::TABLE;
         $wpdb->query( "TRUNCATE TABLE {$table}" );
@@ -771,9 +832,9 @@ final class Indexer implements Bootable {
         ], false );
 
         if ( $chunks > 0 ) {
-            // Fire the first chunk on the next cron tick. Subsequent chunks
-            // chain themselves from run_background_chunk.
-            wp_schedule_single_event( time() + 1, self::BACKGROUND_HOOK, [ $job_id ] );
+            // Enqueue the first chunk. Subsequent chunks chain themselves
+            // from run_background_chunk.
+            $this->schedule_chunk( $job_id );
         }
 
         return [
@@ -886,7 +947,7 @@ final class Indexer implements Bootable {
             $state['running']     = false;
             $state['finished_at'] = time();
         } else {
-            wp_schedule_single_event( time() + 1, self::BACKGROUND_HOOK, [ $job_id ] );
+            $this->schedule_chunk( $job_id );
         }
 
         update_option( self::BACKGROUND_STATE_OPTION, $state, false );
