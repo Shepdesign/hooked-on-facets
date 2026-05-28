@@ -170,6 +170,17 @@ Two deliberate departures from the other bridges:
 
 If Breakdance later ships a scoped query filter, the binding should move to that hook and this recipe becomes a fallback.
 
+### Divi — main-query path + Array-Query-style recipe
+
+Divi is the second exception, for the same reason as Breakdance: **no scoped per-loop query filter in core**. Elementor's `elementor/query/{id}` and Bricks' `bricks/posts/query_vars` have no Divi equivalent — the clean per-loop hooks people cite (`ctdqb_post_query_args` and friends) ship with third-party Divi Query Builder plugins, not Divi itself. So the bridge splits Divi's two real surfaces:
+
+- **Theme Builder archive / index templates** drive the **main query**, which `QueryHook::on_pre_get_posts` already intercepts. No Divi-specific code runs for this — the common "build a shop/archive template in Divi" case works out of the box.
+- **A Blog module on a regular page** runs a **secondary `WP_Query`** Divi exposes no per-module identifier for at query time. The bridge exposes a global `hof_divi_query_args( $base_args )` helper (mirror of `hof_breakdance_query_args`) that a developer calls from their own scoped `pre_get_posts` snippet to merge HOF's URL-derived `post__in`. The real logic lives in `Divi::query_args()` so it's unit-testable with a mocked resolver; the global function is a thin delegate.
+
+Placement, unlike binding, gets a native surface. `integrations/divi/modules/facet.php` is a classic-API `ET_Builder_Module` subclass registered on `et_builder_ready` (priority 9999), `require_once`'d just-in-time the same way the Bricks element and Elementor widget are — its parent only exists once Divi's builder loads. Three things differ from those placement classes, all classic-Divi quirks: the slug **must** start with `et_pb_` (`et_pb_hof_facet`) or the shortcode callbacks never register; `render()` **returns** markup rather than echoing; and settings are read from `$this->props`. The live-site frontend render is a plain server render through the shared `Renderer`. `vb_support = 'on'` opts the module into the Visual Builder via Divi's server-render-over-AJAX path (no companion `.jsx`) — that VB behavior is the piece still pending validation against a live Divi install. The `[hof_facet]` shortcode remains a fallback placement surface.
+
+The query-binding helper has **no presence gate** (nothing to register against; it's inert until called, so `register_hooks()` loads `integrations/divi/helpers.php` unconditionally). Module registration **does** gate, inside `register_module()`, on `\ET_Builder_Module` being present — `et_builder_ready` itself is passive and costs nothing when Divi is absent. If Divi ships a scoped query filter, the secondary-query binding should move to it.
+
 ## Tests
 
 - **PHP** — PHPUnit 11 + Brain Monkey (no live WordPress; WP funcs are stubbed per test). `composer test`. Tests live under `tests/php/`; WP-class stubs (`WP_Query` and friends) live under `tests/stubs/` so composer's PSR-4 scan doesn't flag them.
