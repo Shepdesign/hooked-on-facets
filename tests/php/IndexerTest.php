@@ -74,4 +74,29 @@ final class IndexerTest extends TestCase {
 
         self::assertSame( 191, strlen( $out[0]['value'] ) );
     }
+
+    // ── extract_ids (ID-resolution adapter) ───────────────────────────────
+
+    private function ids( mixed $decoded ): array {
+        return ( new Indexer() )->extract_ids( $decoded );
+    }
+
+    public function test_extract_ids_from_scalar_and_array(): void {
+        self::assertSame( [ 12 ], $this->ids( '12' ) );
+        self::assertSame( [ 12, 34 ], $this->ids( [ '12', '34' ] ),
+            'ACF relationship stores a serialized array of post-ID strings.' );
+    }
+
+    public function test_extract_ids_drops_non_positive_non_numeric_and_dedupes(): void {
+        self::assertSame( [ 12, 34 ], $this->ids( [ '12', '', 'abc', '0', '-5', '34', '12' ] ) );
+    }
+
+    public function test_extract_ids_skips_non_scalar_elements(): void {
+        self::assertSame( [ 12 ], $this->ids( [ [ 'nested' ], '12', (object) [ 'a' => 1 ] ] ) );
+    }
+
+    public function test_extract_ids_empty(): void {
+        self::assertSame( [], $this->ids( [] ) );
+        self::assertSame( [], $this->ids( '' ) );
+    }
 }

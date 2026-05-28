@@ -132,20 +132,39 @@ final class AcfTest extends TestCase {
         self::assertSame( 'checkbox', $facets[0]['display'] );
     }
 
-    public function test_skips_id_array_date_and_structural_types(): void {
+    public function test_maps_relationship_and_post_object_to_post_resolve_facets(): void {
+        $this->mockWpdb();
+        $this->feedFields( [
+            [ 'name' => 'related', 'label' => 'Related', 'type' => 'relationship' ],
+            [ 'name' => 'author',  'label' => 'Author',  'type' => 'post_object' ],
+        ] );
+
+        $byName = [];
+        foreach ( ( new Acf() )->suggest() as $f ) {
+            $byName[ $f['name'] ] = $f;
+        }
+
+        // post-ID arrays — the indexer resolves IDs → titles at index time.
+        self::assertSame( 'meta',     $byName['related']['kind'] );
+        self::assertSame( 'checkbox', $byName['related']['display'] );
+        self::assertSame( 'post',     $byName['related']['settings']['resolve'] );
+        self::assertSame( 'post',     $byName['author']['settings']['resolve'] );
+    }
+
+    public function test_skips_unresolvable_id_date_and_structural_types(): void {
         $this->mockWpdb();
         $this->feedFields( [
             // Taxonomy field with Save Terms OFF — term IDs live in meta only.
-            [ 'name' => 'cats',    'label' => 'Cats',    'type' => 'taxonomy', 'taxonomy' => 'cats_tax' ],
-            [ 'name' => 'related', 'label' => 'Related', 'type' => 'relationship' ],
-            [ 'name' => 'author',  'label' => 'Author',  'type' => 'post_object' ],
-            [ 'name' => 'launch',  'label' => 'Launch',  'type' => 'date_picker' ],
-            [ 'name' => 'specs',   'label' => 'Specs',   'type' => 'repeater' ],
-            [ 'name' => 'hero',    'label' => 'Hero',    'type' => 'image' ],
+            [ 'name' => 'cats',   'label' => 'Cats',   'type' => 'taxonomy', 'taxonomy' => 'cats_tax' ],
+            // User field — user-ID array; needs user (not post) resolution.
+            [ 'name' => 'owner',  'label' => 'Owner',  'type' => 'user' ],
+            [ 'name' => 'launch', 'label' => 'Launch', 'type' => 'date_picker' ],
+            [ 'name' => 'specs',  'label' => 'Specs',  'type' => 'repeater' ],
+            [ 'name' => 'hero',   'label' => 'Hero',   'type' => 'image' ],
         ] );
 
         self::assertSame( [], ( new Acf() )->suggest(),
-            'ID-array (incl. Save-Terms-off taxonomy), date, and structural ACF types are deferred.' );
+            'Save-Terms-off taxonomy, user, date, and structural ACF types are deferred.' );
     }
 
     public function test_skips_fields_already_configured(): void {
