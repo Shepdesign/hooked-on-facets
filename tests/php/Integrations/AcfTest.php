@@ -151,20 +151,69 @@ final class AcfTest extends TestCase {
         self::assertSame( 'post',     $byName['author']['settings']['resolve'] );
     }
 
-    public function test_skips_unresolvable_id_date_and_structural_types(): void {
+    public function test_maps_user_field_to_user_resolve_facet(): void {
         $this->mockWpdb();
         $this->feedFields( [
-            // Taxonomy field with Save Terms OFF — term IDs live in meta only.
-            [ 'name' => 'cats',   'label' => 'Cats',   'type' => 'taxonomy', 'taxonomy' => 'cats_tax' ],
-            // User field — user-ID array; needs user (not post) resolution.
-            [ 'name' => 'owner',  'label' => 'Owner',  'type' => 'user' ],
-            [ 'name' => 'launch', 'label' => 'Launch', 'type' => 'date_picker' ],
-            [ 'name' => 'specs',  'label' => 'Specs',  'type' => 'repeater' ],
-            [ 'name' => 'hero',   'label' => 'Hero',   'type' => 'image' ],
+            [ 'name' => 'owner', 'label' => 'Owner', 'type' => 'user' ],
+        ] );
+
+        $facets = ( new Acf() )->suggest();
+
+        self::assertCount( 1, $facets );
+        self::assertSame( 'meta',     $facets[0]['kind'] );
+        self::assertSame( 'checkbox', $facets[0]['display'] );
+        self::assertSame( 'user',     $facets[0]['settings']['resolve'],
+            'A user field is resolved from user IDs to display names at index time.' );
+        self::assertSame( 'owner',    $facets[0]['source'] );
+    }
+
+    public function test_maps_save_terms_off_taxonomy_to_term_resolve_facet(): void {
+        $this->mockWpdb();
+        // Save Terms OFF (no save_terms key) — term IDs live in meta only.
+        $this->feedFields( [
+            [ 'name' => 'cats', 'label' => 'Cats', 'type' => 'taxonomy', 'taxonomy' => 'cats_tax' ],
+        ] );
+
+        $facets = ( new Acf() )->suggest();
+
+        self::assertCount( 1, $facets );
+        self::assertSame( 'meta',     $facets[0]['kind'],
+            'Save-Terms-off stores term IDs in meta, so it is a meta facet, not taxonomy.' );
+        self::assertSame( 'checkbox', $facets[0]['display'] );
+        self::assertSame( 'term',     $facets[0]['settings']['resolve'] );
+        self::assertSame( 'cats',     $facets[0]['source'],
+            'Source is the meta key (field name), not the taxonomy slug.' );
+    }
+
+    public function test_maps_date_fields_to_date_range(): void {
+        $this->mockWpdb();
+        $this->feedFields( [
+            [ 'name' => 'launch',  'label' => 'Launch',  'type' => 'date_picker' ],
+            [ 'name' => 'expires', 'label' => 'Expires', 'type' => 'date_time_picker' ],
+        ] );
+
+        $byName = [];
+        foreach ( ( new Acf() )->suggest() as $f ) {
+            $byName[ $f['name'] ] = $f;
+        }
+
+        self::assertSame( 'date_range', $byName['launch']['display'] );
+        self::assertSame( 'date_range', $byName['expires']['display'] );
+        self::assertSame( 'meta',       $byName['launch']['kind'] );
+        self::assertSame( 'launch',     $byName['launch']['source'] );
+    }
+
+    public function test_skips_time_and_structural_types(): void {
+        $this->mockWpdb();
+        $this->feedFields( [
+            // time_picker is a time-of-day, not a calendar date.
+            [ 'name' => 'opens', 'label' => 'Opens', 'type' => 'time_picker' ],
+            [ 'name' => 'specs', 'label' => 'Specs', 'type' => 'repeater' ],
+            [ 'name' => 'hero',  'label' => 'Hero',  'type' => 'image' ],
         ] );
 
         self::assertSame( [], ( new Acf() )->suggest(),
-            'Save-Terms-off taxonomy, user, date, and structural ACF types are deferred.' );
+            'time_picker and structural ACF types are deferred.' );
     }
 
     public function test_skips_fields_already_configured(): void {

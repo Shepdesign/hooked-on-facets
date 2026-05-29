@@ -8,13 +8,18 @@ declare(strict_types=1);
 namespace HookedOnFacets\Tests;
 
 use HookedOnFacets\Indexer;
+use Mockery;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Covers normalize_meta_values() — the serialized-array adapter that both
- * meta gatherers funnel through. Pure logic, no WordPress / DB needed.
+ * meta gatherers funnel through — and resolve_targets(), the ID → label
+ * lookup behind the 'post' / 'user' / 'term' resolve kinds. The former is
+ * pure logic; the latter is exercised with a mocked $wpdb.
  */
 final class IndexerTest extends TestCase {
+    use MockeryPHPUnitIntegration;
 
     private function values( mixed $decoded, bool $is_date = false ): array {
         return ( new Indexer() )->normalize_meta_values( $decoded, $is_date );
@@ -61,6 +66,42 @@ final class IndexerTest extends TestCase {
         self::assertNull( $out[2]['numeric'], 'Non-numeric values keep a null numeric.' );
     }
 
+    // ── date normalization (ACF compact Ymd) ──────────────────────────────
+
+    public function test_acf_compact_ymd_normalizes_to_epoch_when_date(): void {
+        $epoch = ( new \DateTime( '2026-05-28T00:00:00+00:00' ) )->getTimestamp();
+
+        $out = $this->values( '20260528', true );
+
+        self::assertSame(
+            (float) $epoch,
+            $out[0]['numeric'],
+            'A date_range facet must read ACF date_picker Ymd as a UTC-midnight epoch, not a raw integer.'
+        );
+    }
+
+    public function test_compact_ymd_stays_a_raw_number_when_not_a_date(): void {
+        $out = $this->values( '20260528', false );
+
+        self::assertSame( 20260528.0, $out[0]['numeric'],
+            'Outside a date facet, an 8-digit value is just a number.' );
+    }
+
+    public function test_invalid_compact_date_falls_through_to_raw_number(): void {
+        // 2026-13-45 is not a real date; round-trip validation rejects it, so
+        // it falls through to the numeric passthrough rather than rolling over.
+        $out = $this->values( '20261345', true );
+
+        self::assertSame( 20261345.0, $out[0]['numeric'] );
+    }
+
+    public function test_real_epoch_passes_through_unchanged_when_date(): void {
+        // A genuine ~10-digit unix timestamp is past the 8-digit Ymd gate.
+        $out = $this->values( '1700000000', true );
+
+        self::assertSame( 1700000000.0, $out[0]['numeric'] );
+    }
+
     public function test_empty_array_yields_nothing(): void {
         self::assertSame( [], $this->values( [] ) );
     }
@@ -98,5 +139,111 @@ final class IndexerTest extends TestCase {
     public function test_extract_ids_empty(): void {
         self::assertSame( [], $this->ids( [] ) );
         self::assertSame( [], $this->ids( '' ) );
+    }
+
+    // ── resolve_targets (ID → label lookup) ───────────────────────────────
+
+    public function test_resolve_targets_user_maps_id_to_display_name(): void {
+        $sql = $this->mockWpdbRecords( [
+            [ 'id' => '7', 'label' => 'Jane Doe' ],
+            [ 'id' => '9', 'label' => '' ],
+        ] );
+
+        $map = $this->resolveTargets( [ 7, 9 ], 'user' );
+
+        self::assertStringContainsString( 'wp_users', $sql() );
+        self::assertSame( [ 'value' => '7', 'display' => 'Jane Doe', 'term_id' => null ], $map[7] );
+        self::assertSame( '9', $map[9]['display'], 'An empty label falls back to the id string.' );
+        self::assertNull( $map[9]['term_id'], 'User resolution carries no term_id.' );
+    }
+
+    public function test_resolve_targets_term_carries_term_id(): void {
+        $sql = $this->mockWpdbRecords( [
+            [ 'id' => '12', 'label' => 'Fiction' ],
+        ] );
+
+        $map = $this->resolveTargets( [ 12 ], 'term' );
+
+        self::assertStringContainsString( 'wp_terms', $sql() );
+        self::assertSame(
+            [ 'value' => '12', 'display' => 'Fiction', 'term_id' => 12 ],
+            $map[12],
+            'A term-resolved row records the source term_id.'
+        );
+    }
+
+    public function test_resolve_targets_post_still_maps_to_title(): void {
+        $sql = $this->mockWpdbRecords( [
+            [ 'id' => '3', 'label' => 'Hello World' ],
+        ] );
+
+        $map = $this->resolveTargets( [ 3 ], 'post' );
+
+        self::assertStringContainsString( 'wp_posts', $sql() );
+        self::assertSame( 'Hello World', $map[3]['display'] );
+        self::assertNull( $map[3]['term_id'] );
+    }
+
+    public function test_resolve_targets_unknown_kind_returns_empty(): void {
+        // Returns before touching $wpdb, so no mock is needed.
+        self::assertSame( [], $this->resolveTargets( [ 1, 2 ], 'bogus' ) );
+    }
+
+    public function test_resolve_targets_empty_ids_returns_empty(): void {
+        self::assertSame( [], $this->resolveTargets( [], 'user' ) );
+    }
+
+    public function test_resolve_targets_drops_ids_that_no_longer_exist(): void {
+        // Only id 5 comes back from the lookup; 6 was deleted.
+        $this->mockWpdbRecords( [
+            [ 'id' => '5', 'label' => 'Alice' ],
+        ] );
+
+        $map = $this->resolveTargets( [ 5, 6 ], 'user' );
+
+        self::assertArrayHasKey( 5, $map );
+        self::assertArrayNotHasKey( 6, $map, 'IDs that no longer resolve are absent from the map.' );
+    }
+
+    /**
+     * Invoke the private resolve_targets() without changing its production
+     * visibility — same approach the repo would use for any DB-bound internal.
+     *
+     * @param int[] $ids
+     * @return array<int, array{value: string, display: string, term_id: ?int}>
+     */
+    private function resolveTargets( array $ids, string $resolve ): array {
+        $indexer = new Indexer();
+        $method  = new \ReflectionMethod( $indexer, 'resolve_targets' );
+        $method->setAccessible( true );
+        return $method->invoke( $indexer, $ids, $resolve );
+    }
+
+    /**
+     * Mock $wpdb so prepare() is a pass-through (capturing the SQL) and
+     * get_results() returns the given records. Returns a closure that yields
+     * the last SQL string passed to prepare(), so a test can assert the table.
+     *
+     * @param array<int, array<string, string>> $records
+     * @return callable(): string
+     */
+    private function mockWpdbRecords( array $records ): callable {
+        $captured = '';
+        $wpdb = Mockery::mock();
+        $wpdb->posts = 'wp_posts';
+        $wpdb->users = 'wp_users';
+        $wpdb->terms = 'wp_terms';
+        $wpdb->shouldReceive( 'prepare' )->andReturnUsing(
+            function ( $query, ...$args ) use ( &$captured ) {
+                $captured = (string) $query;
+                return $query;
+            }
+        );
+        $wpdb->shouldReceive( 'get_results' )->andReturn( $records );
+        $GLOBALS['wpdb'] = $wpdb;
+
+        return static function () use ( &$captured ): string {
+            return $captured;
+        };
     }
 }

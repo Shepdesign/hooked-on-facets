@@ -586,16 +586,18 @@ final class Indexer implements Bootable {
      * Resolution kind for a meta facet whose stored values are IDs that need
      * mapping to a human label, or null for a plain scalar/multi-value facet.
      *
-     * Driven by the facet's `settings.resolve`. Currently only 'post' (ACF
-     * relationship / post_object — arrays of post IDs). 'term' (taxonomy
-     * fields stored as IDs without "Save Terms") is a planned follow-up.
+     * Driven by the facet's `settings.resolve`:
+     *   'post' — ACF relationship / post_object (arrays of post IDs).
+     *   'user' — ACF user field (arrays of user IDs).
+     *   'term' — ACF taxonomy field with "Save Terms" off (term IDs in meta
+     *            only, never written to wp_term_relationships).
      *
      * @param array<string, mixed> $facet
      */
     private function resolve_kind( array $facet ): ?string {
         $settings = $facet['settings'] ?? [];
         $resolve  = is_array( $settings ) ? (string) ( $settings['resolve'] ?? '' ) : '';
-        return $resolve === 'post' ? 'post' : null;
+        return in_array( $resolve, [ 'post', 'user', 'term' ], true ) ? $resolve : null;
     }
 
     /**
@@ -626,34 +628,52 @@ final class Indexer implements Bootable {
     /**
      * Resolve a set of target IDs to facet value/display pairs in one query.
      *
-     * For 'post': value is the post ID (stable filter key — same role the
-     * slug plays for a taxonomy facet) and display is the post title. IDs that
-     * no longer resolve (deleted posts) are simply absent from the map, so the
-     * caller drops them.
+     * The stored ID is always the facet value (a stable filter key — the same
+     * role the slug plays for a taxonomy facet); the human label varies by
+     * kind: post title, user display name, or term name. IDs that no longer
+     * resolve (deleted post / user / term) are simply absent from the map, so
+     * the caller drops them. For 'term', `term_id` is carried through so the
+     * row records the source term; 'post' and 'user' leave it null.
      *
      * @param int[] $ids
      * @return array<int, array{value: string, display: string, term_id: ?int}>
      */
     private function resolve_targets( array $ids, string $resolve ): array {
-        if ( empty( $ids ) || $resolve !== 'post' ) {
+        if ( empty( $ids ) ) {
             return [];
         }
 
         global $wpdb;
         $ids_placeholders = implode( ', ', array_fill( 0, count( $ids ), '%d' ) );
-        $records = $wpdb->get_results( $wpdb->prepare(
-            "SELECT ID, post_title FROM {$wpdb->posts} WHERE ID IN ({$ids_placeholders})",
-            $ids
-        ), ARRAY_A );
+
+        // term_id is globally unique in wp_terms, so no taxonomy join is needed.
+        switch ( $resolve ) {
+            case 'post':
+                $sql      = "SELECT ID AS id, post_title AS label FROM {$wpdb->posts} WHERE ID IN ({$ids_placeholders})";
+                $is_term  = false;
+                break;
+            case 'user':
+                $sql      = "SELECT ID AS id, display_name AS label FROM {$wpdb->users} WHERE ID IN ({$ids_placeholders})";
+                $is_term  = false;
+                break;
+            case 'term':
+                $sql      = "SELECT term_id AS id, name AS label FROM {$wpdb->terms} WHERE term_id IN ({$ids_placeholders})";
+                $is_term  = true;
+                break;
+            default:
+                return [];
+        }
+
+        $records = $wpdb->get_results( $wpdb->prepare( $sql, $ids ), ARRAY_A );
 
         $map = [];
         foreach ( (array) $records as $r ) {
-            $id    = (int) $r['ID'];
-            $title = (string) $r['post_title'];
+            $id    = (int) $r['id'];
+            $label = (string) $r['label'];
             $map[ $id ] = [
                 'value'   => (string) $id,
-                'display' => substr( $title !== '' ? $title : (string) $id, 0, 191 ),
-                'term_id' => null,
+                'display' => substr( $label !== '' ? $label : (string) $id, 0, 191 ),
+                'term_id' => $is_term ? $id : null,
             ];
         }
         return $map;
@@ -801,10 +821,26 @@ final class Indexer implements Bootable {
 
     private function resolve_numeric( string $value, bool $is_date ): ?float {
         if ( $is_date ) {
-            // Pure numeric values (existing epochs / unix timestamps) pass through.
+            // ACF date_picker stores a compact Ymd string (e.g. 20260528) — a
+            // valid integer that would otherwise pass through as a raw number
+            // and mis-scale the range. Parse it as a calendar date first,
+            // validated by round-trip so an out-of-range value (e.g. 20261345)
+            // falls through to the numeric path rather than silently rolling
+            // over. A genuine epoch is ~10 digits, so the 8-digit gate keeps
+            // real timestamps on the passthrough below.
+            if ( ctype_digit( $value ) && strlen( $value ) === 8 ) {
+                $dt     = \DateTime::createFromFormat( '!Ymd', $value, new \DateTimeZone( 'UTC' ) );
+                $errors = \DateTime::getLastErrors();
+                $clean  = $errors === false || ( empty( $errors['warning_count'] ) && empty( $errors['error_count'] ) );
+                if ( $dt !== false && $clean && $dt->format( 'Ymd' ) === $value ) {
+                    return (float) $dt->getTimestamp();
+                }
+            }
+            // Existing epochs / unix timestamps pass through.
             if ( is_numeric( $value ) ) {
                 return (float) $value;
             }
+            // date_time_picker (Y-m-d H:i:s) and other parseable date strings.
             $ts = strtotime( $value );
             return $ts === false ? null : (float) $ts;
         }
