@@ -1693,3 +1693,65 @@
 @media (prefers-reduced-motion: reduce) {
     .hof-wheel-dial { transition-duration: 0.4s; }
 }
+
+/* ── Intersection matrix ────────────────────────────────────────────────── */
+
+.hof-matrix-note {
+    margin: 0.25rem 0 0.5rem;
+    font-size: 0.75rem;
+    color: var(--hof-muted);
+}
+
+.hof-matrix-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.hof-matrix-cell {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--hof-border);
+    border-radius: var(--hof-radius-md);
+    cursor: pointer;
+}
+
+.hof-matrix-cell[data-hof-selected="1"] {
+    border-color: var(--hof-primary);
+    background: color-mix(in oklab, var(--hof-primary) 10%, var(--hof-surface));
+}
+
+.hof-matrix-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--hof-border);
+    background: var(--hof-surface);
+}
+
+.hof-matrix-cell[data-hof-selected="1"] .hof-matrix-dot {
+    border-color: var(--hof-primary);
+    background: var(--hof-primary);
+}
+
+.hof-matrix-name {
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hof-matrix-bar {
+    height: 6px;
+    border-radius: var(--hof-radius-pill);
+    background: color-mix(in oklab, var(--hof-primary) 35%, var(--hof-border));
+    /* Width tracks the row's share of the largest bucket count. */
+    width: calc(var(--hof-matrix-weight, 0) * 60px);
+    min-width: 2px;
+}

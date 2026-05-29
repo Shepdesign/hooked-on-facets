@@ -121,6 +121,8 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 - [x] **Visual DNA facet** (`visual_dna`) + `src/VisualDna/ColorExtractor.php` — color-extraction-driven visual filtering, with `bin/verify-visual-dna.sh` harness.
 - [x] **CSS Variable Engine — full theming UI** (`TokensPanel.jsx`). The `--hof-*` token contract is documented in SHEPDESIGN.md. (Was Phase 2 candidate #3.)
 - [x] **Telemetry** (`src/Telemetry/`) — buffers resolver timings + loop-hook signatures in-memory, flushes one option write at shutdown. Surfaced via `GET /telemetry`.
+- [x] **Spin the Wheel** (`spin_the_wheel`) — gamified single-select picker. A cosmetic conic-gradient dial over an accessible radiogroup (`spin.js`); spins to a random value or pick one directly. Single-value OR semantics, same URL shape as radio.
+- [x] **Intersection matrix** (`matrix`) — the re-introduced Venn/UpSet matrix, now on real **AND-within-facet** semantics (`settings.match`, see `Resolver::build_facet_legs()`): one single-value INTERSECT leg per selected value. Pairs an explicit selected-state dot + per-row count bar with the active-filters chip strip — the readability gap that retired the first version.
 
 ### Shipped early (were tagged Phase 3)
 
@@ -130,7 +132,7 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 ### Retired
 
 - **2D slider** — purged; shelved and never completed (commit `e06a2e4`).
-- **Venn matrix / UpSet matrix** — shipped briefly in Phase 2, then retired: the OR-within-facet semantics mismatched the AND-intersect visual and users couldn't tell what they'd selected. The fix was the active-filters chip strip. Off-deck until the resolver supports real AND-within-facet.
+- **Venn matrix / UpSet matrix** — was retired (the OR-within-facet semantics mismatched the AND-intersect visual and selection state was unreadable), then **re-introduced** as the `matrix` display once the resolver gained AND-within-facet support. The original blockers are addressed: real AND semantics plus an explicit selected-state dot, per-row count bar, and the active-filters chip strip.
 
 ## Pending
 
@@ -141,16 +143,12 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 
 ### Deferred wow-kit facets (designed, never built)
 
-- **Spin the Wheel** — gamified picker.
-- **Saved Bin** — drag-and-drop comparison bin.
-
-(Both blocked on nothing technical; just unsequenced.)
+- **Saved Bin** — drag-and-drop comparison bin. (Spin the Wheel shipped — see Phase 2.)
 
 ### Phase 3+
 
 | Feature | Notes |
 |---|---|
-| Venn / UpSet matrix | Gated on an AND-within-facet resolver |
 | Multisite support | Not started |
 
 ## Decisions made

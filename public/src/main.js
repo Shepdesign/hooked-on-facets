@@ -64,7 +64,7 @@ document.addEventListener('change', (e) => {
     const display = facetEl.getAttribute('data-hof-display');
     if (!name) return;
 
-    if (display === 'checkbox' || display === 'swatch' || display === 'swiper' || display === 'hierarchy') {
+    if (display === 'checkbox' || display === 'swatch' || display === 'swiper' || display === 'hierarchy' || display === 'matrix') {
         const values = Array.from(
             facetEl.querySelectorAll('input[type="checkbox"]:checked')
         ).map((cb) => cb.value);
@@ -76,6 +76,16 @@ document.addEventListener('change', (e) => {
                 const cb = tile.querySelector('input[type="checkbox"]');
                 if (cb?.checked) tile.setAttribute('data-hof-selected', '1');
                 else tile.removeAttribute('data-hof-selected');
+            });
+        }
+
+        if (display === 'matrix') {
+            // Same optimistic flip for matrix rows — the selected-state dot
+            // updates immediately; refresh() reconciles counts.
+            facetEl.querySelectorAll('.hof-matrix-cell').forEach((cell) => {
+                const cb = cell.querySelector('input[type="checkbox"]');
+                if (cb?.checked) cell.setAttribute('data-hof-selected', '1');
+                else cell.removeAttribute('data-hof-selected');
             });
         }
 

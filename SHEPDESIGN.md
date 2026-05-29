@@ -6,7 +6,7 @@ This file provides guidance to shepdesign code (shepdesign.ai/code) when working
 
 Hooked on Facets (HOF) is a WordPress + WooCommerce faceted search and filtering plugin. The brand promise is sub-50ms filter queries on 100k+ product catalogs paired with UI inventions that legacy competitors (FacetWP, WP Grid Builder) don't ship: swipe-deck facets, 2D slider grids, gamified "spin the wheel" picker, fluid swatch tiles, a drag-and-drop saved comparison bin.
 
-The Venn matrix and UpSet matrix shipped briefly in Phase 2 but were retired — the OR-within-facet semantic mismatched the AND-intersect visual, and users couldn't tell what they had selected. The fix landed as the active filters chip strip ([hof_active_filters]) which the simpler checkbox list pairs with. Matrix visualizations are off-deck until the resolver supports real AND-within-facet.
+The Venn matrix and UpSet matrix shipped briefly in Phase 2, were retired — the OR-within-facet semantic mismatched the AND-intersect visual, and users couldn't tell what they had selected — and have since been re-introduced as the `matrix` display once the resolver gained real AND-within-facet support (`settings.match='all'`, which the matrix defaults to). The fix that made it readable: the active filters chip strip (`[hof_active_filters]`) plus an explicit selected-state dot and per-row count bar.
 
 See `plan.md` for what is in scope per phase. The "wow kit" is Phase 2; Phase 1 is performance foundations plus three baseline facet types.
 

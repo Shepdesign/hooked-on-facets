@@ -51,6 +51,7 @@ const DISPLAY_GROUPS = [
             { value: 'swatch', label: 'Fluid swatches' },
             { value: 'swiper', label: 'Swipe deck' },
             { value: 'spin_the_wheel', label: 'Spin the wheel' },
+            { value: 'matrix', label: 'Intersection matrix' },
         ],
     },
     {
@@ -505,6 +506,31 @@ function FacetPreview({ facet }) {
                 </div>
                 <p className="hof-preview-note">
                     Gamified single-select. Spin lands on a value (or pick one directly).
+                </p>
+            </div>
+        );
+    }
+
+    if (facet.display === 'matrix') {
+        const rows = [
+            { name: 'Waterproof', weight: 1.0, on: true },
+            { name: 'Wireless',   weight: 0.6, on: true },
+            { name: 'Foldable',   weight: 0.3, on: false },
+        ];
+        return (
+            <div className="hof-preview">
+                <div className="hof-preview-label">{label}</div>
+                <ul className="hof-preview-matrix">
+                    {rows.map((r) => (
+                        <li key={r.name} className={`hof-preview-matrix-row${r.on ? ' is-on' : ''}`}>
+                            <span className="hof-preview-matrix-dot" />
+                            <span className="hof-preview-matrix-name">{r.name}</span>
+                            <span className="hof-preview-matrix-bar" style={{ width: `${r.weight * 100}%` }} />
+                        </li>
+                    ))}
+                </ul>
+                <p className="hof-preview-note">
+                    Stack values — items must match all selected (AND-within-facet).
                 </p>
             </div>
         );

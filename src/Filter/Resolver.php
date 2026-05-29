@@ -288,7 +288,10 @@ final class Resolver implements IdResolver {
         $display   = $facet_def['display'] ?? 'checkbox';
         $is_range  = is_array( $value ) && ( isset( $value['min'] ) || isset( $value['max'] ) );
         $settings  = is_array( $facet_def['settings'] ?? null ) ? $facet_def['settings'] : [];
-        $match_all = ! $is_range && $display !== 'search' && ( $settings['match'] ?? 'any' ) === 'all';
+        // The matrix display is an intersection visualization, so it defaults
+        // to AND-within-facet; every other multi-value display defaults to OR.
+        $default_match = $display === 'matrix' ? 'all' : 'any';
+        $match_all = ! $is_range && $display !== 'search' && ( $settings['match'] ?? $default_match ) === 'all';
 
         if ( $match_all ) {
             $legs = [];
