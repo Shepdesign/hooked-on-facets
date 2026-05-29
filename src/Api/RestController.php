@@ -512,7 +512,7 @@ final class RestController implements Bootable {
         $allowed_displays = [
             'checkbox', 'radio', 'dropdown', 'toggle', 'hierarchy',
             'range', 'date_range', 'search', 'swatch', 'swiper',
-            'ask', 'visual_dna', 'pagination',
+            'spin_the_wheel', 'ask', 'visual_dna', 'pagination',
         ];
 
         $clean = [];

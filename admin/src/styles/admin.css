@@ -892,6 +892,60 @@ body.toplevel_page_hooked-on-facets .wrap {
     color: var(--hof-color-coral-50);
 }
 
+/* ── Spin-the-wheel preview ───────────────────────────────────────────── */
+
+.hof-preview-wheel {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 8px auto;
+}
+
+.hof-preview-wheel-dial {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--hof-surface);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
+    background: conic-gradient(
+        var(--hof-color-soft-indigo) 0% 25%,
+        var(--hof-color-facet-coral) 25% 50%,
+        var(--hof-color-soft-indigo) 50% 75%,
+        var(--hof-color-facet-coral) 75% 100%
+    );
+}
+
+.hof-preview-wheel-pointer {
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 11px solid var(--hof-color-deep-ink);
+    z-index: 2;
+}
+
+.hof-preview-wheel-spin {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--hof-color-deep-ink);
+    color: var(--hof-surface);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border: 2px solid var(--hof-surface);
+}
+
 
 /* ── Tokens panel ─────────────────────────────────────────────────────── */
 
