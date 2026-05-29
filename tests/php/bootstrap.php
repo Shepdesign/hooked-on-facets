@@ -21,6 +21,12 @@ if ( ! defined( 'HOF_VERSION' ) ) {
     define( 'HOF_VERSION', 'test' );
 }
 
+// $wpdb->get_results() output-format constant, used by the indexer's
+// ID-resolution queries. Defined here since there's no live WordPress.
+if ( ! defined( 'ARRAY_A' ) ) {
+    define( 'ARRAY_A', 'ARRAY_A' );
+}
+
 require_once dirname( __DIR__, 2 ) . '/vendor/autoload.php';
 
 // Global WP class stubs live outside tests/php/ to avoid composer's

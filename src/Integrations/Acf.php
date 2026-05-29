@@ -24,25 +24,26 @@
  *   number, range   → range
  *   text, textarea,
  *   email, url      → search
- *   taxonomy        → taxonomy facet, but only when the field's "Save Terms"
- *                     option is on (ACF then writes to wp_term_relationships,
- *                     so the existing taxonomy index path serves it). Save-
- *                     Terms-off fields store term IDs in meta only — deferred.
+ *   taxonomy        → with "Save Terms" on, a taxonomy facet (ACF writes to
+ *                     wp_term_relationships, so the existing taxonomy index
+ *                     path serves it). With it off, the terms live only as
+ *                     term IDs in meta → a meta facet with settings.resolve =
+ *                     'term' (term ID → name at index time).
  *   relationship,
  *   post_object     → checkbox, with settings.resolve = 'post'. These store a
  *                     serialized array of post IDs; the indexer resolves the
  *                     IDs to post titles at index time (value = ID, display =
  *                     title), so the buckets read as post names.
+ *   user            → checkbox, with settings.resolve = 'user'. Serialized
+ *                     array of user IDs (scalar for a single user); resolved
+ *                     to display names at index time.
+ *   date_picker,
+ *   date_time_picker → date_range. date_picker stores a compact `Ymd`,
+ *                     date_time_picker `Y-m-d H:i:s`; the indexer normalizes
+ *                     both to epoch seconds so the range resolver scales them.
  *
  * Deliberately NOT suggested (deferred):
- *   - user fields — serialized array of user IDs; needs user (not post)
- *     resolution, a separate lookup.
- *   - Save-Terms-off taxonomy — term IDs in meta; needs term resolution.
- *   - All of the above could ride the same resolve mechanism once 'user' and
- *     'term' resolution kinds land alongside 'post'.
- *   - Date types — date_picker / date_time_picker store `Ymd`, which the
- *     range path reads as a raw integer rather than a timestamp; suggesting a
- *     date_range facet would mis-scale until the indexer normalizes ACF dates.
+ *   - time_picker — a time-of-day (`H:i:s`), not a calendar date.
  *   - Structural / presentational types — repeater, group, flexible_content,
  *     wysiwyg, image, file, message, tab, etc. — aren't meaningfully facetable.
  *
@@ -181,11 +182,16 @@ final class Acf {
             case 'taxonomy':
                 // With "Save Terms" on, ACF writes the selected terms to
                 // wp_term_relationships, so a plain taxonomy-kind facet serves
-                // them through the existing taxonomy index path — no meta-ID
-                // resolution needed. Without it, the terms live only as IDs in
-                // meta; that's the deferred ID → name case, so skip.
+                // them through the existing taxonomy index path. With it off,
+                // the terms live only as term IDs in postmeta — a meta facet
+                // resolved via the 'term' kind (term ID → name at index time).
+                if ( empty( $field['save_terms'] ) ) {
+                    $cfg['display']  = 'checkbox';
+                    $cfg['settings'] = [ 'resolve' => 'term' ];
+                    return $cfg;
+                }
                 $taxonomy = (string) ( $field['taxonomy'] ?? '' );
-                if ( $taxonomy === '' || empty( $field['save_terms'] ) ) {
+                if ( $taxonomy === '' ) {
                     return null;
                 }
                 $cfg['kind']    = 'taxonomy';
@@ -200,6 +206,14 @@ final class Acf {
                 // time when settings.resolve = 'post'.
                 $cfg['display']  = 'checkbox';
                 $cfg['settings'] = [ 'resolve' => 'post' ];
+                return $cfg;
+
+            case 'user':
+                // Single user → scalar user ID; multiple → serialized array of
+                // user IDs. The indexer resolves IDs → display names at index
+                // time when settings.resolve = 'user'.
+                $cfg['display']  = 'checkbox';
+                $cfg['settings'] = [ 'resolve' => 'user' ];
                 return $cfg;
 
             case 'radio':
@@ -219,6 +233,16 @@ final class Acf {
             case 'number':
             case 'range':
                 $cfg['display'] = 'range';
+                return $cfg;
+
+            case 'date_picker':
+            case 'date_time_picker':
+                // date_picker stores a compact Ymd; date_time_picker stores
+                // Y-m-d H:i:s. The indexer normalizes both to epoch seconds
+                // (resolve_numeric's date branch), so the date_range resolver
+                // path scales them correctly. time_picker is a time-of-day,
+                // not a calendar date, so it stays deferred.
+                $cfg['display'] = 'date_range';
                 return $cfg;
 
             case 'text':
