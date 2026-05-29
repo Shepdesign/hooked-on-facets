@@ -132,6 +132,8 @@ final class Plugin {
 
         $this->bind( \HookedOnFacets\Integrations\WooCommerce::class, static fn() => new \HookedOnFacets\Integrations\WooCommerce() );
         $this->bind( \HookedOnFacets\Integrations\Acf::class, static fn() => new \HookedOnFacets\Integrations\Acf() );
+        $this->bind( \HookedOnFacets\Integrations\MetaBox::class, static fn() => new \HookedOnFacets\Integrations\MetaBox() );
+        $this->bind( \HookedOnFacets\Integrations\Pods::class, static fn() => new \HookedOnFacets\Integrations\Pods() );
 
         $this->bind( \HookedOnFacets\Integrations\Elementor::class, static fn( self $c ) => new \HookedOnFacets\Integrations\Elementor(
             $c->make( \HookedOnFacets\Filter\Resolver::class ),
@@ -176,6 +178,8 @@ final class Plugin {
             $c->make( \HookedOnFacets\Licensing\LicenseManager::class ),
             $c->make( \HookedOnFacets\Integrations\WooCommerce::class ),
             $c->make( \HookedOnFacets\Integrations\Acf::class ),
+            $c->make( \HookedOnFacets\Integrations\MetaBox::class ),
+            $c->make( \HookedOnFacets\Integrations\Pods::class ),
         ) );
 
         $this->bind( \HookedOnFacets\Facets\Renderer::class, static fn( self $c ) => new \HookedOnFacets\Facets\Renderer(

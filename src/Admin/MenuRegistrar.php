@@ -89,6 +89,8 @@ final class MenuRegistrar implements Bootable {
                 'version'            => HOF_VERSION,
                 'woocommerceActive'  => function_exists( 'WC' ) || class_exists( \WooCommerce::class ),
                 'acfActive'          => function_exists( 'acf_get_field_groups' ) && function_exists( 'acf_get_fields' ),
+                'metaboxActive'      => function_exists( 'rwmb_meta' ) && function_exists( 'rwmb_get_registry' ),
+                'podsActive'         => function_exists( 'pods' ) && function_exists( 'pods_api' ),
             ] )
         );
 
