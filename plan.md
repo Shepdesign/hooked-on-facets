@@ -152,7 +152,7 @@ development TODOs**. The roadmap is complete across:
   IDs) and ACF date normalization.
 - **Builders** — Gutenberg, Elementor, Bricks, Breakdance, Divi.
 - **Infrastructure** — background reindex, telemetry, licensing, full theming UI,
-  AI, and **multisite**.
+  AI, and **multisite** (validated on a live `WP_ALLOW_MULTISITE` network — stable).
 
 ### Deferred — gated on a live third-party environment
 
@@ -172,8 +172,6 @@ project can't provision; current behavior is correct and documented.
   postmeta, and the `meta_in_use()` gate cleanly *skips* table-stored Pods
   fields rather than mis-suggesting them, so there's no broken behavior — just a
   capability gap that needs a live Pods install to design and verify against.
-- **Multisite live-network validation** — shipped and verified by lint + review;
-  not yet exercised on a live `WP_ALLOW_MULTISITE` stack.
 
 ### Deferred — product decision
 
