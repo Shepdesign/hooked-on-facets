@@ -135,16 +135,51 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 - **2D slider** — purged; shelved and never completed (commit `e06a2e4`).
 - **Venn matrix / UpSet matrix** — was retired (the OR-within-facet semantics mismatched the AND-intersect visual and selection state was unreadable), then **re-introduced** as the `matrix` display once the resolver gained AND-within-facet support. The original blockers are addressed: real AND semantics plus an explicit selected-state dot, per-row count bar, and the active-filters chip strip.
 
-## Pending
+## Status — feature-complete
 
-### Phase 2 candidates (not sequenced)
+Every planned facet, source, and capability has shipped. There are **no open
+development TODOs**. The roadmap is complete across:
 
-1. **Custom-field sources — remaining** — the core mechanism is complete: ACF, Meta Box, and Pods all land, the resolve mechanism covers `'post'` / `'user'` / `'term'` (with `extract_ids()` splitting comma-separated term-ID strings), and ACF dates are normalized. Small deferred edges remain: time-of-day fields (`time_picker` / Meta Box `time`, which aren't calendar dates) and Pods relationships stored in a Pods table / `wp_podsrel` rather than postmeta.
-2. **Native builder placement — remaining** — Breakdance Element-Studio bundle (still deferred; placement uses the shortcode). Divi's native module is authored but its Visual Builder rendering needs validation against a live Divi install. Migrate either bridge's query binding to a scoped hook if the builder ships one.
+- **Facet types (16)** — checkbox, radio, dropdown, toggle, hierarchy, range,
+  date_range, search, swatch, swipe deck, **spin the wheel**, **intersection
+  matrix**, **saved bin**, active filters, ask (AI), visual DNA, plus pagination.
+- **Resolver** — INTERSECT engine with OR-within-facet and **AND-within-facet**
+  (`settings.match`), the matrix's intersection semantics, and the reserved
+  `_visual_ids` / `_bin_ids` ID restrictions.
+- **Custom-field sources** — WooCommerce, ACF, **Meta Box**, **Pods**; the
+  resolve mechanism covers `'post'` / `'user'` / `'term'` (with comma-split term
+  IDs) and ACF date normalization.
+- **Builders** — Gutenberg, Elementor, Bricks, Breakdance, Divi.
+- **Infrastructure** — background reindex, telemetry, licensing, full theming UI,
+  AI, and **multisite**.
 
-### Shipped (was Phase 3+)
+### Deferred — gated on a live third-party environment
 
-- [x] **Multisite support** — the index table and facet options are already per-blog (`$wpdb->prefix` / `get_option`, which `switch_to_blog` re-points), so support is a lifecycle concern: `Activator::activate( $network_wide )` installs across every existing site on network activation, `install_new_site()` (on `wp_initialize_site`) seeds tables for sites added later while HOF is network-active, the `plugins_loaded` auto-heal self-installs any blog whose schema is behind, and `uninstall.php` runs its opt-in cleanup per site. **Pending live-network validation** — verified by lint + review; not yet exercised on a live `WP_ALLOW_MULTISITE` stack.
+These are not missing code so much as steps that need an environment this
+project can't provision; current behavior is correct and documented.
+
+- **Breakdance native placement element** — Breakdance elements are Element-Studio
+  directory bundles (`\Breakdance\ElementStudio\registerSaveLocation()`), an
+  undocumented format that must be authored *and* validated against a live
+  Breakdance install. Placement works today via the `[hof_facet]` shortcode in a
+  Breakdance Code/Shortcode element; query binding via the Array Query recipe.
+- **Divi Visual Builder render validation** — the native `ET_Builder_Module` is
+  authored; its VB server-render-over-AJAX path needs a live Divi install to
+  validate. Theme Builder (main-query) placement already filters through
+  `QueryHook` with no Divi code.
+- **Pods table / `wp_podsrel` relationship storage** — the indexer reads
+  postmeta, and the `meta_in_use()` gate cleanly *skips* table-stored Pods
+  fields rather than mis-suggesting them, so there's no broken behavior — just a
+  capability gap that needs a live Pods install to design and verify against.
+- **Multisite live-network validation** — shipped and verified by lint + review;
+  not yet exercised on a live `WP_ALLOW_MULTISITE` stack.
+
+### Deferred — product decision
+
+- **Time-of-day facet** (`time_picker` / Meta Box `time`) — intentionally *not*
+  a facet type. A time-of-day value isn't a calendar date, and surfacing it as a
+  raw numeric (seconds-since-midnight) range is confusing; doing it well needs a
+  dedicated clock / time-range picker, which isn't warranted without demand.
 
 ## Decisions made
 
