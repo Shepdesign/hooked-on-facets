@@ -1,0 +1,111 @@
+# Changelog
+
+All notable changes to Hooked on Facets are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Until 1.0, every version is an `-alpha` pre-release — the public API and the
+index schema may change between them. Each version links to its full GitHub
+release notes.
+
+## [Unreleased]
+
+_No unreleased changes._
+
+## [0.12.0-alpha] - 2026-05-29
+
+Feature-complete milestone — the full "wow kit" plus the AND-within-facet resolver.
+
+### Added
+
+- **Spin-the-wheel facet** (`spin_the_wheel`) — a gamified single-select picker:
+  a cosmetic conic-gradient dial over a real, accessible radiogroup that
+  degrades to a plain single-select with JS off.
+- **Saved-bin facet** (`saved_bin`) — a drag-and-drop / click comparison bin.
+  Items are pinned to a per-site `localStorage` bin (via the new
+  `[hof_bin_button]` shortcode or any `data-hof-bin-add` element) and filtered
+  to with a "show only saved" toggle, backed by the reserved `_bin_ids`
+  resolver key.
+- **Intersection matrix facet** (`matrix`) — the Venn/UpSet matrix returns on
+  real AND-within-facet semantics, paired with an explicit selected-state dot,
+  per-row count bars, and the active-filters chip strip.
+- **AND-within-facet resolver mode** — `settings.match = 'all'` makes a facet
+  require objects to carry _every_ selected value (one single-value `INTERSECT`
+  leg per value), exposed as an any/all control on multi-value facets.
+- **Multisite support** — network-aware activation, new-site table seeding
+  (`wp_initialize_site`), the `plugins_loaded` schema auto-heal, and per-site
+  opt-in uninstall. Validated on a live `WP_ALLOW_MULTISITE` network.
+
+## [0.11.0-alpha] - 2026-05-29
+
+Custom-field source line — ACF, Meta Box, and Pods.
+
+### Added
+
+- **ACF, Meta Box, and Pods** suggestion providers — one-click facet configs
+  from registered custom fields, gated so only in-use fields are offered.
+- **Indexer resolve mechanism** — ID→label resolution for `post` / `user` /
+  `term` references, serialized-array and comma-separated-ID adapters, and ACF
+  `date_picker` (`Ymd`) → epoch normalization.
+- **Divi bridge** — query helper plus a native module for placement.
+- **Action Scheduler-backed background reindex**, with a `wp_cron` fallback.
+
+## [0.10.0-alpha] - 2026-05-26
+
+- Third page-builder bridge: **Breakdance** (Array Query recipe).
+
+## [0.9.0-alpha] - 2026-05-26
+
+- Second page-builder bridge: **Bricks** (query binding by CSS class).
+
+## [0.8.0-alpha] - 2026-05-24
+
+- Polish pass: theming foundation (CSS variable tokens), admin clarity, and a
+  numbered **pagination** facet.
+
+## [0.7.0-alpha] - 2026-05-24
+
+- First page-builder bridge: **Elementor** (Query ID binding).
+
+## [0.6.1-alpha] - 2026-05-24
+
+- Test harness and CI hygiene.
+
+## [0.6.0-alpha] - 2026-05-21
+
+- Customer-ready foundation.
+
+## [0.5.0-alpha] - 2026-05-21
+
+- Premium licensing scaffold.
+
+## [0.4.0-alpha] - 2026-05-21
+
+- Admin SPA expansion ("admin grows up").
+
+## [0.3.0-alpha] - 2026-05-21
+
+- Visual DNA v3 — palette matching.
+
+## [0.2.0-alpha] - 2026-05-21
+
+- Visual DNA lands — color-extraction-driven filtering.
+
+## [0.1.0-alpha] - 2026-05-21
+
+- First public alpha.
+
+[Unreleased]: https://github.com/Shepdesign/hooked-on-facets/compare/v0.12.0-alpha...HEAD
+[0.12.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.12.0-alpha
+[0.11.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.11.0-alpha
+[0.10.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.10.0-alpha
+[0.9.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.9.0-alpha
+[0.8.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.8.0-alpha
+[0.7.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.7.0-alpha
+[0.6.1-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.6.1-alpha
+[0.6.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.6.0-alpha
+[0.5.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.5.0-alpha
+[0.4.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.4.0-alpha
+[0.3.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.3.0-alpha
+[0.2.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.2.0-alpha
+[0.1.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.1.0-alpha
