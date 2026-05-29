@@ -640,11 +640,16 @@ final class RestController implements Bootable {
         $animation  = isset( $raw['animation'] ) && in_array( (string) $raw['animation'], $allowed_animations, true ) ? (string) $raw['animation'] : null;
         $deck_depth = isset( $raw['deckDepth'] ) ? max( 1, min( 10, (int) $raw['deckDepth'] ) ) : null;
 
+        // match = 'all' turns a multi-value facet into AND-within-facet (an
+        // object must carry every selected value); 'any' (default) is OR.
+        $match = isset( $raw['match'] ) && in_array( (string) $raw['match'], [ 'any', 'all' ], true ) ? (string) $raw['match'] : null;
+
         return array_filter( [
             'variant'   => $variant,
             'cardSize'  => $card_size,
             'deckDepth' => $deck_depth,
             'animation' => $animation,
+            'match'     => $match,
         ], static fn( $v ) => $v !== null );
     }
 

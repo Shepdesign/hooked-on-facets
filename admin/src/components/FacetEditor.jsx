@@ -81,6 +81,10 @@ const VIEW_DISPLAYS = new Set(['ask', 'visual_dna', 'pagination']);
 // Displays that visual_dna can target (color-bearing displays).
 const COLOR_TARGET_DISPLAYS = new Set(['checkbox', 'radio', 'dropdown', 'swatch', 'swiper']);
 
+// Multi-value displays — a shopper can pick more than one value, so the
+// any/all (OR/AND) match mode is meaningful.
+const MULTI_VALUE_DISPLAYS = new Set(['checkbox', 'swatch', 'swiper']);
+
 const sanitizeSlug = (raw) =>
     String(raw || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
@@ -260,6 +264,25 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                 Shown in the input before the shopper types. Hint what kinds of asks
                                 work — e.g. <em>"comfy red shoes under $50"</em> or
                                 <em>"a gift for my dad's workshop"</em>.
+                            </span>
+                        </label>
+                    )}
+
+                    {MULTI_VALUE_DISPLAYS.has(facet.display) && (
+                        <label className="hof-field">
+                            <span className="hof-field-label">Match within facet</span>
+                            <select
+                                className="hof-input"
+                                value={settings.match || 'any'}
+                                onChange={(e) => updateSettings({ match: e.target.value })}
+                            >
+                                <option value="any">Any selected value (OR)</option>
+                                <option value="all">All selected values (AND)</option>
+                            </select>
+                            <span className="hof-field-help">
+                                <strong>Any</strong> matches items with at least one selected value.
+                                {' '}<strong>All</strong> requires every selected value — useful for
+                                tags or features where shoppers narrow by stacking choices.
                             </span>
                         </label>
                     )}
