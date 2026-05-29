@@ -1577,3 +1577,119 @@
 .hof-visual-dna-status[data-hof-visual-status-kind="error"] {
     color: var(--hof-danger);
 }
+
+/* ── Spin the wheel ─────────────────────────────────────────────────────── */
+
+.hof-facet-wheel {
+    --hof-wheel-a: var(--hof-primary);
+    --hof-wheel-b: var(--hof-accent);
+    --hof-wheel-size: 220px;
+}
+
+.hof-wheel {
+    position: relative;
+    width: var(--hof-wheel-size);
+    height: var(--hof-wheel-size);
+    margin: 0.75rem auto;
+}
+
+.hof-wheel-dial {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px solid var(--hof-surface);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+    transform: rotate(var(--hof-wheel-rotation, 0deg));
+    transition: transform 4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hof-wheel-seg {
+    position: absolute;
+    top: 4%;
+    left: 50%;
+    transform-origin: 0 calc(var(--hof-wheel-size) / 2 - 4%);
+    transform: translateX(-50%)
+        rotate(calc((var(--hof-wheel-i) + 0.5) * (360deg / var(--hof-wheel-n))));
+    max-width: 42%;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--hof-surface);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+.hof-wheel-pointer {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 14px solid var(--hof-text);
+    z-index: 2;
+}
+
+.hof-wheel-spin {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 3px solid var(--hof-surface);
+    background: var(--hof-text);
+    color: var(--hof-surface);
+    font-weight: 700;
+    font-size: 0.75rem;
+    cursor: pointer;
+    z-index: 3;
+}
+
+.hof-wheel-spin:disabled { opacity: 0.5; cursor: default; }
+
+[data-hof-wheel-spinning] .hof-wheel-spin { pointer-events: none; opacity: 0.6; }
+
+.hof-wheel-options {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.hof-wheel-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid var(--hof-border);
+    border-radius: var(--hof-radius-pill);
+    cursor: pointer;
+    font-size: 0.8125rem;
+}
+
+.hof-wheel-option[data-hof-selected="1"] {
+    border-color: var(--hof-primary);
+    background: color-mix(in oklab, var(--hof-primary) 12%, var(--hof-surface));
+}
+
+.hof-wheel-clear {
+    margin-top: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--hof-primary);
+    cursor: pointer;
+    font-size: 0.8125rem;
+    text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hof-wheel-dial { transition-duration: 0.4s; }
+}

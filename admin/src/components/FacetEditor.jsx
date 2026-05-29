@@ -50,6 +50,7 @@ const DISPLAY_GROUPS = [
         items: [
             { value: 'swatch', label: 'Fluid swatches' },
             { value: 'swiper', label: 'Swipe deck' },
+            { value: 'spin_the_wheel', label: 'Spin the wheel' },
         ],
     },
     {
@@ -465,6 +466,22 @@ function FacetPreview({ facet }) {
                 </div>
                 <p className="hof-preview-note">
                     Right = include, left = skip. Cards reuse the term's swatch image/color.
+                </p>
+            </div>
+        );
+    }
+
+    if (facet.display === 'spin_the_wheel') {
+        return (
+            <div className="hof-preview">
+                <div className="hof-preview-label">{label}</div>
+                <div className="hof-preview-wheel">
+                    <span className="hof-preview-wheel-pointer" />
+                    <div className="hof-preview-wheel-dial" />
+                    <span className="hof-preview-wheel-spin">Spin</span>
+                </div>
+                <p className="hof-preview-note">
+                    Gamified single-select. Spin lands on a value (or pick one directly).
                 </p>
             </div>
         );

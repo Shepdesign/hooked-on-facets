@@ -55,6 +55,7 @@ final class Renderer {
             'search'      => $this->render_search( $facet, $current_value ),
             'swatch'      => $this->render_swatch( $facet, (array) $current_value, $counts ),
             'swiper'      => $this->render_swiper( $facet, (array) $current_value, $counts ),
+            'spin_the_wheel' => $this->render_spin_the_wheel( $facet, (array) $current_value, $counts ),
             'radio'       => $this->render_radio( $facet, (array) $current_value, $counts ),
             'dropdown'    => $this->render_dropdown( $facet, (array) $current_value, $counts ),
             'toggle'      => $this->render_toggle( $facet, (array) $current_value ),
@@ -979,6 +980,94 @@ final class Renderer {
         return (string) ob_get_clean();
     }
 
+
+    /**
+     * Spin-the-wheel facet — a gamified single-select picker. The dial is
+     * cosmetic (conic-gradient segments, aria-hidden); selection is driven by
+     * real radio inputs in a radiogroup, so it's keyboard- and screen-reader-
+     * accessible and degrades to a plain single-select with JS off. Single-
+     * value OR semantics — the same `hof[<name>]=value` URL shape as radio, so
+     * the Resolver treats it identically.
+     *
+     * @param array<string, mixed> $facet
+     * @param array<int, string>   $selected_values
+     * @param array<string, mixed> $counts
+     */
+    private function render_spin_the_wheel( array $facet, array $selected_values, array $counts ): string {
+        $name    = $facet['name'];
+        $label   = $facet['label'] ?: $name;
+        $buckets = ( $counts['type'] ?? '' ) === 'values' ? $counts['buckets'] : [];
+        $current = (string) ( $selected_values[0] ?? '' );
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-wheel"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="spin_the_wheel">
+            <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
+            <?php if ( empty( $buckets ) ) : ?>
+                <p class="hof-facet-empty"><?php esc_html_e( 'No options available.', 'hooked-on-facets' ); ?></p>
+            <?php else :
+                $segments = count( $buckets );
+                // Build a conic-gradient from evenly-split segments in two
+                // alternating theme tokens so the dial reads as a wheel.
+                $stops = [];
+                foreach ( array_values( $buckets ) as $i => $_b ) {
+                    $from  = ( $i / $segments ) * 100;
+                    $to    = ( ( $i + 1 ) / $segments ) * 100;
+                    $color = $i % 2 === 0 ? 'var(--hof-wheel-a)' : 'var(--hof-wheel-b)';
+                    $stops[] = sprintf( '%s %.4f%% %.4f%%', $color, $from, $to );
+                }
+                $dial_bg = 'conic-gradient(' . implode( ', ', $stops ) . ')';
+            ?>
+                <div class="hof-wheel" style="--hof-wheel-n: <?php echo (int) $segments; ?>;">
+                    <span class="hof-wheel-pointer" aria-hidden="true"></span>
+                    <div class="hof-wheel-dial"
+                         data-hof-wheel-dial
+                         aria-hidden="true"
+                         style="background: <?php echo esc_attr( $dial_bg ); ?>;">
+                        <?php foreach ( array_values( $buckets ) as $i => $bucket ) : ?>
+                            <span class="hof-wheel-seg"
+                                  style="--hof-wheel-i: <?php echo (int) $i; ?>;"
+                                  data-hof-wheel-value="<?php echo esc_attr( (string) $bucket['value'] ); ?>"><?php echo esc_html( $bucket['display'] ); ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <button type="button" class="hof-wheel-spin" data-hof-wheel-spin>
+                        <?php esc_html_e( 'Spin', 'hooked-on-facets' ); ?>
+                    </button>
+                </div>
+                <ul class="hof-wheel-options" role="radiogroup" aria-label="<?php echo esc_attr( $label ); ?>">
+                    <?php foreach ( $buckets as $bucket ) :
+                        $value   = (string) $bucket['value'];
+                        $count   = (int) $bucket['count'];
+                        $checked = $value === $current;
+                    ?>
+                        <li class="hof-wheel-option-item">
+                            <label class="hof-wheel-option"<?php echo $checked ? ' data-hof-selected="1"' : ''; ?>>
+                                <input type="radio"
+                                       class="hof-wheel-input screen-reader-text"
+                                       name="hof[<?php echo esc_attr( $name ); ?>]"
+                                       value="<?php echo esc_attr( $value ); ?>"
+                                       data-hof-wheel-value="<?php echo esc_attr( $value ); ?>"
+                                       <?php checked( $checked ); ?>>
+                                <span class="hof-wheel-option-name"><?php echo esc_html( $bucket['display'] ); ?></span>
+                                <span class="hof-facet-count"
+                                      data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
+                            </label>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <button type="button"
+                        class="hof-wheel-clear"
+                        data-hof-wheel-clear
+                        <?php echo $current === '' ? 'hidden' : ''; ?>>
+                    <?php esc_html_e( 'Clear', 'hooked-on-facets' ); ?>
+                </button>
+            <?php endif; ?>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
 
     private function render_search( array $facet, $current_value ): string {
         $name  = $facet['name'];

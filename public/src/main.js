@@ -10,6 +10,7 @@ import './styles/facets.css';
 import { Store, buildUrl } from './state.js';
 import { refresh } from './refresh.js';
 import { initSwiper } from './swiper.js';
+import { initSpinWheel } from './spin.js';
 import { initAsk } from './ask.js';
 import { initVisualDna } from './visual-dna.js';
 import { initPagination } from './pagination.js';
@@ -18,6 +19,7 @@ const store = new Store();
 store.hydrateFromUrl();
 
 initSwiper();
+initSpinWheel();
 initAsk(store);
 initVisualDna(store);
 initPagination();
@@ -81,7 +83,7 @@ document.addEventListener('change', (e) => {
         return;
     }
 
-    if (display === 'radio') {
+    if (display === 'radio' || display === 'spin_the_wheel') {
         const v = facetEl.querySelector('input[type="radio"]:checked')?.value ?? '';
         store.set(name, v === '' ? [] : [v]);
         return;
