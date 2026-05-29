@@ -29,13 +29,15 @@
  *                                     chosen terms to the post (writes to
  *                                     wp_term_relationships, like ACF
  *                                     Save-Terms-on), so source = the taxonomy
+ *   taxonomy_advanced               → checkbox + resolve='term'. Stores the
+ *                                     chosen term IDs as a single
+ *                                     comma-separated string in meta (no term
+ *                                     relationships); the indexer's
+ *                                     extract_ids() splits it.
  *   post                            → checkbox + resolve='post' (post IDs in meta)
  *   user                            → checkbox + resolve='user' (user IDs in meta)
  *
  * Deferred:
- *   - taxonomy_advanced — stores the chosen term IDs as a single
- *     comma-separated string in meta; needs a comma-split adapter the indexer
- *     doesn't have yet.
  *   - time — a time-of-day, not a calendar date.
  *   - Structural / media types — group, wysiwyg, single_image, image_advanced,
  *     file, file_advanced, key_value, etc. — aren't meaningfully facetable.
@@ -240,6 +242,15 @@ final class MetaBox {
                 $cfg['display'] = 'checkbox';
                 return $cfg;
 
+            case 'taxonomy_advanced':
+                // Stores the chosen term IDs as a single comma-separated string
+                // in meta (no term relationships written), so it's a meta facet
+                // resolved via the 'term' kind — the indexer's extract_ids()
+                // splits the comma-separated value.
+                $cfg['display']  = 'checkbox';
+                $cfg['settings'] = [ 'resolve' => 'term' ];
+                return $cfg;
+
             case 'post':
                 $cfg['display']  = 'checkbox';
                 $cfg['settings'] = [ 'resolve' => 'post' ];
@@ -251,8 +262,8 @@ final class MetaBox {
                 return $cfg;
 
             default:
-                // taxonomy_advanced (comma-separated IDs), time, and structural
-                // / media types — see the class docblock for why each is deferred.
+                // time and structural / media types — see the class docblock
+                // for why each is deferred.
                 return null;
         }
     }

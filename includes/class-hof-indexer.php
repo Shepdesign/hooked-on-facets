@@ -604,8 +604,11 @@ final class Indexer implements Bootable {
      * Flatten a decoded meta value into a list of positive integer IDs.
      *
      * ACF relationship stores a serialized array of post-ID strings; a single
-     * post_object stores a scalar ID. Both land here as the get_post_meta() /
-     * maybe_unserialize() output. Non-numeric / non-positive entries drop out.
+     * post_object stores a scalar ID; Meta Box's taxonomy_advanced stores its
+     * term IDs as one comma-separated string ("12,34,56"). All land here as the
+     * get_post_meta() / maybe_unserialize() output. Each scalar is split on
+     * commas (a no-op for a plain ID), and non-numeric / non-positive entries
+     * drop out.
      *
      * @return int[]
      */
@@ -617,9 +620,11 @@ final class Indexer implements Bootable {
             if ( ! is_scalar( $item ) ) {
                 continue;
             }
-            $id = (int) $item;
-            if ( $id > 0 ) {
-                $ids[] = $id;
+            foreach ( explode( ',', (string) $item ) as $piece ) {
+                $id = (int) trim( $piece );
+                if ( $id > 0 ) {
+                    $ids[] = $id;
+                }
             }
         }
         return array_values( array_unique( $ids ) );
