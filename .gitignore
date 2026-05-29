@@ -26,3 +26,6 @@ Thumbs.db
 # Local env
 .env
 .env.local
+
+# Claude Code local dev aid — kept out of the public repo (sole credit: shepdesign)
+/CLAUDE.md
