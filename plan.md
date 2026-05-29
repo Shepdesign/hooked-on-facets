@@ -1,8 +1,9 @@
 # Roadmap — Hooked on Facets
 
-> Status snapshot at `v0.11.0-alpha`. Phase 1 is complete; most of the Phase 2
-> "wow kit" has landed (and two Phase 3 surfaces shipped early), and the
-> custom-field source line (ACF, Meta Box, Pods) is now complete. See
+> Status snapshot at `v0.12.0-alpha` — **feature-complete**. Every planned
+> facet (16 types), source (WooCommerce, ACF, Meta Box, Pods), the
+> AND-within-facet resolver, and multisite have shipped. The only open items
+> are gated on live third-party environments (see "Status" below). See
 > `SHEPDESIGN.md` for architecture and the load-bearing SQL shape.
 
 ## Goal
