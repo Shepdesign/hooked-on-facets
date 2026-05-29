@@ -56,6 +56,7 @@ final class Renderer {
             'swatch'      => $this->render_swatch( $facet, (array) $current_value, $counts ),
             'swiper'      => $this->render_swiper( $facet, (array) $current_value, $counts ),
             'spin_the_wheel' => $this->render_spin_the_wheel( $facet, (array) $current_value, $counts ),
+            'matrix'      => $this->render_matrix( $facet, (array) $current_value, $counts ),
             'radio'       => $this->render_radio( $facet, (array) $current_value, $counts ),
             'dropdown'    => $this->render_dropdown( $facet, (array) $current_value, $counts ),
             'toggle'      => $this->render_toggle( $facet, (array) $current_value ),
@@ -1063,6 +1064,71 @@ final class Renderer {
                         <?php echo $current === '' ? 'hidden' : ''; ?>>
                     <?php esc_html_e( 'Clear', 'hooked-on-facets' ); ?>
                 </button>
+            <?php endif; ?>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * UpSet-style matrix facet — an intersection picker. Each value is a row
+     * with a toggle; selected rows AND together (the resolver defaults the
+     * matrix display to match='all'). The retirement that shelved the old Venn
+     * matrix was an OR/AND mismatch plus unreadable selection state; this build
+     * pairs AND-within-facet semantics with an explicit selected-state dot and
+     * a per-row count bar, and the active-filters chip strip surfaces exactly
+     * which values are stacked. Same `hof[<name>][]=value` URL shape as
+     * checkbox, so the runtime reuses the multi-select path.
+     *
+     * @param array<string, mixed> $facet
+     * @param array<int, string>   $selected_values
+     * @param array<string, mixed> $counts
+     */
+    private function render_matrix( array $facet, array $selected_values, array $counts ): string {
+        $name    = $facet['name'];
+        $label   = $facet['label'] ?: $name;
+        $buckets = ( $counts['type'] ?? '' ) === 'values' ? $counts['buckets'] : [];
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-matrix"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="matrix">
+            <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
+            <?php if ( empty( $buckets ) ) : ?>
+                <p class="hof-facet-empty"><?php esc_html_e( 'No options available.', 'hooked-on-facets' ); ?></p>
+            <?php else :
+                $selected_lookup = array_fill_keys( array_map( 'strval', $selected_values ), true );
+                $max_count       = max( array_map( static fn( $b ) => max( 0, (int) $b['count'] ), $buckets ) );
+                $max_count       = $max_count > 0 ? $max_count : 1;
+            ?>
+                <p class="hof-matrix-note">
+                    <?php esc_html_e( 'Stack values — items must match every one you select.', 'hooked-on-facets' ); ?>
+                </p>
+                <ul class="hof-matrix-rows">
+                    <?php foreach ( $buckets as $bucket ) :
+                        $value   = (string) $bucket['value'];
+                        $count   = (int) $bucket['count'];
+                        $checked = isset( $selected_lookup[ $value ] );
+                        $weight  = $count / $max_count;
+                    ?>
+                        <li class="hof-matrix-row">
+                            <label class="hof-matrix-cell"<?php echo $checked ? ' data-hof-selected="1"' : ''; ?>>
+                                <input type="checkbox"
+                                       class="hof-matrix-input screen-reader-text"
+                                       name="hof[<?php echo esc_attr( $name ); ?>][]"
+                                       value="<?php echo esc_attr( $value ); ?>"
+                                       <?php checked( $checked ); ?>>
+                                <span class="hof-matrix-dot" aria-hidden="true"></span>
+                                <span class="hof-matrix-name"><?php echo esc_html( $bucket['display'] ); ?></span>
+                                <span class="hof-matrix-bar" aria-hidden="true"
+                                      style="--hof-matrix-weight: <?php echo esc_attr( sprintf( '%.4f', $weight ) ); ?>;"></span>
+                                <span class="hof-facet-count"
+                                      data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
+                            </label>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
             <?php endif; ?>
         </div>
         <?php

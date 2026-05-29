@@ -946,6 +946,47 @@ body.toplevel_page_hooked-on-facets .wrap {
     border: 2px solid var(--hof-surface);
 }
 
+/* ── Intersection-matrix preview ──────────────────────────────────────── */
+
+.hof-preview-matrix {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.hof-preview-matrix-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.hof-preview-matrix-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--hof-color-ink-300);
+    background: var(--hof-surface);
+    flex: none;
+}
+
+.hof-preview-matrix-row.is-on .hof-preview-matrix-dot {
+    background: var(--hof-color-soft-indigo);
+    border-color: var(--hof-color-soft-indigo);
+}
+
+.hof-preview-matrix-name { flex: none; min-width: 70px; }
+
+.hof-preview-matrix-bar {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--hof-color-soft-indigo);
+    opacity: 0.55;
+}
+
 
 /* ── Tokens panel ─────────────────────────────────────────────────────── */
 

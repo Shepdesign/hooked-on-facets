@@ -76,6 +76,32 @@ final class ResolverTest extends TestCase {
         self::assertSame( [ 'tags', 'a' ], $this->captured['params'] );
     }
 
+    public function test_matrix_display_defaults_to_and(): void {
+        // The matrix is an intersection visualization, so it ANDs its values
+        // even with no explicit match setting.
+        $this->withFacets( [
+            [ 'name' => 'features', 'kind' => 'taxonomy', 'display' => 'matrix', 'settings' => [] ],
+        ] );
+
+        ( new Resolver() )->resolve_ids( [ 'features' => [ 'a', 'b' ] ] );
+
+        self::assertSame( 1, substr_count( $this->captured['sql'], ' INTERSECT ' ),
+            'Two matrix values → two AND legs → one INTERSECT.' );
+        self::assertStringNotContainsString( ' IN (', $this->captured['sql'] );
+        self::assertSame( [ 'features', 'a', 'features', 'b' ], $this->captured['params'] );
+    }
+
+    public function test_matrix_display_honors_explicit_any_override(): void {
+        $this->withFacets( [
+            [ 'name' => 'features', 'kind' => 'taxonomy', 'display' => 'matrix', 'settings' => [ 'match' => 'any' ] ],
+        ] );
+
+        ( new Resolver() )->resolve_ids( [ 'features' => [ 'a', 'b' ] ] );
+
+        self::assertStringContainsString( 'facet_value IN (%s, %s)', $this->captured['sql'],
+            'An explicit match=any overrides the matrix default.' );
+    }
+
     public function test_and_within_one_facet_still_intersects_across_facets(): void {
         $this->withFacets( [
             [ 'name' => 'tags',  'kind' => 'taxonomy', 'display' => 'checkbox', 'settings' => [ 'match' => 'all' ] ],
