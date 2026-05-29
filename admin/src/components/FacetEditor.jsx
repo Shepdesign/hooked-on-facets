@@ -62,6 +62,13 @@ const DISPLAY_GROUPS = [
         ],
     },
     {
+        group: 'Collect',
+        hint: 'Shoppers pin items into a bin to compare or filter to.',
+        items: [
+            { value: 'saved_bin', label: 'Saved bin (compare)' },
+        ],
+    },
+    {
         group: 'Display-only (no filter)',
         hint: "Doesn't filter on its own — sends shoppers' input to other facets.",
         items: [
@@ -76,8 +83,9 @@ const DISPLAY_GROUPS = [
 const DISPLAYS = DISPLAY_GROUPS.flatMap((g) => g.items);
 
 // Displays that don't have a source — they orchestrate other facets
-// (ask, visual_dna) or render result-region navigation (pagination).
-const VIEW_DISPLAYS = new Set(['ask', 'visual_dna', 'pagination']);
+// (ask, visual_dna), render result-region navigation (pagination), or filter
+// by a client-persisted set of object IDs (saved_bin).
+const VIEW_DISPLAYS = new Set(['ask', 'visual_dna', 'pagination', 'saved_bin']);
 
 // Displays that visual_dna can target (color-bearing displays).
 const COLOR_TARGET_DISPLAYS = new Set(['checkbox', 'radio', 'dropdown', 'swatch', 'swiper']);
@@ -506,6 +514,25 @@ function FacetPreview({ facet }) {
                 </div>
                 <p className="hof-preview-note">
                     Gamified single-select. Spin lands on a value (or pick one directly).
+                </p>
+            </div>
+        );
+    }
+
+    if (facet.display === 'saved_bin') {
+        return (
+            <div className="hof-preview">
+                <div className="hof-preview-label">{label}</div>
+                <ul className="hof-preview-bin">
+                    <li className="hof-preview-bin-item">Trail Runner <span>×</span></li>
+                    <li className="hof-preview-bin-item">Court Classic <span>×</span></li>
+                </ul>
+                <label className="hof-preview-bin-toggle">
+                    <input type="checkbox" readOnly /> Show only saved (2)
+                </label>
+                <p className="hof-preview-note">
+                    Shoppers add items (button or drag) into a localStorage bin, then
+                    filter results to just the bin. Add buttons via <code>[hof_bin_button]</code>.
                 </p>
             </div>
         );

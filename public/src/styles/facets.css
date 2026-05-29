@@ -1755,3 +1755,74 @@
     width: calc(var(--hof-matrix-weight, 0) * 60px);
     min-width: 2px;
 }
+
+/* ── Saved bin ──────────────────────────────────────────────────────────── */
+
+.hof-facet-bin[data-hof-bin-over="1"] {
+    outline: 2px dashed var(--hof-primary);
+    outline-offset: 2px;
+}
+
+.hof-bin-empty {
+    margin: 0.25rem 0;
+    font-size: 0.8125rem;
+    color: var(--hof-muted);
+}
+
+.hof-bin-items {
+    list-style: none;
+    margin: 0.25rem 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.hof-bin-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--hof-border);
+    border-radius: var(--hof-radius-pill);
+    font-size: 0.8125rem;
+}
+
+.hof-bin-item-remove {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--hof-muted);
+}
+
+.hof-bin-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.hof-bin-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    cursor: pointer;
+}
+
+.hof-bin-clear {
+    background: none;
+    border: none;
+    color: var(--hof-primary);
+    cursor: pointer;
+    font-size: 0.8125rem;
+    text-decoration: underline;
+}
+
+.hof-bin-add[data-hof-bin-in="1"] {
+    /* Theme hook: styled when the item is already in the bin. */
+    opacity: 0.7;
+}

@@ -123,6 +123,7 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 - [x] **Telemetry** (`src/Telemetry/`) — buffers resolver timings + loop-hook signatures in-memory, flushes one option write at shutdown. Surfaced via `GET /telemetry`.
 - [x] **Spin the Wheel** (`spin_the_wheel`) — gamified single-select picker. A cosmetic conic-gradient dial over an accessible radiogroup (`spin.js`); spins to a random value or pick one directly. Single-value OR semantics, same URL shape as radio.
 - [x] **Intersection matrix** (`matrix`) — the re-introduced Venn/UpSet matrix, now on real **AND-within-facet** semantics (`settings.match`, see `Resolver::build_facet_legs()`): one single-value INTERSECT leg per selected value. Pairs an explicit selected-state dot + per-row count bar with the active-filters chip strip — the readability gap that retired the first version.
+- [x] **Saved Bin** (`saved_bin`) — drag-and-drop / click comparison bin. Shoppers pin items (the `[hof_bin_button]` shortcode, or any `data-hof-bin-add` element, draggable) into a localStorage bin (`bin.js`, per-site key); a "show only saved" toggle filters results to the bin via the reserved `_bin_ids` resolver key (a plain ID intersection, parallel to Visual DNA's `_visual_ids`). The only facet that filters by object ID rather than an index value.
 
 ### Shipped early (were tagged Phase 3)
 
@@ -140,10 +141,6 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 
 1. **Custom-field sources — remaining** — the core mechanism is complete: ACF, Meta Box, and Pods all land, the resolve mechanism covers `'post'` / `'user'` / `'term'` (with `extract_ids()` splitting comma-separated term-ID strings), and ACF dates are normalized. Small deferred edges remain: time-of-day fields (`time_picker` / Meta Box `time`, which aren't calendar dates) and Pods relationships stored in a Pods table / `wp_podsrel` rather than postmeta.
 2. **Native builder placement — remaining** — Breakdance Element-Studio bundle (still deferred; placement uses the shortcode). Divi's native module is authored but its Visual Builder rendering needs validation against a live Divi install. Migrate either bridge's query binding to a scoped hook if the builder ships one.
-
-### Deferred wow-kit facets (designed, never built)
-
-- **Saved Bin** — drag-and-drop comparison bin. (Spin the Wheel shipped — see Phase 2.)
 
 ### Phase 3+
 
