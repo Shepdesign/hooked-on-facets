@@ -52,7 +52,7 @@ final class Resolver implements IdResolver {
         // restriction, and _visual_ids would just be silently skipped, but
         // stripping it is clearer).
         $counts_state = $filter_state;
-        unset( $counts_state['_visual_ids'] );
+        unset( $counts_state['_visual_ids'], $counts_state['_bin_ids'] );
 
         $ids    = $this->resolve_ids( $filter_state );
         $counts = $this->resolve_counts( $counts_state );
@@ -78,14 +78,11 @@ final class Resolver implements IdResolver {
         global $wpdb;
         $table = $wpdb->prefix . Activator::TABLE;
 
-        // Visual DNA v2 restriction lives under a reserved key, not as a
-        // configured facet. Pull it out before building the facet subquery
-        // and apply it as an intersection + ordering at the end.
-        $visual_ids = [];
-        if ( isset( $filter_state['_visual_ids'] ) && is_array( $filter_state['_visual_ids'] ) ) {
-            $visual_ids = $filter_state['_visual_ids'];
-            unset( $filter_state['_visual_ids'] );
-        }
+        // Reserved keys aren't configured facets — pull them out before
+        // building the facet subquery. Visual DNA v2 applies an intersection
+        // + ordering at the end; the saved bin applies a plain intersection.
+        $visual_ids = $this->pull_id_list( $filter_state, '_visual_ids' );
+        $bin_ids    = $this->pull_id_list( $filter_state, '_bin_ids' );
 
         $parts = $this->build_filter_subquery( $filter_state, $table );
 
@@ -95,6 +92,17 @@ final class Resolver implements IdResolver {
             $rows    = $wpdb->get_col( $wpdb->prepare( $parts['sql'], $parts['params'] ) );
             $this->recorder?->record_resolver_ms( ( microtime( true ) - $started ) * 1000 );
             $ids = array_map( 'intval', $rows );
+        }
+
+        // Saved-bin restriction — intersect the bin's IDs with the facet
+        // result (or stand alone when no facets are active).
+        if ( ! empty( $bin_ids ) ) {
+            if ( $ids === null ) {
+                $ids = array_values( $bin_ids );
+            } else {
+                $match = array_fill_keys( $ids, true );
+                $ids   = array_values( array_filter( $bin_ids, static fn( $id ) => isset( $match[ $id ] ) ) );
+            }
         }
 
         if ( ! empty( $visual_ids ) ) {
@@ -133,10 +141,10 @@ final class Resolver implements IdResolver {
                 continue;
             }
 
-            // Reserved key — Visual DNA v2 ordered ID restriction. Carried
-            // through as `_visual_ids` (with the leading underscore marking
-            // it as an internal control, not a real facet name).
-            if ( $key === '_visual_ids' ) {
+            // Reserved keys — internal ID restrictions, not real facet names
+            // (the leading underscore marks them). `_visual_ids` is Visual DNA
+            // v2's ordered restriction; `_bin_ids` is the saved comparison bin.
+            if ( $key === '_visual_ids' || $key === '_bin_ids' ) {
                 $ids = [];
                 if ( is_array( $value ) ) {
                     foreach ( $value as $v ) {
@@ -144,14 +152,14 @@ final class Resolver implements IdResolver {
                         if ( $id > 0 ) $ids[] = $id;
                     }
                 } elseif ( is_string( $value ) && $value !== '' ) {
-                    // CSV form for URL-driven state — `?hof[_visual_ids]=12,34,56`
+                    // CSV form for URL-driven state — `?hof[_bin_ids]=12,34,56`
                     foreach ( explode( ',', $value ) as $v ) {
                         $id = (int) $v;
                         if ( $id > 0 ) $ids[] = $id;
                     }
                 }
                 if ( ! empty( $ids ) ) {
-                    $clean[ '_visual_ids' ] = $ids;
+                    $clean[ $key ] = $ids;
                 }
                 continue;
             }
@@ -213,6 +221,20 @@ final class Resolver implements IdResolver {
 
     // ── Internals ───────────────────────────────────────────────────────────
 
+    /**
+     * Extract and remove a reserved positive-integer ID list from the state.
+     *
+     * @param array<string, mixed> $filter_state
+     * @return int[]
+     */
+    private function pull_id_list( array &$filter_state, string $key ): array {
+        if ( ! isset( $filter_state[ $key ] ) || ! is_array( $filter_state[ $key ] ) ) {
+            return [];
+        }
+        $ids = $filter_state[ $key ];
+        unset( $filter_state[ $key ] );
+        return array_values( array_filter( array_map( 'intval', $ids ), static fn( $id ) => $id > 0 ) );
+    }
 
     /**
      * Build the core filter subquery: IDs matching all configured facets in

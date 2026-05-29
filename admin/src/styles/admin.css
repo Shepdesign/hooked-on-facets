@@ -987,6 +987,37 @@ body.toplevel_page_hooked-on-facets .wrap {
     opacity: 0.55;
 }
 
+/* ── Saved-bin preview ────────────────────────────────────────────────── */
+
+.hof-preview-bin {
+    list-style: none;
+    margin: 8px 0 6px;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.hof-preview-bin-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border: 0.5px solid var(--hof-color-ink-300);
+    border-radius: 999px;
+    font-size: 12px;
+}
+
+.hof-preview-bin-item span { color: var(--hof-color-ink-500); }
+
+.hof-preview-bin-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--hof-color-ink-500);
+}
+
 
 /* ── Tokens panel ─────────────────────────────────────────────────────── */
 

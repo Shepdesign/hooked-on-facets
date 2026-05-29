@@ -11,6 +11,7 @@ import { Store, buildUrl } from './state.js';
 import { refresh } from './refresh.js';
 import { initSwiper } from './swiper.js';
 import { initSpinWheel } from './spin.js';
+import { initBin } from './bin.js';
 import { initAsk } from './ask.js';
 import { initVisualDna } from './visual-dna.js';
 import { initPagination } from './pagination.js';
@@ -20,6 +21,7 @@ store.hydrateFromUrl();
 
 initSwiper();
 initSpinWheel();
+initBin(store);
 initAsk(store);
 initVisualDna(store);
 initPagination();

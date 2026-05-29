@@ -57,6 +57,7 @@ final class Renderer {
             'swiper'      => $this->render_swiper( $facet, (array) $current_value, $counts ),
             'spin_the_wheel' => $this->render_spin_the_wheel( $facet, (array) $current_value, $counts ),
             'matrix'      => $this->render_matrix( $facet, (array) $current_value, $counts ),
+            'saved_bin'   => $this->render_saved_bin( $facet ),
             'radio'       => $this->render_radio( $facet, (array) $current_value, $counts ),
             'dropdown'    => $this->render_dropdown( $facet, (array) $current_value, $counts ),
             'toggle'      => $this->render_toggle( $facet, (array) $current_value ),
@@ -1130,6 +1131,53 @@ final class Renderer {
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
+        </div>
+        <?php
+        return (string) ob_get_clean();
+    }
+
+    /**
+     * Saved-bin facet — a drag-and-drop / click comparison bin. Unlike every
+     * other facet, it filters by a client-persisted set of *object* IDs (the
+     * products a shopper pinned), not by an index value, so the server only
+     * renders an empty shell: `bin.js` hydrates contents from localStorage and,
+     * when "show only saved" is on, feeds the IDs to the resolver via the
+     * reserved `_bin_ids` filter key. Shoppers add items with any element
+     * carrying `data-hof-bin-add` + `data-hof-bin-id` (the `[hof_bin_button]`
+     * shortcode emits one), or by dragging such an element onto the bin.
+     *
+     * @param array<string, mixed> $facet
+     */
+    private function render_saved_bin( array $facet ): string {
+        $name  = $facet['name'];
+        $label = $facet['label'] ?: $name;
+        // Per-site storage key so two sites on one browser origin don't share
+        // a bin (multisite-safe; see Activator::TABLE prefixing).
+        global $wpdb;
+        $store_key = 'hof_bin_' . $wpdb->prefix;
+
+        ob_start();
+        ?>
+        <div class="hof-facet hof-facet-bin"
+             data-hof-facet="<?php echo esc_attr( $name ); ?>"
+             data-hof-display="saved_bin"
+             data-hof-bin-key="<?php echo esc_attr( $store_key ); ?>"
+             data-hof-bin-dropzone>
+            <span class="hof-facet-label"><?php echo esc_html( $label ); ?></span>
+            <p class="hof-bin-empty" data-hof-bin-empty hidden>
+                <?php esc_html_e( 'Your bin is empty. Add items to compare them here.', 'hooked-on-facets' ); ?>
+            </p>
+            <ul class="hof-bin-items" data-hof-bin-items></ul>
+            <div class="hof-bin-controls">
+                <label class="hof-bin-toggle">
+                    <input type="checkbox" data-hof-bin-toggle>
+                    <span><?php esc_html_e( 'Show only saved', 'hooked-on-facets' ); ?>
+                        (<span data-hof-bin-count>0</span>)</span>
+                </label>
+                <button type="button" class="hof-bin-clear" data-hof-bin-clear hidden>
+                    <?php esc_html_e( 'Clear bin', 'hooked-on-facets' ); ?>
+                </button>
+            </div>
         </div>
         <?php
         return (string) ob_get_clean();

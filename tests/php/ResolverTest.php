@@ -118,12 +118,40 @@ final class ResolverTest extends TestCase {
         self::assertSame( [ 'tags', 'a', 'tags', 'b', 'brand', 'acme' ], $this->captured['params'] );
     }
 
+    public function test_bin_ids_intersect_the_facet_result(): void {
+        // Facet subquery returns 10, 20, 30; the bin holds 20, 30, 40.
+        $this->withFacets(
+            [ [ 'name' => 'brand', 'kind' => 'taxonomy', 'display' => 'checkbox', 'settings' => [] ] ],
+            [ 10, 20, 30 ]
+        );
+
+        $ids = ( new Resolver() )->resolve_ids( [
+            'brand'    => [ 'acme' ],
+            '_bin_ids' => [ 20, 30, 40 ],
+        ] );
+
+        // Intersection of the facet result with the bin set.
+        self::assertSame( [ 20, 30 ], $ids );
+        // The bin key never reaches the SQL as a facet.
+        self::assertStringNotContainsString( '_bin_ids', $this->captured['sql'] );
+    }
+
+    public function test_bin_ids_stand_alone_when_no_facets_active(): void {
+        $this->withFacets( [], [] );
+
+        $ids = ( new Resolver() )->resolve_ids( [ '_bin_ids' => [ 5, 6, 7 ] ] );
+
+        self::assertSame( [ 5, 6, 7 ], $ids,
+            'With no facet filters, the bin set is the whole restriction.' );
+    }
+
     // ── helpers ────────────────────────────────────────────────────────────
 
     /**
      * @param array<int, array<string, mixed>> $facets
+     * @param array<int, int>                   $col_result IDs the facet subquery "returns".
      */
-    private function withFacets( array $facets ): void {
+    private function withFacets( array $facets, array $col_result = [] ): void {
         Functions\when( 'get_option' )->justReturn( $facets );
 
         $wpdb = Mockery::mock();
@@ -135,7 +163,7 @@ final class ResolverTest extends TestCase {
                 return (string) $sql;
             }
         );
-        $wpdb->shouldReceive( 'get_col' )->andReturn( [] );
+        $wpdb->shouldReceive( 'get_col' )->andReturn( $col_result );
         $wpdb->shouldReceive( 'esc_like' )->andReturnUsing( static fn( $s ) => (string) $s );
         $GLOBALS['wpdb'] = $wpdb;
     }
