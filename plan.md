@@ -1,7 +1,8 @@
 # Roadmap — Hooked on Facets
 
-> Status snapshot at `v0.10.0-alpha`. Phase 1 is complete; most of the Phase 2
-> "wow kit" has landed (and two Phase 3 surfaces shipped early). See
+> Status snapshot at `v0.11.0-alpha`. Phase 1 is complete; most of the Phase 2
+> "wow kit" has landed (and two Phase 3 surfaces shipped early), and the
+> custom-field source line (ACF, Meta Box, Pods) is now complete. See
 > `SHEPDESIGN.md` for architecture and the load-bearing SQL shape.
 
 ## Goal
