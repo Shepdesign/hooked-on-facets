@@ -29,11 +29,65 @@ final class Activator {
     private function __construct() {}
 
     /**
-     * Fired by register_activation_hook.
+     * Fired by register_activation_hook. The hook passes $network_wide = true
+     * when the plugin is network-activated on multisite.
+     *
+     * The flat index table and facet options are per-blog (every read/write
+     * goes through $wpdb->prefix / get_option, which switch_to_blog re-points),
+     * so multisite support is purely a lifecycle concern: install on each
+     * existing site now, and on each new site as it's created (see
+     * install_new_site). A per-site activation just installs the current blog.
      */
-    public static function activate(): void {
+    public static function activate( bool $network_wide = false ): void {
+        if ( $network_wide && is_multisite() ) {
+            self::install_network();
+            return;
+        }
+        self::install_for_current_site();
+    }
+
+    /**
+     * Install the schema + stamp the version on the current blog.
+     */
+    public static function install_for_current_site(): void {
         self::install_index_table();
         update_option( self::DB_VERSION_OPTION, self::DB_VERSION, true );
+    }
+
+    /**
+     * Network activation — install on every existing site. Sites created later
+     * are covered by install_new_site() on the wp_initialize_site action.
+     */
+    public static function install_network(): void {
+        if ( ! is_multisite() ) {
+            self::install_for_current_site();
+            return;
+        }
+        foreach ( get_sites( [ 'number' => 0, 'fields' => 'ids' ] ) as $site_id ) {
+            switch_to_blog( (int) $site_id );
+            self::install_for_current_site();
+            restore_current_blog();
+        }
+    }
+
+    /**
+     * Install on a newly created network site, but only when HOF is
+     * network-active — a per-site activation shouldn't seed tables on sites
+     * that aren't running the plugin. Hooked to wp_initialize_site.
+     */
+    public static function install_new_site( \WP_Site $new_site ): void {
+        if ( ! is_multisite() ) {
+            return;
+        }
+        if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+        if ( ! is_plugin_active_for_network( HOF_PLUGIN_BASENAME ) ) {
+            return;
+        }
+        switch_to_blog( (int) $new_site->blog_id );
+        self::install_for_current_site();
+        restore_current_blog();
     }
 
     /**

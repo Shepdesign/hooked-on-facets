@@ -142,11 +142,9 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 1. **Custom-field sources — remaining** — the core mechanism is complete: ACF, Meta Box, and Pods all land, the resolve mechanism covers `'post'` / `'user'` / `'term'` (with `extract_ids()` splitting comma-separated term-ID strings), and ACF dates are normalized. Small deferred edges remain: time-of-day fields (`time_picker` / Meta Box `time`, which aren't calendar dates) and Pods relationships stored in a Pods table / `wp_podsrel` rather than postmeta.
 2. **Native builder placement — remaining** — Breakdance Element-Studio bundle (still deferred; placement uses the shortcode). Divi's native module is authored but its Visual Builder rendering needs validation against a live Divi install. Migrate either bridge's query binding to a scoped hook if the builder ships one.
 
-### Phase 3+
+### Shipped (was Phase 3+)
 
-| Feature | Notes |
-|---|---|
-| Multisite support | Not started |
+- [x] **Multisite support** — the index table and facet options are already per-blog (`$wpdb->prefix` / `get_option`, which `switch_to_blog` re-points), so support is a lifecycle concern: `Activator::activate( $network_wide )` installs across every existing site on network activation, `install_new_site()` (on `wp_initialize_site`) seeds tables for sites added later while HOF is network-active, the `plugins_loaded` auto-heal self-installs any blog whose schema is behind, and `uninstall.php` runs its opt-in cleanup per site. **Pending live-network validation** — verified by lint + review; not yet exercised on a live `WP_ALLOW_MULTISITE` stack.
 
 ## Decisions made
 

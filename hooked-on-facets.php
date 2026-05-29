@@ -102,11 +102,17 @@ require_once $hof_autoload;
 |--------------------------------------------------------------------------
 | Lifecycle hooks
 |--------------------------------------------------------------------------
-| Activator installs the schema. Deactivator preserves data (only flushes
-| rewrites + scheduled events). Uninstall lives in uninstall.php (TBD).
+| Activator installs the schema (network-aware on multisite). Deactivator
+| preserves data (only flushes rewrites + scheduled events). Uninstall lives
+| in uninstall.php — opt-in, per-site on multisite.
 */
 register_activation_hook( __FILE__, [ \HookedOnFacets\Activator::class, 'activate' ] );
 register_deactivation_hook( __FILE__, [ \HookedOnFacets\Deactivator::class, 'deactivate' ] );
+
+// Multisite: seed the index table on any site added to the network while HOF
+// is network-active. Priority 900 so it runs after core finishes initializing
+// the new site's tables.
+add_action( 'wp_initialize_site', [ \HookedOnFacets\Activator::class, 'install_new_site' ], 900 );
 
 /*
 |--------------------------------------------------------------------------
