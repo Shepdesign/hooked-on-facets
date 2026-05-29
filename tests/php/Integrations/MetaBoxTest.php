@@ -128,17 +128,31 @@ final class MetaBoxTest extends TestCase {
         self::assertSame( 'genre', $facets[0]['source'], 'The first taxonomy binds the facet.' );
     }
 
-    public function test_skips_taxonomy_advanced_time_and_structural_types(): void {
+    public function test_maps_taxonomy_advanced_to_term_resolve_facet(): void {
         $this->mockWpdb();
         $this->feedFields( [
-            [ 'id' => 'cats',    'name' => 'Cats',    'type' => 'taxonomy_advanced', 'taxonomy' => 'cats' ],
+            [ 'id' => 'cats', 'name' => 'Cats', 'type' => 'taxonomy_advanced', 'taxonomy' => 'cats' ],
+        ] );
+
+        $facets = ( new MetaBox() )->suggest();
+
+        self::assertCount( 1, $facets );
+        self::assertSame( 'meta', $facets[0]['kind'],
+            'taxonomy_advanced stores term IDs in meta (no relationships), so it is a meta facet.' );
+        self::assertSame( 'term', $facets[0]['settings']['resolve'] );
+        self::assertSame( 'cats', $facets[0]['source'], 'Source is the meta key (field id).' );
+    }
+
+    public function test_skips_time_and_structural_types(): void {
+        $this->mockWpdb();
+        $this->feedFields( [
             [ 'id' => 'opens',   'name' => 'Opens',   'type' => 'time' ],
             [ 'id' => 'gallery', 'name' => 'Gallery', 'type' => 'image_advanced' ],
             [ 'id' => 'body',    'name' => 'Body',    'type' => 'wysiwyg' ],
         ] );
 
         self::assertSame( [], ( new MetaBox() )->suggest(),
-            'taxonomy_advanced, time, and structural / media types are deferred.' );
+            'time and structural / media types are deferred.' );
     }
 
     // ── enumeration shape ─────────────────────────────────────────────────

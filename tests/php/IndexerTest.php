@@ -132,6 +132,15 @@ final class IndexerTest extends TestCase {
         self::assertSame( [ 12, 34 ], $this->ids( [ '12', '', 'abc', '0', '-5', '34', '12' ] ) );
     }
 
+    public function test_extract_ids_splits_comma_separated_strings(): void {
+        // Meta Box taxonomy_advanced stores its term IDs as one CSV string.
+        self::assertSame( [ 12, 34, 56 ], $this->ids( '12,34,56' ) );
+        self::assertSame( [ 12, 34, 56 ], $this->ids( [ '12,34', '56' ] ),
+            'A CSV string nested in an array is split element-wise too.' );
+        self::assertSame( [ 12, 34 ], $this->ids( ' 12 , , 34 ' ),
+            'Whitespace and empty segments are trimmed and dropped.' );
+    }
+
     public function test_extract_ids_skips_non_scalar_elements(): void {
         self::assertSame( [ 12 ], $this->ids( [ [ 'nested' ], '12', (object) [ 'a' => 1 ] ] ) );
     }
