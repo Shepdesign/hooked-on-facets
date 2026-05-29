@@ -12,8 +12,11 @@
  *   GROUP BY object_id
  *   HAVING COUNT(DISTINCT facet_name) = N
  *
- * AND-across-facets (HAVING), OR-within-facet (IN). Drill-down counts reuse
- * the same subquery as an INNER JOIN — one table sweep per facet count.
+ * AND-across-facets (HAVING), OR-within-facet (IN). A facet can opt into
+ * AND-within-facet (settings.match = 'all') — it then contributes one
+ * single-value INTERSECT leg per selected value instead of one IN leg, so the
+ * object must carry every value. Drill-down counts reuse the same subquery as
+ * an INNER JOIN — one table sweep per facet count.
  *
  * @package HookedOnFacets
  */
@@ -243,21 +246,18 @@ final class Resolver implements IdResolver {
                 continue;
             }
 
-            $clause = $this->build_facet_clause( $facet_name, $value, $defs[ $facet_name ] );
-            if ( $clause === null ) {
-                continue;
+            foreach ( $this->build_facet_legs( $facet_name, $value, $defs[ $facet_name ] ) as $clause ) {
+                $index   = $clause['index'] ?? 'facet_lookup';
+                // DISTINCT only when the leg can emit the same object_id more
+                // than once — multi-value taxonomy IN-lists. INTERSECT dedupes
+                // across legs, but a single-facet filter is a degenerate
+                // INTERSECT (one leg, no operator), so the leg has to dedupe
+                // itself in that case. Single-value / range / meta legs don't
+                // pay the cost so the covering-index streaming win stays intact.
+                $distinct = ! empty( $clause['needs_distinct'] ) ? 'DISTINCT ' : '';
+                $legs[]   = "SELECT {$distinct}object_id FROM {$table} USE INDEX ({$index}) WHERE {$clause['sql']}";
+                $params   = array_merge( $params, $clause['params'] );
             }
-
-            $index   = $clause['index'] ?? 'facet_lookup';
-            // DISTINCT only when the leg can emit the same object_id more
-            // than once — multi-value taxonomy IN-lists. INTERSECT dedupes
-            // across legs, but a single-facet filter is a degenerate
-            // INTERSECT (one leg, no operator), so the leg has to dedupe
-            // itself in that case. Single-value / range / meta legs don't
-            // pay the cost so the covering-index streaming win stays intact.
-            $distinct = ! empty( $clause['needs_distinct'] ) ? 'DISTINCT ' : '';
-            $legs[]   = "SELECT {$distinct}object_id FROM {$table} USE INDEX ({$index}) WHERE {$clause['sql']}";
-            $params   = array_merge( $params, $clause['params'] );
         }
 
         if ( empty( $legs ) ) {
@@ -268,6 +268,56 @@ final class Resolver implements IdResolver {
             'sql'    => implode( ' INTERSECT ', $legs ),
             'params' => $params,
         ];
+    }
+
+    /**
+     * Build the INTERSECT leg(s) one facet contributes to the subquery.
+     *
+     * Most facets contribute a single leg (range, search, or an OR-within
+     * IN-list). A multi-value facet set to **match = all** (AND-within-facet)
+     * contributes one single-value leg per selected value instead: INTERSECT
+     * already gives AND across legs, so N legs means "object has all N values".
+     * Each leg is a covering-index equality scan with no DISTINCT (a single
+     * (facet_name, facet_value) pair matches an object at most once), so AND
+     * mode is, if anything, cheaper than the OR IN-list.
+     *
+     * @param array<string, mixed> $facet_def
+     * @return list<array{sql: string, params: list<mixed>, index: string, needs_distinct?: bool}>
+     */
+    private function build_facet_legs( string $facet_name, mixed $value, array $facet_def ): array {
+        $display   = $facet_def['display'] ?? 'checkbox';
+        $is_range  = is_array( $value ) && ( isset( $value['min'] ) || isset( $value['max'] ) );
+        $settings  = is_array( $facet_def['settings'] ?? null ) ? $facet_def['settings'] : [];
+        $match_all = ! $is_range && $display !== 'search' && ( $settings['match'] ?? 'any' ) === 'all';
+
+        if ( $match_all ) {
+            $legs = [];
+            foreach ( $this->normalize_multi_values( $value ) as $v ) {
+                $legs[] = [
+                    'sql'    => 'facet_name = %s AND facet_value = %s',
+                    'params' => [ $facet_name, $v ],
+                    'index'  => 'facet_lookup',
+                ];
+            }
+            return $legs;
+        }
+
+        $clause = $this->build_facet_clause( $facet_name, $value, $facet_def );
+        return $clause === null ? [] : [ $clause ];
+    }
+
+    /**
+     * Flatten a multi-value filter value into a deduped list of non-empty
+     * strings — shared by the OR IN-list and the AND per-value legs.
+     *
+     * @return list<string>
+     */
+    private function normalize_multi_values( mixed $value ): array {
+        $values = is_array( $value ) ? $value : [ $value ];
+        return array_values( array_unique( array_filter(
+            array_map( static fn( $v ) => is_scalar( $v ) ? (string) $v : null, $values ),
+            static fn( $v ) => $v !== null && $v !== ''
+        ) ) );
     }
 
     /**
@@ -309,12 +359,8 @@ final class Resolver implements IdResolver {
             ];
         }
 
-        // Multi-value (checkbox / radio / swatch).
-        $values = is_array( $value ) ? $value : [ $value ];
-        $values = array_values( array_filter(
-            array_map( static fn( $v ) => is_scalar( $v ) ? (string) $v : null, $values ),
-            static fn( $v ) => $v !== null && $v !== ''
-        ) );
+        // Multi-value (checkbox / radio / swatch) — OR-within via IN-list.
+        $values = $this->normalize_multi_values( $value );
         if ( empty( $values ) ) {
             return null;
         }
