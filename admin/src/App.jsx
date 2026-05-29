@@ -75,21 +75,23 @@ export default function App({ bootstrap }) {
         setView('facets');
     };
 
-    const addWooCommerceFacets = async () => {
+    // Pull suggested facet configs from a source integration's /suggest route
+    // and append the net-new ones. Shared by every source button below.
+    const addSuggestedFacets = async (endpoint, missingMsg, emptyMsg) => {
         const restUrl = bootstrap?.restUrl || '';
         const nonce   = bootstrap?.nonce || '';
         try {
-            const res  = await fetch(`${restUrl}integrations/woocommerce/suggest`, {
+            const res  = await fetch(`${restUrl}${endpoint}`, {
                 headers: { 'X-WP-Nonce': nonce },
             });
             const data = await res.json();
             if (!data?.available) {
-                alert(data?.reason || 'WooCommerce not detected on this site.');
+                alert(data?.reason || missingMsg);
                 return;
             }
             const suggested = Array.isArray(data.facets) ? data.facets : [];
             if (suggested.length === 0) {
-                alert('No new WooCommerce facets to add — your existing facets already cover the store.');
+                alert(emptyMsg);
                 return;
             }
             setFacets((prev) => {
@@ -100,38 +102,33 @@ export default function App({ bootstrap }) {
             setDirty(true);
             setView('facets');
         } catch (e) {
-            alert('Could not fetch WooCommerce suggestions: ' + (e?.message || 'unknown'));
+            alert('Could not fetch suggestions: ' + (e?.message || 'unknown'));
         }
     };
 
-    const addAcfFacets = async () => {
-        const restUrl = bootstrap?.restUrl || '';
-        const nonce   = bootstrap?.nonce || '';
-        try {
-            const res  = await fetch(`${restUrl}integrations/acf/suggest`, {
-                headers: { 'X-WP-Nonce': nonce },
-            });
-            const data = await res.json();
-            if (!data?.available) {
-                alert(data?.reason || 'Advanced Custom Fields not detected on this site.');
-                return;
-            }
-            const suggested = Array.isArray(data.facets) ? data.facets : [];
-            if (suggested.length === 0) {
-                alert('No new ACF facets to add — your existing facets already cover the indexable fields.');
-                return;
-            }
-            setFacets((prev) => {
-                const next = [...prev, ...suggested];
-                setSelectedIdx(prev.length); // jump to the first new one
-                return next;
-            });
-            setDirty(true);
-            setView('facets');
-        } catch (e) {
-            alert('Could not fetch ACF suggestions: ' + (e?.message || 'unknown'));
-        }
-    };
+    const addWooCommerceFacets = () => addSuggestedFacets(
+        'integrations/woocommerce/suggest',
+        'WooCommerce not detected on this site.',
+        'No new WooCommerce facets to add — your existing facets already cover the store.',
+    );
+
+    const addAcfFacets = () => addSuggestedFacets(
+        'integrations/acf/suggest',
+        'Advanced Custom Fields not detected on this site.',
+        'No new ACF facets to add — your existing facets already cover the indexable fields.',
+    );
+
+    const addMetaBoxFacets = () => addSuggestedFacets(
+        'integrations/metabox/suggest',
+        'Meta Box not detected on this site.',
+        'No new Meta Box facets to add — your existing facets already cover the fields.',
+    );
+
+    const addPodsFacets = () => addSuggestedFacets(
+        'integrations/pods/suggest',
+        'Pods not detected on this site.',
+        'No new Pods facets to add — your existing facets already cover the fields.',
+    );
 
     const deleteSelected = () => {
         if (selectedIdx === null) return;
@@ -312,6 +309,26 @@ export default function App({ bootstrap }) {
                                             title="Add suggested facets based on your Advanced Custom Fields"
                                         >
                                             + ACF facets
+                                        </button>
+                                    )}
+                                    {bootstrap?.metaboxActive && (
+                                        <button
+                                            className="hof-btn"
+                                            onClick={addMetaBoxFacets}
+                                            type="button"
+                                            title="Add suggested facets based on your Meta Box fields"
+                                        >
+                                            + Meta Box facets
+                                        </button>
+                                    )}
+                                    {bootstrap?.podsActive && (
+                                        <button
+                                            className="hof-btn"
+                                            onClick={addPodsFacets}
+                                            type="button"
+                                            title="Add suggested facets based on your Pods fields"
+                                        >
+                                            + Pods facets
                                         </button>
                                     )}
                                     {error && <span className="hof-error" role="alert">{error}</span>}
