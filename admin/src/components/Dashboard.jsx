@@ -33,6 +33,8 @@ export default function Dashboard({ facets, productsIndexed, telemetry, onCreate
     const totalHits   = telemetry?.loops?.total_hits ?? 0;
     const avgMs       = telemetry?.resolver?.avg_ms;
     const sampleSize  = telemetry?.resolver?.sample_size ?? 0;
+    const resolver    = telemetry?.resolver ?? {};
+    const analytics   = telemetry?.facets ?? { usage: [], top_values: {}, zero_results: [], total: 0 };
 
     return (
         <div className="hof-dash">
@@ -65,6 +67,8 @@ export default function Dashboard({ facets, productsIndexed, telemetry, onCreate
                 <Stat label="Products indexed" value={fmtNumber(productsIndexed)} />
                 <Stat label="Active facets" value={<><span>{active}</span><span className="hof-stat-unit"> of {active}</span></>} />
             </div>
+
+            <Analytics analytics={analytics} resolver={resolver} facets={facets} />
 
             <p className="hof-eyebrow hof-dash-section-label">Your facets</p>
 
@@ -113,6 +117,94 @@ function Stat({ label, value }) {
             <p className="hof-stat-value">{value}</p>
         </div>
     );
+}
+
+// Usage analytics from the telemetry snapshot: facet/value popularity,
+// zero-result combos, latency percentiles, and dead (never-used) facets.
+function Analytics({ analytics, resolver, facets }) {
+    const usage = analytics.usage || [];
+    const zero  = analytics.zero_results || [];
+    const hasData = usage.length > 0 || zero.length > 0;
+
+    // Dead facets — configured but never applied by a shopper.
+    const usedNames = new Set(usage.map((u) => u.facet));
+    const dead = facets
+        .filter((f) => f.name && f.source && !usedNames.has(f.name))
+        .map((f) => f.label || f.name);
+
+    const maxUsage = usage.reduce((m, u) => Math.max(m, u.count), 0) || 1;
+
+    return (
+        <>
+            <p className="hof-eyebrow hof-dash-section-label">Analytics</p>
+
+            <div className="hof-dash-stats">
+                <Stat label="p50 query" value={msStat(resolver.p50_ms)} />
+                <Stat label="p95 query" value={msStat(resolver.p95_ms)} />
+                <Stat label="p99 query" value={msStat(resolver.p99_ms)} />
+            </div>
+
+            {!hasData ? (
+                <p className="hof-dash-empty">
+                    No filter activity captured yet. Usage is recorded as shoppers apply facets.
+                </p>
+            ) : (
+                <div className="hof-analytics-grid">
+                    <section className="hof-analytics-card">
+                        <h3 className="hof-analytics-title">Most-used facets</h3>
+                        {usage.length === 0 ? (
+                            <p className="hof-analytics-muted">No facet usage yet.</p>
+                        ) : (
+                            <ul className="hof-analytics-bars">
+                                {usage.slice(0, 8).map((u) => (
+                                    <li key={u.facet} className="hof-analytics-bar-row">
+                                        <span className="hof-analytics-bar-label">{u.facet}</span>
+                                        <span className="hof-analytics-bar-track">
+                                            <span
+                                                className="hof-analytics-bar-fill"
+                                                style={{ width: `${Math.round((u.count / maxUsage) * 100)}%` }}
+                                            />
+                                        </span>
+                                        <span className="hof-analytics-bar-count">{fmtNumber(u.count)}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
+
+                    <section className="hof-analytics-card">
+                        <h3 className="hof-analytics-title">Filters that find nothing</h3>
+                        {zero.length === 0 ? (
+                            <p className="hof-analytics-muted">No zero-result filters — nice.</p>
+                        ) : (
+                            <ul className="hof-analytics-list">
+                                {zero.slice(0, 8).map((z) => (
+                                    <li key={z.signature} className="hof-analytics-list-row">
+                                        <code className="hof-analytics-sig">{z.signature}</code>
+                                        <span className="hof-chip">{fmtNumber(z.count)}×</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
+                </div>
+            )}
+
+            {dead.length > 0 && (
+                <p className="hof-analytics-dead">
+                    <strong>{dead.length} dead facet{dead.length === 1 ? '' : 's'}</strong> — configured but never
+                    used by a shopper: {dead.slice(0, 6).join(', ')}{dead.length > 6 ? '…' : ''}. Consider removing
+                    or repositioning {dead.length === 1 ? 'it' : 'them'}.
+                </p>
+            )}
+        </>
+    );
+}
+
+function msStat(ms) {
+    return ms !== null && ms !== undefined
+        ? <><span>{Number(ms).toFixed(1)}</span><span className="hof-stat-unit">ms</span></>
+        : <><span>—</span><span className="hof-stat-unit">ms</span></>;
 }
 
 function fmtNumber(n) {

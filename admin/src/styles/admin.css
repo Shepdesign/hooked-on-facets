@@ -1254,6 +1254,112 @@ body.toplevel_page_hooked-on-facets .wrap {
     margin-top: 18px;
 }
 
+/* ── Analytics ────────────────────────────────────────────────────────── */
+
+.hof-analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.hof-analytics-card {
+    border: 0.5px solid var(--hof-color-ink-300);
+    border-radius: 10px;
+    padding: 16px;
+    background: var(--hof-surface);
+}
+
+.hof-analytics-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 12px;
+    color: var(--hof-color-deep-ink);
+}
+
+.hof-analytics-muted {
+    font-size: 13px;
+    color: var(--hof-color-ink-500);
+    margin: 0;
+}
+
+.hof-analytics-bars {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hof-analytics-bar-row {
+    display: grid;
+    grid-template-columns: minmax(60px, 1fr) 2fr auto;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+}
+
+.hof-analytics-bar-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hof-analytics-bar-track {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--hof-color-ink-100, rgba(0, 0, 0, 0.06));
+    overflow: hidden;
+}
+
+.hof-analytics-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--hof-color-soft-indigo);
+    min-width: 2px;
+}
+
+.hof-analytics-bar-count {
+    font-variant-numeric: tabular-nums;
+    color: var(--hof-color-ink-700);
+}
+
+.hof-analytics-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hof-analytics-list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.hof-analytics-sig {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--hof-color-ink-700);
+}
+
+.hof-analytics-dead {
+    font-size: 12px;
+    color: var(--hof-color-ink-700);
+    background: color-mix(in oklab, var(--hof-color-facet-coral) 8%, var(--hof-surface));
+    border: 0.5px solid color-mix(in oklab, var(--hof-color-facet-coral) 30%, var(--hof-color-ink-300));
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 0 0 18px;
+}
+
 /* ── Blueprint sandbox ────────────────────────────────────────────────── */
 
 .hof-bp {
