@@ -513,8 +513,9 @@ final class RestController implements Bootable {
     public function telemetry( \WP_REST_Request $request ): \WP_REST_Response {
         if ( ! $this->recorder ) {
             return new \WP_REST_Response( [
-                'resolver' => [ 'avg_ms' => null, 'p95_ms' => null, 'sample_size' => 0, 'total_calls' => 0 ],
+                'resolver' => [ 'avg_ms' => null, 'p50_ms' => null, 'p95_ms' => null, 'p99_ms' => null, 'sample_size' => 0, 'total_calls' => 0 ],
                 'loops'    => [ 'count' => 0, 'total_hits' => 0, 'top' => [], 'signatures' => [] ],
+                'facets'   => [ 'usage' => [], 'top_values' => [], 'zero_results' => [], 'total' => 0 ],
             ], 200 );
         }
         return new \WP_REST_Response( $this->recorder->snapshot(), 200 );
@@ -723,6 +724,13 @@ final class RestController implements Bootable {
         $page_ids = is_array( $result['ids'] )
             ? array_slice( $result['ids'], ( $page - 1 ) * $per_page, $per_page )
             : null;
+
+        // One usage signal per filter action — facet/value popularity and
+        // zero-result combos for the admin analytics. Skipped when nothing is
+        // filtered (record_filter_usage drops empty / reserved-only states).
+        if ( $result['ids'] !== null ) {
+            $this->recorder?->record_filter_usage( $filters, (int) $total );
+        }
 
         return new \WP_REST_Response( [
             'ids'         => $page_ids,

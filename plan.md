@@ -168,6 +168,15 @@ Net-new value beyond the original roadmap.
   unit-tested (`SeoManagerTest`, 12 cases); WP hooks (`wp_head`, `wp_robots`,
   `document_title_parts`) are thin glue. Settings under `hof_seo`, surfaced in a
   new admin **SEO** screen and `GET|POST /seo-settings`.
+- [x] **Analytics dashboard** — the Telemetry `Recorder` now captures
+  per-facet/value usage and zero-result filter combinations (one signal per
+  `/filter` action, buffered in-memory and flushed at shutdown like the resolver
+  timings, with caps on tracked values and zero-result signatures). `snapshot()`
+  surfaces p50/p95/p99 resolver latency plus a `facets` block (usage, top
+  values, ranked zero-result combos); the admin **Dashboard** renders most-used
+  facets, "filters that find nothing," the latency percentiles, and a **dead
+  facets** callout (configured but never applied). Covered by `RecorderTest`
+  (6 cases).
 
 ### Deferred — gated on a live third-party environment
 
