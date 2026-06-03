@@ -10,6 +10,10 @@ release notes.
 
 ## [Unreleased]
 
+_No unreleased changes._
+
+## [0.13.1-alpha] - 2026-05-29
+
 ### Changed
 
 - **Counts query optimization** — the drill-down counts now `GROUP BY
@@ -126,7 +130,8 @@ Custom-field source line — ACF, Meta Box, and Pods.
 
 - First public alpha.
 
-[Unreleased]: https://github.com/Shepdesign/hooked-on-facets/compare/v0.13.0-alpha...HEAD
+[Unreleased]: https://github.com/Shepdesign/hooked-on-facets/compare/v0.13.1-alpha...HEAD
+[0.13.1-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.13.1-alpha
 [0.13.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.13.0-alpha
 [0.12.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.12.0-alpha
 [0.11.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.11.0-alpha

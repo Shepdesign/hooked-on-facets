@@ -1,7 +1,8 @@
 # Roadmap — Hooked on Facets
 
-> Status snapshot at `v0.13.0-alpha` — **feature-complete**, plus the first
-> round of post-1.0 enhancements (SEO, analytics, resolver cache; see
+> Status snapshot at `v0.13.1-alpha` — **feature-complete**, plus the first
+> round of post-1.0 enhancements (SEO, analytics, resolver cache + counts
+> optimization; see
 > "Enhancements" below). Every planned facet (16 types), source (WooCommerce,
 > ACF, Meta Box, Pods), the AND-within-facet resolver, and multisite have
 > shipped. The only open items are gated on live third-party environments (see
