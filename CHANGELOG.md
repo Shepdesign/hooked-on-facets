@@ -12,6 +12,30 @@ release notes.
 
 _No unreleased changes._
 
+## [0.13.0-alpha] - 2026-05-29
+
+First round of post-feature-complete enhancements — SEO, analytics, and resolver caching.
+
+### Added
+
+- **SEO for filtered pages** (`src/Seo/SeoManager.php`) — `rel=canonical` to the
+  filter-stripped URL, `noindex,follow` once a configurable number of facets are
+  stacked (default 2), and an active-filters title suffix. Defers canonical to an
+  active general SEO plugin (Yoast / Rank Math / AIOSEO / SEOPress). New admin
+  **SEO** screen and `GET|POST /seo-settings`.
+- **Analytics dashboard** — the Telemetry recorder now captures per-facet/value
+  usage and zero-result filter combinations; `snapshot()` adds p50/p95/p99
+  resolver latency. The admin **Dashboard** renders most-used facets, "filters
+  that find nothing," latency percentiles, and a dead-facets callout.
+
+### Changed
+
+- **Resolver result-set cache** — `resolve()` and `resolve_ids()` cache their
+  output in the object cache, keyed by `(index version, filter state)`. The
+  Indexer bumps `hof_index_version` on every write for O(1) invalidation.
+  Benchmarking showed the IDs+counts `/filter` path was ~465ms on 100k products;
+  cached repeat hits are sub-millisecond. Kill switch: `hof_resolver_cache_enabled`.
+
 ## [0.12.0-alpha] - 2026-05-29
 
 Feature-complete milestone — the full "wow kit" plus the AND-within-facet resolver.
@@ -95,7 +119,8 @@ Custom-field source line — ACF, Meta Box, and Pods.
 
 - First public alpha.
 
-[Unreleased]: https://github.com/Shepdesign/hooked-on-facets/compare/v0.12.0-alpha...HEAD
+[Unreleased]: https://github.com/Shepdesign/hooked-on-facets/compare/v0.13.0-alpha...HEAD
+[0.13.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.13.0-alpha
 [0.12.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.12.0-alpha
 [0.11.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.11.0-alpha
 [0.10.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.10.0-alpha
