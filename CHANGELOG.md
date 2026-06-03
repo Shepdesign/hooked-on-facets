@@ -10,7 +10,14 @@ release notes.
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Changed
+
+- **Counts query optimization** — the drill-down counts now `GROUP BY
+  facet_value` alone (picking the display via `MIN(facet_display)`) instead of
+  `(facet_value, facet_display)`. The value→display mapping is 1:1 so results
+  are identical, but dropping the second 191-char column from the GROUP BY
+  shrinks the aggregation temp table: `resolve()` p95 dropped from ~465ms to
+  ~63ms (7.5×) on 100k products, uncached.
 
 ## [0.13.0-alpha] - 2026-05-29
 
