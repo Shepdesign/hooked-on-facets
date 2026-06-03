@@ -180,6 +180,7 @@ final class Plugin {
             $c->make( \HookedOnFacets\Integrations\Acf::class ),
             $c->make( \HookedOnFacets\Integrations\MetaBox::class ),
             $c->make( \HookedOnFacets\Integrations\Pods::class ),
+            $c->make( \HookedOnFacets\Seo\SeoManager::class ),
         ) );
 
         $this->bind( \HookedOnFacets\Facets\Renderer::class, static fn( self $c ) => new \HookedOnFacets\Facets\Renderer(
@@ -193,6 +194,8 @@ final class Plugin {
         $this->bind( \HookedOnFacets\Frontend\BlockRegistrar::class, static fn( self $c ) => new \HookedOnFacets\Frontend\BlockRegistrar(
             $c->make( \HookedOnFacets\Facets\Renderer::class )
         ) );
+
+        $this->bind( \HookedOnFacets\Seo\SeoManager::class, static fn() => new \HookedOnFacets\Seo\SeoManager() );
     }
 
     /**
@@ -217,6 +220,7 @@ final class Plugin {
             \HookedOnFacets\Frontend\AssetLoader::class,
             \HookedOnFacets\Frontend\Shortcodes::class,
             \HookedOnFacets\Frontend\BlockRegistrar::class,
+            \HookedOnFacets\Seo\SeoManager::class,
             \HookedOnFacets\Integrations\Elementor::class,
             \HookedOnFacets\Integrations\Bricks::class,
             \HookedOnFacets\Integrations\Breakdance::class,

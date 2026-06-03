@@ -154,6 +154,21 @@ development TODOs**. The roadmap is complete across:
 - **Infrastructure** — background reindex, telemetry, licensing, full theming UI,
   AI, and **multisite** (validated on a live `WP_ALLOW_MULTISITE` network — stable).
 
+## Enhancements (post feature-complete)
+
+Net-new value beyond the original roadmap.
+
+- [x] **SEO for filtered pages** (`src/Seo/SeoManager.php`) — faceted URLs are an
+  SEO liability (crawl bloat, near-duplicate pages), and general SEO plugins
+  don't understand the `?hof[*]` query shape, so HOF owns the faceted signals:
+  **canonical** to the filter-stripped URL (deferred when Yoast / Rank Math /
+  AIOSEO / SEOPress is active), **robots noindex,follow** once a configurable
+  number of facets are stacked (default 2 — single-facet landing pages stay
+  indexable), and an **active-filters title suffix**. Decision logic is pure and
+  unit-tested (`SeoManagerTest`, 12 cases); WP hooks (`wp_head`, `wp_robots`,
+  `document_title_parts`) are thin glue. Settings under `hof_seo`, surfaced in a
+  new admin **SEO** screen and `GET|POST /seo-settings`.
+
 ### Deferred — gated on a live third-party environment
 
 These are not missing code so much as steps that need an environment this
