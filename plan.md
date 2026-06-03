@@ -194,8 +194,16 @@ Net-new value beyond the original roadmap.
   into `resolve_ids()` is architecturally unsafe (QueryHook needs the full ID
   set for `post__in`; WP paginates the main query itself), and `mysqli_poll`
   parallel legs remain deferred per the Phase-1 note. Covered by
-  `ResolverCacheTest` (4 cases). **Future work:** a structural optimization of
-  the counts query itself (the ~465ms uncached cost).
+  `ResolverCacheTest` (4 cases).
+- [x] **Counts query optimization** — the drill-down counts (the ~465ms cost the
+  cache only mitigated on repeat hits) now `GROUP BY facet_value` alone instead
+  of `(facet_value, facet_display)`, taking the display via `MIN(facet_display)`.
+  The value→display mapping is 1:1, so the result is byte-identical (verified on
+  the live 100k stack: same 21 buckets), but dropping the second 191-char column
+  from the GROUP BY shrinks the aggregation temp table — measured **454ms → 60ms
+  (7.5×)**, so `resolve()` p95 went **~465ms → ~63ms** *uncached*. `COUNT(DISTINCT
+  object_id)` is retained (not `COUNT(*)`) so multi-row-per-object meta facets
+  still count each object once. SQL shape locked by a `ResolverTest` case.
 
 ### Deferred — gated on a live third-party environment
 

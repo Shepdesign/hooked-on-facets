@@ -152,6 +152,28 @@ final class ResolverTest extends TestCase {
             'With no facet filters, the bin set is the whole restriction.' );
     }
 
+    // ── drill-down counts SQL shape ──────────────────────────────────────────
+
+    public function test_counts_group_by_value_only_with_min_display(): void {
+        // The counts query must GROUP BY facet_value alone (the covering-index
+        // column) and pick the display via MIN — grouping by the 191-char
+        // facet_display too bloated the temp table (454ms → 60ms when dropped).
+        // resolve() with one facet leaves an empty partial state for that facet,
+        // so its count query is the no-subquery branch — the last prepare() call.
+        $this->withFacets( [
+            [ 'name' => 'brand', 'kind' => 'taxonomy', 'display' => 'checkbox', 'settings' => [] ],
+        ] );
+
+        ( new Resolver() )->resolve( [ 'brand' => [ 'acme' ] ] );
+
+        $sql = $this->captured['sql'];
+        self::assertStringContainsString( 'MIN(facet_display)', $sql );
+        self::assertStringContainsString( 'GROUP BY facet_value', $sql );
+        self::assertStringNotContainsString( 'GROUP BY facet_value, facet_display', $sql );
+        // Still counts each object once, not each row.
+        self::assertStringContainsString( 'COUNT(DISTINCT object_id)', $sql );
+    }
+
     // ── helpers ────────────────────────────────────────────────────────────
 
     /**
@@ -171,6 +193,8 @@ final class ResolverTest extends TestCase {
             }
         );
         $wpdb->shouldReceive( 'get_col' )->andReturn( $col_result );
+        $wpdb->shouldReceive( 'get_results' )->andReturn( [] );
+        $wpdb->shouldReceive( 'get_row' )->andReturn( null );
         $wpdb->shouldReceive( 'esc_like' )->andReturnUsing( static fn( $s ) => (string) $s );
         $GLOBALS['wpdb'] = $wpdb;
     }
