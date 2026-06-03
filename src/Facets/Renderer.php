@@ -521,7 +521,7 @@ final class Renderer {
                         </summary>
                         <ul class="hof-hierarchy-children">
                             <?php foreach ( $kids as $child_slug ) {
-                                echo $render_row( $child_slug, $depth + 1 );
+                                echo $render_row( (string) $child_slug, $depth + 1 );
                             } ?>
                         </ul>
                     </details>
@@ -553,7 +553,7 @@ final class Renderer {
                 <?php else : ?>
                     <ul class="hof-hierarchy-tree">
                         <?php foreach ( $roots as $root_slug ) {
-                            echo $render_row( $root_slug, 0 );
+                            echo $render_row( (string) $root_slug, 0 );
                         } ?>
                     </ul>
                 <?php endif; ?>
