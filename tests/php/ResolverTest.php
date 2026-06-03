@@ -29,6 +29,13 @@ final class ResolverTest extends TestCase {
         parent::setUp();
         Monkey\setUp();
         $this->captured = [ 'sql' => '', 'params' => [] ];
+        // These tests assert the generated SQL shape, not caching. Disable the
+        // result-set cache so a leaked wp_cache_* definition from another test
+        // (function_exists stays true process-wide) can't divert us into the
+        // cached path. Cache behavior is covered by ResolverCacheTest.
+        Functions\when( 'apply_filters' )->alias(
+            static fn( $hook, $value = null ) => $hook === 'hof_resolver_cache_enabled' ? false : $value
+        );
     }
 
     protected function tearDown(): void {

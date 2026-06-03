@@ -177,6 +177,23 @@ Net-new value beyond the original roadmap.
   facets, "filters that find nothing," the latency percentiles, and a **dead
   facets** callout (configured but never applied). Covered by `RecorderTest`
   (6 cases).
+- [x] **Resolver result-set cache** — `resolve()` and `resolve_ids()` cache their
+  output in the object cache (group `hof_resolve`), keyed by `(index version,
+  filter state)`. The version (option `hof_index_version`) is bumped by the
+  Indexer on every write (`delete_object`, `bulk_insert`, both rebuild
+  `TRUNCATE`s), so invalidation is O(1) — a bump orphans every stale key. Skips
+  per-user reserved keys (`_visual_ids` / `_bin_ids`); a short TTL backstops
+  any missed bump; filterable kill switch `hof_resolver_cache_enabled`. Most
+  effective with a persistent object cache (Redis / Memcached). **Why this and
+  not the other two ideas:** benchmarking on the live 100k stack showed
+  `resolve_ids()` is already fast (p95 ~8ms) but `resolve()` — the IDs + N
+  drill-down counts behind `/filter` — is **~465ms**, the real bottleneck;
+  caching collapses repeat hits to sub-millisecond. Pushing `LIMIT`/`OFFSET`
+  into `resolve_ids()` is architecturally unsafe (QueryHook needs the full ID
+  set for `post__in`; WP paginates the main query itself), and `mysqli_poll`
+  parallel legs remain deferred per the Phase-1 note. Covered by
+  `ResolverCacheTest` (4 cases). **Future work:** a structural optimization of
+  the counts query itself (the ~465ms uncached cost).
 
 ### Deferred — gated on a live third-party environment
 

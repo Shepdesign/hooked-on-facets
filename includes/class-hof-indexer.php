@@ -145,6 +145,7 @@ final class Indexer implements Bootable {
         $table = $wpdb->prefix . Activator::TABLE;
 
         $wpdb->query( "TRUNCATE TABLE {$table}" );
+        $this->bump_index_version();
 
         $facets = $this->get_configured_facets();
         if ( empty( $facets ) ) {
@@ -304,6 +305,18 @@ final class Indexer implements Bootable {
         global $wpdb;
         $table = $wpdb->prefix . Activator::TABLE;
         $wpdb->delete( $table, [ 'object_id' => $object_id ], [ '%d' ] );
+        $this->bump_index_version();
+    }
+
+    /**
+     * Invalidate the resolver's result-set cache by advancing the index
+     * version. Every cache key embeds this number (see Resolver::cache_key),
+     * so one bump orphans every stale entry — O(1) invalidation. Called from
+     * each index mutation: delete, bulk insert, and the full-rebuild TRUNCATEs.
+     */
+    private function bump_index_version(): void {
+        $current = (int) get_option( \HookedOnFacets\Filter\Resolver::VERSION_OPTION, 0 );
+        update_option( \HookedOnFacets\Filter\Resolver::VERSION_OPTION, $current + 1, false );
     }
 
     // ── Internals ───────────────────────────────────────────────────────────
@@ -959,6 +972,8 @@ final class Indexer implements Bootable {
 
             $wpdb->query( $wpdb->prepare( $sql, $params ) );
         }
+
+        $this->bump_index_version();
     }
 
     /**
@@ -1094,6 +1109,7 @@ final class Indexer implements Bootable {
         // Reset the index — same contract as synchronous bulk_reindex_all.
         $table = $wpdb->prefix . Activator::TABLE;
         $wpdb->query( "TRUNCATE TABLE {$table}" );
+        $this->bump_index_version();
 
         update_option( self::BACKGROUND_STATE_OPTION, [
             'job_id'     => $job_id,
