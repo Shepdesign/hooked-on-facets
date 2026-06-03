@@ -27,6 +27,7 @@ use HookedOnFacets\Integrations\MetaBox;
 use HookedOnFacets\Integrations\Pods;
 use HookedOnFacets\Integrations\WooCommerce;
 use HookedOnFacets\Licensing\LicenseManager;
+use HookedOnFacets\Seo\SeoManager;
 use HookedOnFacets\Telemetry\Recorder;
 
 defined( 'ABSPATH' ) || exit;
@@ -46,6 +47,7 @@ final class RestController implements Bootable {
         private readonly ?Acf $acf = null,
         private readonly ?MetaBox $metabox = null,
         private readonly ?Pods $pods = null,
+        private readonly ?SeoManager $seo = null,
     ) {}
 
     public function register_hooks(): void {
@@ -180,6 +182,19 @@ final class RestController implements Bootable {
                         'required' => false,
                     ],
                 ],
+            ],
+        ] );
+
+        register_rest_route( self::NAMESPACE_V1, '/seo-settings', [
+            [
+                'methods'             => \WP_REST_Server::READABLE,
+                'callback'            => [ $this, 'get_seo_settings' ],
+                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+            ],
+            [
+                'methods'             => \WP_REST_Server::EDITABLE,
+                'callback'            => [ $this, 'save_seo_settings' ],
+                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
             ],
         ] );
 
@@ -337,6 +352,36 @@ final class RestController implements Bootable {
         $key = is_string( $raw ) ? trim( $raw ) : '';
         $this->ai_settings->set_api_key( $key );
         return $this->get_ai_settings( $request );
+    }
+
+    public function get_seo_settings( \WP_REST_Request $request ): \WP_REST_Response {
+        if ( ! $this->seo ) {
+            return new \WP_REST_Response( [ 'available' => false, 'settings' => SeoManager::defaults() ], 200 );
+        }
+        return new \WP_REST_Response( [
+            'available' => true,
+            'settings'  => $this->seo->settings(),
+        ], 200 );
+    }
+
+    public function save_seo_settings( \WP_REST_Request $request ): \WP_REST_Response {
+        if ( ! $this->seo ) {
+            return new \WP_REST_Response( [ 'ok' => false, 'error' => 'SEO settings unavailable' ], 503 );
+        }
+        // Coerce only the known keys against the defaults' types — unknown keys
+        // are dropped, missing keys keep their default.
+        $raw   = (array) $request->get_param( 'settings' );
+        $clean = [];
+        foreach ( SeoManager::defaults() as $key => $default ) {
+            if ( ! array_key_exists( $key, $raw ) ) {
+                continue;
+            }
+            $clean[ $key ] = is_bool( $default )
+                ? (bool) $raw[ $key ]
+                : ( is_int( $default ) ? max( 1, (int) $raw[ $key ] ) : sanitize_text_field( (string) $raw[ $key ] ) );
+        }
+        $this->seo->update_settings( $clean );
+        return $this->get_seo_settings( $request );
     }
 
     public function ask( \WP_REST_Request $request ): \WP_REST_Response {
