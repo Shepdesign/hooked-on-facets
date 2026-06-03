@@ -47,6 +47,19 @@ final class Resolver implements IdResolver {
      * @return array{ids: ?int[], counts: array<string, array<string, mixed>>}
      */
     public function resolve( array $filter_state ): array {
+        // Cache the full IDs+counts result. This is the expensive path — the
+        // drill-down counts run 1 + N grouped queries — so it's where caching
+        // pays off most for the AJAX /filter endpoint. Same version-keyed,
+        // reserved-key-skipping policy as resolve_ids().
+        $cacheable = $this->is_cacheable( $filter_state );
+        if ( $cacheable ) {
+            $key    = $this->cache_key( 'resolve', $filter_state );
+            $cached = $this->cache_get( $key );
+            if ( is_array( $cached ) && isset( $cached['ids'] ) && isset( $cached['counts'] ) ) {
+                return $cached;
+            }
+        }
+
         // resolve_ids handles _visual_ids internally — but counts shouldn't
         // see it (drill-down counts treat each non-self filter as a facet
         // restriction, and _visual_ids would just be silently skipped, but
@@ -57,10 +70,15 @@ final class Resolver implements IdResolver {
         $ids    = $this->resolve_ids( $filter_state );
         $counts = $this->resolve_counts( $counts_state );
 
-        return [
+        $result = [
             'ids'    => $ids,
             'counts' => $counts,
         ];
+
+        if ( $cacheable ) {
+            $this->cache_set( $key, $result );
+        }
+        return $result;
     }
 
     /**
@@ -75,6 +93,35 @@ final class Resolver implements IdResolver {
      * @return int[]|null
      */
     public function resolve_ids( array $filter_state ): ?array {
+        // Cache the resolved ID set for plain-facet filters. Skipped when a
+        // per-user reserved key (_visual_ids / _bin_ids) is present — those
+        // have near-zero reuse and would bloat the cache. Stored in an
+        // envelope so a genuine null (no recognized filters) is distinct from
+        // a cache miss.
+        $cacheable = $this->is_cacheable( $filter_state );
+        if ( $cacheable ) {
+            $key    = $this->cache_key( 'ids', $filter_state );
+            $cached = $this->cache_get( $key );
+            if ( is_array( $cached ) && array_key_exists( 'v', $cached ) ) {
+                return $cached['v'];
+            }
+        }
+
+        $ids = $this->compute_ids( $filter_state );
+
+        if ( $cacheable ) {
+            $this->cache_set( $key, [ 'v' => $ids ] );
+        }
+        return $ids;
+    }
+
+    /**
+     * Uncached ID resolution — the original resolve_ids body.
+     *
+     * @param array<string, mixed> $filter_state
+     * @return int[]|null
+     */
+    private function compute_ids( array $filter_state ): ?array {
         global $wpdb;
         $table = $wpdb->prefix . Activator::TABLE;
 
@@ -513,6 +560,63 @@ final class Resolver implements IdResolver {
                 $rows
             ),
         ];
+    }
+
+    // ── Result-set cache ─────────────────────────────────────────────────────
+    //
+    // Keyed by (index version, filter state), stored in the object cache. The
+    // version (option `hof_index_version`, bumped by the Indexer on every
+    // write) makes invalidation O(1): a bump orphans every old key, which the
+    // backend evicts on its own. Most effective with a persistent object cache
+    // (Redis / Memcached) — common on production WooCommerce — where identical
+    // filters across requests and users hit cache. Without one it degrades to
+    // a harmless per-request memo. A short TTL is a safety net in case a write
+    // ever slips past the version bump.
+
+    public const CACHE_GROUP   = 'hof_resolve';
+    public const VERSION_OPTION = 'hof_index_version';
+
+    /**
+     * Cacheable only when there's something to cache and no per-user reserved
+     * key is in play. Filterable kill switch: `hof_resolver_cache_enabled`.
+     *
+     * @param array<string, mixed> $filter_state
+     */
+    private function is_cacheable( array $filter_state ): bool {
+        if ( ! function_exists( 'wp_cache_get' ) || ! function_exists( 'wp_cache_set' ) ) {
+            return false;
+        }
+        if ( empty( $filter_state ) ) {
+            return false;
+        }
+        if ( isset( $filter_state['_visual_ids'] ) || isset( $filter_state['_bin_ids'] ) ) {
+            return false;
+        }
+        return (bool) apply_filters( 'hof_resolver_cache_enabled', true );
+    }
+
+    /**
+     * @param array<string, mixed> $filter_state
+     */
+    private function cache_key( string $kind, array $filter_state ): string {
+        ksort( $filter_state );
+        $version = (int) get_option( self::VERSION_OPTION, 0 );
+        return sprintf( '%s:v%d:%s', $kind, $version, md5( (string) wp_json_encode( $filter_state ) ) );
+    }
+
+    private function cache_get( string $key ): mixed {
+        if ( ! function_exists( 'wp_cache_get' ) ) {
+            return false;
+        }
+        return wp_cache_get( $key, self::CACHE_GROUP );
+    }
+
+    private function cache_set( string $key, mixed $value ): void {
+        if ( ! function_exists( 'wp_cache_set' ) ) {
+            return;
+        }
+        $ttl = (int) apply_filters( 'hof_resolver_cache_ttl', 300 );
+        wp_cache_set( $key, $value, self::CACHE_GROUP, $ttl );
     }
 
     /**
