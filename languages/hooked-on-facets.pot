@@ -12,78 +12,46 @@ msgstr ""
 "X-Domain: hooked-on-facets\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/Facets/Renderer.php:805
-msgid "%1$s, %2$s item"
-msgid_plural "%1$s, %2$s items"
-msgstr[0] ""
-msgstr[1] ""
-
-#: src/Facets/Renderer.php:329
-#: src/Facets/Renderer.php:379
-msgid "Any"
+#. Plugin Name of the plugin
+#: hooked-on-facets.php
+#: src/Admin/MenuRegistrar.php:59
+msgid "Hooked on Facets"
 msgstr ""
 
-#: src/Facets/Renderer.php:1243
-msgid "Ask"
+#. Plugin URI of the plugin
+#: hooked-on-facets.php
+msgid "https://hookedonfacets.com"
 msgstr ""
 
-#: src/Admin/SwatchTermFields.php:97
-msgid "Choose image"
+#. Description of the plugin
+#: hooked-on-facets.php
+msgid "Ultra-modern faceted search and filtering for WordPress + WooCommerce."
 msgstr ""
 
-#: src/Admin/SwatchTermFields.php:177
-msgid "Choose swatch image"
+#. Author of the plugin
+#: hooked-on-facets.php
+msgid "SHEPDESIGN"
 msgstr ""
 
-#: src/Facets/Renderer.php:1066
-msgid "Clear"
+#. Author URI of the plugin
+#: hooked-on-facets.php
+msgid "https://shepdesign.com"
 msgstr ""
 
-#: src/Frontend/Shortcodes.php:100
-msgid "Clear all filters"
+#. translators: 1: required PHP version, 2: current PHP version
+#: hooked-on-facets.php:56
+#, php-format
+msgid "Hooked on Facets requires PHP %1$s or higher. You are running %2$s."
 msgstr ""
 
-#: src/Facets/Renderer.php:1178
-msgid "Clear bin"
+#. translators: 1: required WordPress version, 2: current WordPress version
+#: hooked-on-facets.php:72
+#, php-format
+msgid "Hooked on Facets requires WordPress %1$s or higher. You are running %2$s."
 msgstr ""
 
-#: src/Facets/Renderer.php:1348
-msgid "Closest match:"
-msgstr ""
-
-#: src/Facets/Renderer.php:1225
-msgid "Describe what you're looking for…"
-msgstr ""
-
-#: src/Facets/Renderer.php:1360
-msgid "Detected palette"
-msgstr ""
-
-#: src/Facets/Renderer.php:1322
-msgid "Drop an image, click to pick a file, paste a URL below, or use the eyedropper."
-msgstr ""
-
-#: src/Facets/Renderer.php:1336
-msgid "Eyedropper"
-msgstr ""
-
-#: integrations/divi/modules/facet.php:86
-#: integrations/elementor/widgets/facet.php:60
-msgid "Facet"
-msgstr ""
-
-#: integrations/bricks/elements/facet.php:63
-#: integrations/divi/modules/facet.php:68
-#: integrations/elementor/widgets/facet.php:68
-msgid "Facet slug"
-msgstr ""
-
-#: src/Admin/MenuRegistrar.php:60
-msgid "Facets"
-msgstr ""
-
-#: src/Facets/Renderer.php:1591
-msgid "First page"
+#: hooked-on-facets.php:94
+msgid "Hooked on Facets: Composer dependencies are missing. Run `composer install` inside the plugin directory."
 msgstr ""
 
 #: integrations/bricks/elements/facet.php:50
@@ -92,53 +60,71 @@ msgstr ""
 msgid "Hooked Facet"
 msgstr ""
 
-#: src/Admin/MenuRegistrar.php:59
-msgid "Hooked on Facets"
+#: integrations/bricks/elements/facet.php:63
+#: integrations/divi/modules/facet.php:68
+#: integrations/elementor/widgets/facet.php:68
+#: integrations/gutenberg/blocks/facet/index.js:35
+msgid "Facet slug"
 msgstr ""
 
-#: hooked-on-facets.php:56
-msgid "Hooked on Facets requires PHP %1$s or higher. You are running %2$s."
+#: integrations/bricks/elements/facet.php:66
+#: integrations/divi/modules/facet.php:71
+#: integrations/elementor/widgets/facet.php:70
+#: integrations/gutenberg/blocks/facet/index.js:36
+msgid "The \"Slug\" of a facet you created in the HOF admin."
 msgstr ""
 
-#: hooked-on-facets.php:72
-msgid "Hooked on Facets requires WordPress %1$s or higher. You are running %2$s."
+#: integrations/bricks/elements/facet.php:81
+msgid "Set a facet slug in the element panel to preview."
 msgstr ""
 
-#: hooked-on-facets.php:94
-msgid "Hooked on Facets: Composer dependencies are missing. Run `composer install` inside the plugin directory."
+#: integrations/divi/modules/facet.php:86
+#: integrations/elementor/widgets/facet.php:60
+#: integrations/gutenberg/blocks/facet/index.js:33
+msgid "Facet"
+msgstr ""
+
+#: integrations/elementor/widgets/facet.php:90
+msgid "Set a facet slug in the widget panel to preview."
+msgstr ""
+
+#: src/Admin/MenuRegistrar.php:60
+msgid "Facets"
 msgstr ""
 
 #: src/Admin/MenuRegistrar.php:154
 msgid "Hooked on Facets: admin assets are missing. Run `npm install && npm run build` in the plugin directory."
 msgstr ""
 
-#: src/Facets/Renderer.php:1251
-msgid "I heard:"
+#: src/Admin/SwatchTermFields.php:50
+#: src/Admin/SwatchTermFields.php:68
+msgid "Swatch color"
 msgstr ""
 
-#: src/Facets/Renderer.php:949
-#: src/Facets/Renderer.php:975
-msgid "Include"
+#: src/Admin/SwatchTermFields.php:52
+#: src/Admin/SwatchTermFields.php:74
+msgid "Optional. CSS color used when no swatch image is set."
 msgstr ""
 
-#: src/Facets/Renderer.php:1630
-msgid "Last page"
+#: src/Admin/SwatchTermFields.php:55
+#: src/Admin/SwatchTermFields.php:79
+msgid "Swatch image"
 msgstr ""
 
-#: src/Facets/Renderer.php:676
-msgid "Max"
+#: src/Admin/SwatchTermFields.php:97
+msgid "Choose image"
 msgstr ""
 
-#: src/Facets/Renderer.php:667
-msgid "Min"
+#: src/Admin/SwatchTermFields.php:101
+msgid "Remove"
 msgstr ""
 
-#: src/Facets/Renderer.php:1623
-msgid "Next page"
+#: src/Admin/SwatchTermFields.php:177
+msgid "Choose swatch image"
 msgstr ""
 
-#: src/Facets/Renderer.php:958
-msgid "No more cards."
+#: src/Admin/SwatchTermFields.php:178
+msgid "Use this image"
 msgstr ""
 
 #: src/Facets/Renderer.php:271
@@ -151,66 +137,48 @@ msgstr ""
 msgid "No options available."
 msgstr ""
 
+#: src/Facets/Renderer.php:329
+#: src/Facets/Renderer.php:379
+msgid "Any"
+msgstr ""
+
 #: src/Facets/Renderer.php:410
 msgid "Off"
 msgstr ""
 
-#: src/Admin/SwatchTermFields.php:52
-#: src/Admin/SwatchTermFields.php:74
-msgid "Optional. CSS color used when no swatch image is set."
-msgstr ""
-
-#: src/Facets/Renderer.php:1613
-msgid "Page %d"
-msgstr ""
-
-#: src/Facets/Renderer.php:1329
-msgid "Paste an image URL…"
-msgstr ""
-
-#: src/Facets/Renderer.php:1338
-msgid "Pick"
-msgstr ""
-
-#: src/Facets/Renderer.php:1598
-msgid "Previous page"
-msgstr ""
-
+#. translators: 1: start date, 2: end date
+#. translators: 1: low bound, 2: high bound
 #: src/Facets/Renderer.php:629
 #: src/Facets/Renderer.php:683
+#, php-format
 msgid "Range: %1$s – %2$s"
 msgstr ""
 
-#: src/Admin/SwatchTermFields.php:101
-msgid "Remove"
+#: src/Facets/Renderer.php:667
+msgid "Min"
 msgstr ""
 
-#: src/Facets/Renderer.php:961
-msgid "Restart"
+#: src/Facets/Renderer.php:676
+msgid "Max"
 msgstr ""
 
-#: src/Facets/Renderer.php:1585
-msgid "Results pagination"
+#. translators: 1: facet value display name, 2: matching-product count
+#: src/Facets/Renderer.php:805
+#, php-format
+msgid "%1$s, %2$s item"
+msgid_plural "%1$s, %2$s items"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: facet label
+#: src/Facets/Renderer.php:913
+#, php-format
+msgid "Swipe through %s"
 msgstr ""
 
-#: src/Frontend/Shortcodes.php:59
-msgid "Save to bin"
-msgstr ""
-
-#: src/Facets/Renderer.php:1201
-msgid "Search…"
-msgstr ""
-
-#: integrations/bricks/elements/facet.php:81
-msgid "Set a facet slug in the element panel to preview."
-msgstr ""
-
-#: integrations/elementor/widgets/facet.php:90
-msgid "Set a facet slug in the widget panel to preview."
-msgstr ""
-
-#: src/Facets/Renderer.php:1174
-msgid "Show only saved"
+#: src/Facets/Renderer.php:949
+#: src/Facets/Renderer.php:975
+msgid "Include"
 msgstr ""
 
 #: src/Facets/Renderer.php:952
@@ -218,51 +186,153 @@ msgstr ""
 msgid "Skip"
 msgstr ""
 
+#: src/Facets/Renderer.php:958
+msgid "No more cards."
+msgstr ""
+
+#: src/Facets/Renderer.php:961
+msgid "Restart"
+msgstr ""
+
 #: src/Facets/Renderer.php:1038
 msgid "Spin"
+msgstr ""
+
+#: src/Facets/Renderer.php:1066
+msgid "Clear"
 msgstr ""
 
 #: src/Facets/Renderer.php:1107
 msgid "Stack values — items must match every one you select."
 msgstr ""
 
-#: src/Admin/SwatchTermFields.php:50
-#: src/Admin/SwatchTermFields.php:68
-msgid "Swatch color"
-msgstr ""
-
-#: src/Admin/SwatchTermFields.php:55
-#: src/Admin/SwatchTermFields.php:79
-msgid "Swatch image"
-msgstr ""
-
-#: src/Facets/Renderer.php:913
-msgid "Swipe through %s"
-msgstr ""
-
-#: integrations/bricks/elements/facet.php:66
-#: integrations/divi/modules/facet.php:71
-#: integrations/elementor/widgets/facet.php:70
-msgid "The \"Slug\" of a facet you created in the HOF admin."
-msgstr ""
-
-#: src/Admin/SwatchTermFields.php:178
-msgid "Use this image"
-msgstr ""
-
-#: src/Facets/Renderer.php:1295
-msgid "Visual DNA needs a target color facet. Pick one in the admin."
-msgstr ""
-
 #: src/Facets/Renderer.php:1168
 msgid "Your bin is empty. Add items to compare them here."
 msgstr ""
 
-#: src/Facets/Renderer.php:1355
-msgid "↺ Clear"
+#: src/Facets/Renderer.php:1174
+msgid "Show only saved"
+msgstr ""
+
+#: src/Facets/Renderer.php:1178
+msgid "Clear bin"
+msgstr ""
+
+#: src/Facets/Renderer.php:1201
+msgid "Search…"
+msgstr ""
+
+#: src/Facets/Renderer.php:1225
+msgid "Describe what you're looking for…"
+msgstr ""
+
+#: src/Facets/Renderer.php:1243
+msgid "Ask"
+msgstr ""
+
+#: src/Facets/Renderer.php:1251
+msgid "I heard:"
 msgstr ""
 
 #: src/Facets/Renderer.php:1256
 msgid "↺ Start over"
 msgstr ""
 
+#: src/Facets/Renderer.php:1295
+msgid "Visual DNA needs a target color facet. Pick one in the admin."
+msgstr ""
+
+#: src/Facets/Renderer.php:1322
+msgid "Drop an image, click to pick a file, paste a URL below, or use the eyedropper."
+msgstr ""
+
+#: src/Facets/Renderer.php:1329
+msgid "Paste an image URL…"
+msgstr ""
+
+#: src/Facets/Renderer.php:1336
+msgid "Eyedropper"
+msgstr ""
+
+#: src/Facets/Renderer.php:1338
+msgid "Pick"
+msgstr ""
+
+#: src/Facets/Renderer.php:1348
+msgid "Closest match:"
+msgstr ""
+
+#: src/Facets/Renderer.php:1355
+msgid "↺ Clear"
+msgstr ""
+
+#: src/Facets/Renderer.php:1360
+msgid "Detected palette"
+msgstr ""
+
+#: src/Facets/Renderer.php:1585
+msgid "Results pagination"
+msgstr ""
+
+#: src/Facets/Renderer.php:1591
+msgid "First page"
+msgstr ""
+
+#: src/Facets/Renderer.php:1598
+msgid "Previous page"
+msgstr ""
+
+#. translators: %d: page number
+#: src/Facets/Renderer.php:1613
+#, php-format
+msgid "Page %d"
+msgstr ""
+
+#: src/Facets/Renderer.php:1623
+msgid "Next page"
+msgstr ""
+
+#: src/Facets/Renderer.php:1630
+msgid "Last page"
+msgstr ""
+
+#: src/Frontend/Shortcodes.php:59
+msgid "Save to bin"
+msgstr ""
+
+#: src/Frontend/Shortcodes.php:100
+msgid "Clear all filters"
+msgstr ""
+
+#: integrations/gutenberg/blocks/facet/index.js:50
+msgid "No matching facet — check the slug."
+msgstr ""
+
+#: integrations/gutenberg/blocks/facet/index.js:54
+msgid "Set a facet slug in the sidebar to preview."
+msgstr ""
+
+#: integrations/gutenberg/blocks/facet/block.json
+msgctxt "block title"
+msgid "Hooked Facet"
+msgstr ""
+
+#: integrations/gutenberg/blocks/facet/block.json
+msgctxt "block description"
+msgid "Render a Hooked on Facets filter on the page."
+msgstr ""
+
+#: integrations/gutenberg/blocks/facet/block.json
+msgctxt "block keyword"
+msgid "facet"
+msgstr ""
+
+#: integrations/gutenberg/blocks/facet/block.json
+msgctxt "block keyword"
+msgid "filter"
+msgstr ""
+
+#: integrations/gutenberg/blocks/facet/block.json
+msgctxt "block keyword"
+msgid "search"
+msgstr ""
