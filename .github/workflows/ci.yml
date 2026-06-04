@@ -1,7 +1,7 @@
 # CI — runs lint, tests, and build verification on push and PR.
 #
 # Pre-alpha aware: each job detects whether its relevant files exist (composer.json,
-# package.json) and no-ops gracefully if not. Once Claude Code drops the scaffold,
+# package.json) and no-ops gracefully if not. Once the project scaffold lands,
 # the jobs activate automatically.
 
 name: CI

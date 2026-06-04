@@ -6,8 +6,7 @@
 > "Enhancements" below). Every planned facet (16 types), source (WooCommerce,
 > ACF, Meta Box, Pods), the AND-within-facet resolver, and multisite have
 > shipped. The only open items are gated on live third-party environments (see
-> "Status" below). See `SHEPDESIGN.md` for architecture and the load-bearing
-> SQL shape.
+> "Status" below).
 
 ## Goal
 
@@ -120,10 +119,10 @@ The remaining 4.5ms gap to 50ms is structural for this benchmark: the price leg 
 
 ### "Wow kit" facets & UI
 
-- [x] **Swipe Deck facet** (`swiper`) — see SHEPDESIGN.md. Pairs with the active-filters chip strip.
+- [x] **Swipe Deck facet** (`swiper`). Pairs with the active-filters chip strip.
 - [x] **Fluid swatches** (`swatch`) — tile size morphs by bucket count via a CSS calc; admin picker labels it "Fluid swatches". (Was Phase 2 candidate #1.)
 - [x] **Visual DNA facet** (`visual_dna`) + `src/VisualDna/ColorExtractor.php` — color-extraction-driven visual filtering, with `bin/verify-visual-dna.sh` harness.
-- [x] **CSS Variable Engine — full theming UI** (`TokensPanel.jsx`). The `--hof-*` token contract is documented in SHEPDESIGN.md. (Was Phase 2 candidate #3.)
+- [x] **CSS Variable Engine — full theming UI** (`TokensPanel.jsx`). (Was Phase 2 candidate #3.)
 - [x] **Telemetry** (`src/Telemetry/`) — buffers resolver timings + loop-hook signatures in-memory, flushes one option write at shutdown. Surfaced via `GET /telemetry`.
 - [x] **Spin the Wheel** (`spin_the_wheel`) — gamified single-select picker. A cosmetic conic-gradient dial over an accessible radiogroup (`spin.js`); spins to a random value or pick one directly. Single-value OR semantics, same URL shape as radio.
 - [x] **Intersection matrix** (`matrix`) — the re-introduced Venn/UpSet matrix, now on real **AND-within-facet** semantics (`settings.match`, see `Resolver::build_facet_legs()`): one single-value INTERSECT leg per selected value. Pairs an explicit selected-state dot + per-row count bar with the active-filters chip strip — the readability gap that retired the first version.
@@ -236,12 +235,12 @@ project can't provision; current behavior is correct and documented.
 
 - **Admin SPA: React 18.** Shared mental model with Gutenberg (`@wordpress/element` is React). Swap cost at this stage is one Vite plugin + one entry file.
 - **Index storage: narrow EAV.** Best perf for multi-facet intersect at scale; proven by FacetWP and re-confirmed by our own 7× benchmark on this layout.
-- **Resolver SQL: `INTERSECT` chain with `USE INDEX` hints.** Each facet leg runs as a covering index range scan on `facet_lookup (facet_name, facet_value, object_id)` for IN-list filters or `facet_numeric_range (facet_name, facet_numeric, object_id)` for `BETWEEN` filters. **Requires MySQL 8.0.31+** for `INTERSECT`. The trailing `object_id` (covering), the range-leg `USE INDEX` hint, and `INTERSECT` (vs `UNION ALL` + `GROUP BY HAVING`) are each load-bearing — see SHEPDESIGN.md.
+- **Resolver SQL: `INTERSECT` chain with `USE INDEX` hints.** Each facet leg runs as a covering index range scan on `facet_lookup (facet_name, facet_value, object_id)` for IN-list filters or `facet_numeric_range (facet_name, facet_numeric, object_id)` for `BETWEEN` filters. **Requires MySQL 8.0.31+** for `INTERSECT`. The trailing `object_id` (covering), the range-leg `USE INDEX` hint, and `INTERSECT` (vs `UNION ALL` + `GROUP BY HAVING`) are each load-bearing.
 - **Two-namespace autoload.** `includes/` (classmap, legacy WP filenames — `Activator`, `Indexer`, `QueryHook`, `Deactivator`) + `src/` (PSR-4 modern). Everything else lives in `src/`.
 - **Indexing: synchronous in the hot path; chunked background job for full rebuilds.** The background job prefers Action Scheduler (wp_cron fallback). Incremental `save_post` updates intentionally stay on the per-object WP-API path so plugin filters (e.g. ACF, custom term meta) keep working.
 - **Docker stack: `wordpress:php8.2-apache` (latest 6.x).** Bumped from the original 6.4 pin because current WooCommerce requires 6.8+.
 - **`wp-cli` sidecar runs as uid 33** so it can write into the wp-content volume; gets its own `WORDPRESS_DB_*` env block since wp-config's `getenv_docker()` fallback host is `mysql`, not our service name `db`.
-- **Page-builder binding is opt-in, not magic detection.** Elementor by Query ID, Bricks by CSS class, Breakdance by Array Query recipe — each documented in SHEPDESIGN.md.
+- **Page-builder binding is opt-in, not magic detection.** Elementor by Query ID, Bricks by CSS class, Breakdance by Array Query recipe.
 
 ## Open questions
 
