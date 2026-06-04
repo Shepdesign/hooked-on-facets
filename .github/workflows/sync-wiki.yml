@@ -38,16 +38,46 @@ jobs:
             exit 1
           fi
 
-          # docs/README.md -> Home; every other page -> Title-Cased name.
-          # launch-checklist is internal, so it is not published to the wiki.
+          # Acronyms preserved after title-casing so existing page URLs are kept.
+          ACRONYMS="Dna:DNA Faq:FAQ Ai:AI Api:API Seo:SEO Url:URL Css:CSS Html:HTML Json:JSON Sql:SQL Eav:EAV"
+          titlecase() {
+            local p
+            p="$(echo "$1" | sed -E 's/(^|-)([a-z])/\1\U\2/g')"
+            for a in $ACRONYMS; do
+              p="$(echo "$p" | sed -E "s/(^|-)${a%%:*}(-|\$)/\1${a##*:}\2/g")"
+            done
+            echo "$p"
+          }
+
+          declare -A keep=( ["Home.md"]=1 )
           cp docs/README.md wiki/Home.md
+
+          # Content pages from /docs (launch-checklist stays internal).
           for f in docs/*.md; do
             base="$(basename "$f" .md)"
-            case "$base" in
-              README|launch-checklist) continue ;;
-            esac
-            page="$(echo "$base" | sed -E 's/(^|-)([a-z])/\1\U\2/g')"
-            cp "$f" "wiki/$page.md"
+            case "$base" in README|launch-checklist) continue ;; esac
+            case "$base" in _*) continue ;; esac
+            page="$(titlecase "$base")"
+            cp "$f" "wiki/$page.md"; keep["$page.md"]=1
+          done
+
+          # Nav pages (verbatim — no title-casing).
+          for u in _Sidebar _Footer; do
+            if [ -f "docs/$u.md" ]; then cp "docs/$u.md" "wiki/$u.md"; keep["$u.md"]=1; fi
+          done
+
+          # Community files single-sourced at repo root -> published to the wiki.
+          cp CONTRIBUTING.md    wiki/Contributing.md;    keep["Contributing.md"]=1
+          cp CODE_OF_CONDUCT.md wiki/Code-of-Conduct.md; keep["Code-of-Conduct.md"]=1
+          cp CHANGELOG.md       wiki/Changelog.md;       keep["Changelog.md"]=1
+
+          # Prune wiki pages with no source. Unsourced _* pages are left untouched.
+          for w in wiki/*.md; do
+            name="$(basename "$w")"
+            [ -n "${keep[$name]:-}" ] && continue
+            case "$name" in _*) continue ;; esac
+            echo "Pruning stale wiki page: $name"
+            rm -f "$w"
           done
 
           cd wiki
