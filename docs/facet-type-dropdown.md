@@ -1,12 +1,10 @@
 # Facet Type: Dropdown
 
-> ✅ **Shipped (experimental).** Single-select; multi-select is a follow-up.
-
-Single- or multi-select in a compact widget. Perfect for long lists and tight UIs.
+Single-select in a compact widget. Perfect for long lists and tight UIs.
 
 ## what it is
 
-A `<select>`-style control (rendered as a custom combobox for better UX). Supports search-within for long lists. Configurable single or multi mode.
+A native `<select>` control with an "Any" default option and a match count beside each value. One value at a time — compact where checkboxes would eat real estate.
 
 ## when to use it
 
@@ -25,20 +23,10 @@ A `<select>`-style control (rendered as a custom combobox for better UX). Suppor
 ```json
 {
   "name": "brand",
-  "type": "dropdown",
-  "label": "Brand",
-  "source": "taxonomy:product_brand",
-  "behavior": {
-    "multiple": true,
-    "operator": "OR",
-    "show_count": true
-  },
-  "ui": {
-    "searchable": true,
-    "placeholder": "All brands",
-    "clearable": true,
-    "max_height": 320
-  }
+  "kind": "taxonomy",
+  "source": "product_brand",
+  "display": "dropdown",
+  "label": "Brand"
 }
 ```
 
@@ -46,44 +34,31 @@ A `<select>`-style control (rendered as a custom combobox for better UX). Suppor
 
 | Field | Values | Default | What |
 |---|---|---|---|
-| `behavior.multiple` | bool | `false` | Allow multiple selections |
-| `behavior.operator` | `"OR"` \| `"AND"` | `"OR"` | Only used if `multiple: true` |
-| `behavior.show_count` | bool | `true` | Show count next to options |
-| `ui.searchable` | bool | `true` | Render a search input in the dropdown |
-| `ui.placeholder` | string | `""` | Placeholder when nothing selected |
-| `ui.clearable` | bool | `true` | Show an "x" to clear selections |
-| `ui.max_height` | int | `320` | Max dropdown height in px |
+| `kind` | `"taxonomy"` \| `"meta"` \| `"field"` | — | Where the indexed values come from |
+| `source` | string | — | The taxonomy slug or meta/field key |
+
+The dropdown is single-select: it renders an "Any" option followed by one option per indexed value, each with a match count. It has no display-specific `settings` in 1.0.0.
 
 ## URL state
 
-**Single:** `?_hof_brand=nike`
-**Multi:** `?_hof_brand=nike,adidas,puma`
-
-## planned PHP filters
-
-```php
-apply_filters( 'hof_facet_dropdown_choices', $choices, $facet );
-apply_filters( 'hof_facet_dropdown_placeholder', $placeholder, $facet );
-apply_filters( 'hof_facet_dropdown_searchable', $searchable, $facet );
-do_action( 'hof_facet_dropdown_rendered', $facet );
+```text
+?hof[brand]=nike
 ```
+
+Single value. Selecting "Any" clears the param.
 
 ## examples
 
-**Searchable brand multi-select:**
+**Single-select brand picker:**
 
 ```json
-{ "name": "brand", "type": "dropdown", "source": "taxonomy:product_brand",
-  "behavior": { "multiple": true, "operator": "OR" },
-  "ui": { "searchable": true, "placeholder": "All brands" } }
+{ "name": "brand", "kind": "taxonomy", "source": "product_brand", "display": "dropdown" }
 ```
 
-**Single-select country picker:**
+**Single-select country picker (meta source):**
 
 ```json
-{ "name": "country", "type": "dropdown", "source": "meta:country_code",
-  "behavior": { "multiple": false },
-  "ui": { "searchable": true, "clearable": true } }
+{ "name": "country", "kind": "meta", "source": "country_code", "display": "dropdown" }
 ```
 
 ## see also

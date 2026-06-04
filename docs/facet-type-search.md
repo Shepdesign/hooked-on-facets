@@ -1,12 +1,10 @@
 # Facet Type: Search
 
-> 🚧 **Planned for v0.5 (beta).**
-
-Free-text search scoped to the current result set.
+Free-text substring filter scoped to a facet's own indexed values.
 
 ## what it is
 
-A debounced text input that filters the result set by matching against configured post fields (title, content, excerpt, SKU, etc.). Plays nicely with other facets — search refines what the facets have already narrowed.
+A single text input that filters the result set with a `LIKE %term%` substring match against the values indexed for this facet's source. Plays nicely with other facets — search refines what the facets have already narrowed.
 
 ## when to use it
 
@@ -25,22 +23,11 @@ A debounced text input that filters the result set by matching against configure
 
 ```json
 {
-  "name": "product_search",
-  "type": "search",
-  "label": "Search",
-  "source": "post:title,excerpt,content",
-  "behavior": {
-    "debounce_ms": 300,
-    "min_chars": 2,
-    "match": "fuzzy",
-    "logic": "all_words"
-  },
-  "ui": {
-    "placeholder": "Search products...",
-    "icon": "search",
-    "instant": true,
-    "clear_button": true
-  }
+  "name": "title_search",
+  "kind": "field",
+  "source": "post_title",
+  "display": "search",
+  "label": "Search"
 }
 ```
 
@@ -48,64 +35,31 @@ A debounced text input that filters the result set by matching against configure
 
 | Field | Values | Default | What |
 |---|---|---|---|
-| `source` | comma-separated post fields | `"post:title"` | Fields to search across |
-| `behavior.debounce_ms` | int | `300` | Ms to wait after typing stops before querying |
-| `behavior.min_chars` | int | `2` | Don't query until this many chars typed |
-| `behavior.match` | `"exact"` \| `"prefix"` \| `"fuzzy"` | `"prefix"` | Matching strategy |
-| `behavior.logic` | `"any_word"` \| `"all_words"` \| `"phrase"` | `"all_words"` | Multi-word handling |
-| `ui.placeholder` | string | `""` | Input placeholder |
-| `ui.icon` | string \| `null` | `"search"` | Icon name (lucide) or `null` |
-| `ui.instant` | bool | `true` | Update as user types (vs. on Enter) |
-| `ui.clear_button` | bool | `true` | Show "x" to clear |
+| `kind` | `"taxonomy"` \| `"meta"` \| `"field"` | — | Where the searchable values come from |
+| `source` | string | — | The taxonomy slug or meta/field key whose indexed values are matched |
 
-### post field sources
-
-| `source` value | What it searches |
-|---|---|
-| `post:title` | Post title |
-| `post:content` | Post body |
-| `post:excerpt` | Post excerpt |
-| `post:all` | Title + content + excerpt |
-| `meta:<key>` | A specific meta field (e.g. SKU) |
-| `taxonomy:<slug>` | Term names in a taxonomy |
-
-Combine with commas: `"post:title,meta:_sku,taxonomy:product_tag"`
+The input matches `LIKE %term%` against this facet's indexed values for the configured source — it does not span arbitrary post fields. The placeholder is fixed ("Search…") and there are no `debounce` / `min_chars` / matching-strategy settings in 1.0.0.
 
 ## URL state
 
 ```text
-?_hof_product_search=organic+cotton
+?hof[title_search]=organic%20cotton
 ```
 
-URL-encoded space (`+` or `%20`). Phrases (with `logic: "phrase"`) preserve word order.
-
-## planned PHP filters
-
-```php
-apply_filters( 'hof_facet_search_query', $query, $facet );
-apply_filters( 'hof_facet_search_fields', $fields, $facet );
-apply_filters( 'hof_facet_search_min_chars', $min, $facet );
-apply_filters( 'hof_facet_search_match_strategy', $strategy, $facet );
-
-// Hook into the actual search SQL
-apply_filters( 'hof_facet_search_sql_where', $where, $query, $facet );
-```
+A single URL-encoded search string.
 
 ## examples
 
-**Standard Woo product search:**
+**Search a product field:**
 
 ```json
-{ "name": "search", "type": "search",
-  "source": "post:title,post:excerpt,meta:_sku",
-  "behavior": { "logic": "all_words", "match": "prefix" } }
+{ "name": "title_search", "kind": "field", "source": "post_title", "display": "search" }
 ```
 
-**Exact phrase search across content:**
+**Search a meta value (e.g. SKU):**
 
 ```json
-{ "name": "exact", "type": "search", "source": "post:all",
-  "behavior": { "match": "exact", "logic": "phrase", "min_chars": 3 } }
+{ "name": "sku", "kind": "meta", "source": "_sku", "display": "search" }
 ```
 
 ## see also

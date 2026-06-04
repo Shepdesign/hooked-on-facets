@@ -1,7 +1,5 @@
 # Facet Type: Toggle
 
-> ✅ **Shipped (experimental).**
-
 A single boolean filter. "On sale." "In stock." "Free shipping." On or off.
 
 ## what it is
@@ -27,18 +25,14 @@ A switch or single checkbox that filters results down to items matching a single
 ```json
 {
   "name": "in_stock",
-  "type": "toggle",
+  "kind": "meta",
+  "source": "_stock_status",
+  "display": "toggle",
   "label": "In stock only",
-  "source": "meta:_stock_status",
-  "behavior": {
-    "match_value": "instock",
-    "default": false,
-    "show_count": true
-  },
-  "ui": {
-    "style": "switch",
-    "label_position": "right",
-    "size": "md"
+  "settings": {
+    "true_value": "instock",
+    "on_label": "In stock",
+    "off_label": "Off"
   }
 }
 ```
@@ -47,53 +41,36 @@ A switch or single checkbox that filters results down to items matching a single
 
 | Field | Values | Default | What |
 |---|---|---|---|
-| `behavior.match_value` | scalar | `true` | The value to match when toggle is ON |
-| `behavior.default` | bool | `false` | Default state (ON or OFF) |
-| `behavior.show_count` | bool | `true` | Show count of matching items next to label |
-| `ui.style` | `"switch"` \| `"checkbox"` \| `"pill"` | `"switch"` | Render style |
-| `ui.label_position` | `"left"` \| `"right"` | `"right"` | Label placement |
-| `ui.size` | `"sm"` \| `"md"` \| `"lg"` | `"md"` | Visual size |
+| `kind` | `"taxonomy"` \| `"meta"` \| `"field"` | — | Where the indexed value comes from |
+| `source` | string | — | The taxonomy slug or meta/field key |
+| `settings.true_value` | string | `"1"` | The exact `facet_value` the index stores for matching items. Typically `1` for boolean meta, or e.g. `instock` |
+| `settings.on_label` | string | facet label | Label shown for the ON state |
+| `settings.off_label` | string | `"Off"` | Label shown for the OFF state |
+
+When on, the facet filters to items whose indexed value equals `true_value`; when off, the facet is cleared (no filter).
 
 ## URL state
 
 ```text
-?_hof_in_stock=1
+?hof[in_stock]=instock
 ```
 
-Absent param or `=0` means OFF (no filter). `=1` means ON.
-
-## planned PHP filters
-
-```php
-apply_filters( 'hof_facet_toggle_match_value', $value, $facet );
-apply_filters( 'hof_facet_toggle_count', $count, $facet );
-apply_filters( 'hof_facet_toggle_default', $default, $facet );
-do_action( 'hof_facet_toggle_changed', $is_on, $facet );
-```
+The param carries `true_value` when on. Absent param means OFF (no filter).
 
 ## examples
 
 **WooCommerce in-stock filter:**
 
 ```json
-{ "name": "in_stock", "type": "toggle", "source": "meta:_stock_status",
-  "behavior": { "match_value": "instock" },
-  "ui": { "style": "switch", "label_position": "right" } }
+{ "name": "in_stock", "kind": "meta", "source": "_stock_status",
+  "display": "toggle", "settings": { "true_value": "instock" } }
 ```
 
-**On-sale filter (custom virtual source):**
+**Boolean featured-flag filter:**
 
 ```json
-{ "name": "on_sale", "type": "toggle", "source": "virtual:woo_on_sale",
-  "behavior": { "match_value": true },
-  "ui": { "style": "pill" } }
-```
-
-**Featured posts:**
-
-```json
-{ "name": "featured", "type": "toggle", "source": "meta:_featured",
-  "behavior": { "match_value": "yes", "default": false } }
+{ "name": "featured", "kind": "meta", "source": "_featured",
+  "display": "toggle", "settings": { "true_value": "yes", "on_label": "Featured only" } }
 ```
 
 ## see also

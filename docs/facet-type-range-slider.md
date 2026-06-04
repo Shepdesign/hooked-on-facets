@@ -1,12 +1,10 @@
-# Facet Type: Range Slider
+# Facet Type: Range
 
-> 🚧 **Planned for v0.1 (alpha).**
-
-A dual-handle slider for numeric ranges. Price, weight, distance, anything continuous.
+A min/max numeric range filter. Price, weight, distance, anything continuous.
 
 ## what it is
 
-Two draggable handles defining a min/max. Optional histogram shows data distribution. Optional number inputs for precise entry.
+Two `<input type="number">` controls defining a min and max, with the data-derived bounds shown as placeholders/hints. The resolver matches with a numeric `BETWEEN` against the indexed value. The display slug is `range`.
 
 ## when to use it
 
@@ -26,22 +24,10 @@ Two draggable handles defining a min/max. Optional histogram shows data distribu
 ```json
 {
   "name": "price",
-  "type": "range_slider",
-  "label": "Price",
-  "source": "meta:_price",
-  "behavior": {
-    "min": "auto",
-    "max": "auto",
-    "step": 1,
-    "compare": "between"
-  },
-  "ui": {
-    "format": "currency",
-    "currency_symbol": "$",
-    "show_inputs": true,
-    "histogram": true,
-    "histogram_buckets": 20
-  }
+  "kind": "meta",
+  "source": "_price",
+  "display": "range",
+  "label": "Price"
 }
 ```
 
@@ -49,48 +35,31 @@ Two draggable handles defining a min/max. Optional histogram shows data distribu
 
 | Field | Values | Default | What |
 |---|---|---|---|
-| `behavior.min` | number \| `"auto"` | `"auto"` | Lower bound; auto = computed from data |
-| `behavior.max` | number \| `"auto"` | `"auto"` | Upper bound |
-| `behavior.step` | number | `1` | Slider step increment |
-| `behavior.compare` | `"between"` \| `"gte"` \| `"lte"` | `"between"` | Match strategy |
-| `ui.format` | `"number"` \| `"currency"` \| `"custom"` | `"number"` | Value formatter |
-| `ui.currency_symbol` | string | `"$"` | Used when `format: currency` |
-| `ui.show_inputs` | bool | `true` | Render min/max number inputs alongside slider |
-| `ui.histogram` | bool | `false` | Show distribution chart above slider |
-| `ui.histogram_buckets` | int | `20` | Number of histogram bars |
+| `kind` | `"meta"` \| `"field"` | — | Where the numeric value comes from |
+| `source` | string | — | The meta/field key holding the number |
+
+The min/max bounds are computed from the indexed values and shown as input hints — they are not configured. The facet has no display-specific `settings` in 1.0.0.
 
 ## URL state
 
 ```text
-?_hof_price=10-200
+?hof[price][min]=10&hof[price][max]=200
 ```
 
-Hyphen-separated min and max. Open-ended ranges use empty side: `?_hof_price=-50` (up to 50) or `?_hof_price=100-` (100+).
-
-## planned PHP filters
-
-```php
-apply_filters( 'hof_facet_range_slider_bounds', $bounds, $facet );
-apply_filters( 'hof_facet_range_slider_step', $step, $facet );
-apply_filters( 'hof_facet_range_slider_format_value', $formatted, $raw, $facet );
-apply_filters( 'hof_facet_range_slider_histogram_data', $data, $facet );
-```
+Either side may be omitted for an open-ended range (e.g. only `[max]` for "up to 200", or only `[min]` for "100 and up").
 
 ## examples
 
-**WooCommerce price slider with histogram:**
+**WooCommerce price range:**
 
 ```json
-{ "name": "price", "type": "range_slider", "source": "meta:_price",
-  "behavior": { "min": "auto", "max": "auto", "step": 1 },
-  "ui": { "format": "currency", "histogram": true } }
+{ "name": "price", "kind": "meta", "source": "_price", "display": "range" }
 ```
 
-**Rating threshold (4+ stars):**
+**Rating range (field source):**
 
 ```json
-{ "name": "min_rating", "type": "range_slider", "source": "meta:rating",
-  "behavior": { "min": 0, "max": 5, "step": 0.5, "compare": "gte" } }
+{ "name": "rating", "kind": "field", "source": "average_rating", "display": "range" }
 ```
 
 ## see also

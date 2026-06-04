@@ -1,12 +1,10 @@
 # Facet Type: Date Range
 
-> ✅ **Shipped (experimental).** UI + resolver path are live; Indexer date → epoch conversion is still a follow-up.
-
-A calendar-driven date range picker with optional presets.
+A pair of native date inputs for filtering on a date range.
 
 ## what it is
 
-Two date inputs (start, end) with a dual-month calendar UI. Optional preset shortcuts ("Today", "This week", "Next 30 days"). Powers events, post archives, order history filtering.
+Two `<input type="date">` controls (start, end). The index stores each date as a Unix epoch (the Indexer converts date sources to epoch when the facet's display is `date_range`), so the resolver matches with a numeric `BETWEEN`. Powers events, post archives, order history filtering.
 
 ## when to use it
 
@@ -27,20 +25,12 @@ Two date inputs (start, end) with a dual-month calendar UI. Optional preset shor
 ```json
 {
   "name": "event_date",
-  "type": "date_range",
+  "kind": "meta",
+  "source": "event_start_date",
+  "display": "date_range",
   "label": "When",
-  "source": "meta:event_start_date",
-  "behavior": {
-    "min": "auto",
-    "max": "auto",
-    "compare": "overlaps",
-    "end_source": "meta:event_end_date"
-  },
-  "ui": {
-    "preset_ranges": ["today", "this_week", "this_month", "next_30_days"],
-    "calendar": "dual",
-    "first_day_of_week": 1,
-    "date_format": "site_default"
+  "settings": {
+    "format": "date"
   }
 }
 ```
@@ -49,52 +39,34 @@ Two date inputs (start, end) with a dual-month calendar UI. Optional preset shor
 
 | Field | Values | Default | What |
 |---|---|---|---|
-| `behavior.min` | ISO date \| `"auto"` | `"auto"` | Earliest selectable date |
-| `behavior.max` | ISO date \| `"auto"` | `"auto"` | Latest selectable date |
-| `behavior.compare` | `"between"` \| `"overlaps"` \| `"starts_in"` | `"between"` | Match strategy |
-| `behavior.end_source` | string \| `null` | `null` | For event-style data with start + end fields |
-| `ui.preset_ranges` | array of preset slugs | `[]` | Shortcut buttons |
-| `ui.calendar` | `"single"` \| `"dual"` | `"dual"` | One or two months shown |
-| `ui.first_day_of_week` | 0-6 | site setting | 0 = Sunday, 1 = Monday |
-| `ui.date_format` | string \| `"site_default"` | `"site_default"` | PHP date format |
+| `kind` | `"taxonomy"` \| `"meta"` \| `"field"` | — | Where the indexed value comes from (meta/field for dates) |
+| `source` | string | — | The meta/field key holding the date |
+| `settings.format` | `"date"` \| `"datetime"` | `"date"` | `date` = ISO `yyyy-mm-dd`; assumes the source resolves to a Unix timestamp in the index |
 
-### preset slugs
-
-`today`, `tomorrow`, `yesterday`, `this_week`, `this_weekend`, `this_month`, `next_7_days`, `next_30_days`, `next_90_days`, `last_7_days`, `last_30_days`, `last_90_days`, `this_year`, `last_year`
+The min/max bounds shown on the inputs are computed from the indexed values, not configured.
 
 ## URL state
 
 ```text
-?_hof_event_date=2026-06-01_2026-06-30
+?hof[event_date][min]=2026-06-01&hof[event_date][max]=2026-06-30
 ```
 
-ISO dates separated by underscore. Open-ended: `?_hof_event_date=2026-06-01_` (from June 1 onward).
-
-## planned PHP filters
-
-```php
-apply_filters( 'hof_facet_date_range_bounds', $bounds, $facet );
-apply_filters( 'hof_facet_date_range_presets', $presets, $facet );
-apply_filters( 'hof_facet_date_range_compare', $compare, $facet );
-apply_filters( 'hof_facet_date_range_format', $format, $facet );
-```
+Each end is an ISO date. Either side may be omitted for an open-ended range (e.g. only `[min]` for "from June 1 onward").
 
 ## examples
 
-**Event calendar with overlap matching:**
+**Event date filter:**
 
 ```json
-{ "name": "when", "type": "date_range", "source": "meta:event_start",
-  "behavior": { "compare": "overlaps", "end_source": "meta:event_end" },
-  "ui": { "preset_ranges": ["this_week", "this_month", "next_30_days"] } }
+{ "name": "event_date", "kind": "meta", "source": "event_start_date",
+  "display": "date_range", "settings": { "format": "date" } }
 ```
 
-**Blog archive by publish date:**
+**Field-sourced publish date:**
 
 ```json
-{ "name": "published", "type": "date_range", "source": "post:date",
-  "behavior": { "compare": "between" },
-  "ui": { "calendar": "dual" } }
+{ "name": "published", "kind": "field", "source": "post_date",
+  "display": "date_range" }
 ```
 
 ## see also

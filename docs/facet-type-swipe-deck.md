@@ -1,7 +1,5 @@
 # Facet Type: Swipe Deck
 
-> 🎴 **Shipped (experimental).**
-
 A stacked deck of swipeable cards — one term per card — that feels native on touch and works with the keyboard on desktop. Built for stores where the *vibe* of a category matters more than ticking ten checkboxes.
 
 ## what it is
@@ -39,7 +37,8 @@ The shipping display slug is `swiper`. (The brand name is *swipe deck* — the s
     "variant": "Swipe",
     "cardSize": "Medium",
     "deckDepth": 4,
-    "animation": "Spring"
+    "animation": "Spring",
+    "match": "any"
   }
 }
 ```
@@ -48,10 +47,11 @@ The shipping display slug is `swiper`. (The brand name is *swipe deck* — the s
 
 | Field | Values | Default | What |
 |---|---|---|---|
-| `settings.variant` | `"Card"` \| `"Grid"` \| `"Swipe"` | `"Swipe"` | `Swipe` is the deck; `Card`/`Grid` are display fallbacks for non-touch |
+| `settings.variant` | `"Card"` \| `"Grid"` \| `"Swipe"` | `"Card"` | `Swipe` is the deck; `Card`/`Grid` are display fallbacks for non-touch |
 | `settings.cardSize` | `"Small"` \| `"Medium"` \| `"Large"` | `"Medium"` | Card footprint |
-| `settings.deckDepth` | int 1–10 | `4` | Number of cards visible in the stack behind the top card |
+| `settings.deckDepth` | int 1–10 | `3` | Number of cards visible in the stack behind the top card |
 | `settings.animation` | `"Spring"` \| `"Linear"` | `"Spring"` | Swipe physics — Spring overshoots, Linear glides |
+| `settings.match` | `"any"` \| `"all"` | `"any"` | `any` = OR within the facet (match any selected term); `all` = AND (item must carry every selected term) |
 
 ## interaction model
 
@@ -67,7 +67,7 @@ Selections coalesce into a single URL param like a multi-select checkbox facet �
 ## URL state
 
 ```text
-?_hof_vibe=cozy,bold,minimal
+?hof[vibe]=cozy,bold,minimal
 ```
 
 Comma-separated term slugs. Identical wire format to checkbox/swatch facets, so deep links survive a display-type change.
@@ -77,29 +77,22 @@ Comma-separated term slugs. Identical wire format to checkbox/swatch facets, so 
 The deck respects the site's existing typography and CSS variables:
 
 ```css
-:root {
-  --hof-swipe-card-radius: 14px;
-  --hof-swipe-card-bg: var(--hof-surface);
-  --hof-swipe-accent: var(--hof-accent);
+.hof-facet-swiper {
+  --hof-swiper-card-w: 240px;     /* also set by the cardSize setting */
+  --hof-swiper-card-h: 300px;
+  --hof-swiper-card-bg: #EEEDFE;
+  --hof-swiper-back-offset: 8px;  /* gap between stacked cards */
 }
 ```
 
-Per-term card art uses the same term-meta convention as Color Swatch:
+Per-term card art uses the same term-meta keys as Color Swatch:
 
 ```php
-update_term_meta( $term_id, 'swatch_image', $attachment_id );
-update_term_meta( $term_id, 'swatch_color', '#D85A30' );
+update_term_meta( $term_id, '_hof_swatch_image', $attachment_id );
+update_term_meta( $term_id, '_hof_swatch_color', '#D85A30' );
 ```
 
 When neither is set, the deck falls back to a typographic card with a generated initial glyph.
-
-## planned PHP filters
-
-```php
-apply_filters( 'hof_facet_swiper_cards', $cards, $facet );
-apply_filters( 'hof_facet_swiper_card_image', $image_url, $term, $facet );
-apply_filters( 'hof_facet_swiper_card_label', $label, $term, $facet );
-```
 
 ## see also
 

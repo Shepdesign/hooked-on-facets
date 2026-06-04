@@ -1,7 +1,5 @@
 # Facet Type: Checkbox
 
-> 🚧 **Planned for v0.1 (alpha).** This page is the spec; implementation lands with the alpha scaffold.
-
 The workhorse. Multi-select filtering. The first facet type you'll reach for nine times out of ten.
 
 ## what it is
@@ -27,21 +25,13 @@ A list of checkbox options. Users tick one or many. Results match items that hav
 
 ```json
 {
-  "name": "product_category",
-  "type": "checkbox",
+  "name": "category",
+  "kind": "taxonomy",
+  "source": "product_cat",
+  "display": "checkbox",
   "label": "Category",
-  "source": "taxonomy:product_cat",
-  "behavior": {
-    "operator": "OR",
-    "show_count": true,
-    "show_zero": false,
-    "include_children": false
-  },
-  "ui": {
-    "max_visible": 10,
-    "collapsible": true,
-    "search_within": true,
-    "sort": "count_desc"
+  "settings": {
+    "match": "any"
   }
 }
 ```
@@ -50,70 +40,46 @@ A list of checkbox options. Users tick one or many. Results match items that hav
 
 | Field | Values | Default | What |
 |---|---|---|---|
-| `behavior.operator` | `"OR"` \| `"AND"` | `"OR"` | OR matches *any* selected; AND matches *all* |
-| `behavior.show_count` | bool | `true` | Show `(42)` next to each option |
-| `behavior.show_zero` | bool | `false` | Show options with no matches (greyed out) |
-| `behavior.include_children` | bool | `false` | For taxonomies, include descendant terms |
-| `ui.max_visible` | int \| `null` | `10` | Collapse list after N items; `null` = show all |
-| `ui.collapsible` | bool | `true` | "Show more / less" toggle |
-| `ui.search_within` | bool | `false` | Render a search box inside the facet |
-| `ui.sort` | `count_desc` \| `count_asc` \| `name_asc` \| `name_desc` \| `manual` | `count_desc` | Option order |
+| `kind` | `"taxonomy"` \| `"meta"` \| `"field"` | — | Where the indexed values come from |
+| `source` | string | — | The taxonomy slug or meta/field key (e.g. `product_cat`) |
+| `settings.match` | `"any"` \| `"all"` | `"any"` | `any` = OR within the facet (match at least one selected value); `all` = AND (item must carry every selected value) |
+
+Counts are always rendered next to each option, and refresh based on the *other* active facets (drill-down counts share the resolver's subquery). There are no separate `show_count` / `show_zero` / sort / collapse settings in 1.0.0.
 
 ## frontend behavior
 
-- Each click toggles the option and triggers a debounced (default 200ms) re-query
-- The URL updates instantly via `history.replaceState`
+- Each click toggles the option and triggers a re-query against the index
+- The URL updates so the filter state is shareable and survives reload
 - Counts refresh based on the *other* active facets (cross-facet awareness)
-- Disabled options (count = 0 with `show_zero: true`) cannot be selected
 
 ## URL state
 
 ```text
-?_hof_product_category=shirts,pants,shoes
+?hof[category]=shirts,pants,shoes
 ```
 
-Comma-separated slugs (or term IDs depending on config). The operator (`OR`/`AND`) lives in the facet config, not the URL.
-
-## planned PHP filters
-
-```php
-// Modify the underlying query args before the index is hit
-apply_filters( 'hof_facet_checkbox_query_args', $args, $facet );
-
-// Modify the list of choices before rendering
-apply_filters( 'hof_facet_checkbox_choices', $choices, $facet );
-
-// Modify a single choice's label
-apply_filters( 'hof_facet_checkbox_label', $label, $value, $facet );
-
-// Modify the count rendered next to each option
-apply_filters( 'hof_facet_checkbox_count', $count, $value, $facet );
-
-// Fire after a facet renders (server side)
-do_action( 'hof_facet_checkbox_rendered', $facet, $output );
-```
+Comma-separated term slugs. The `any`/`all` match mode lives in the facet config, not the URL.
 
 ## examples
 
-**Multi-select product categories with counts:**
+**Multi-select product categories (OR within facet):**
 
 ```json
-{ "name": "category", "type": "checkbox", "source": "taxonomy:product_cat",
-  "behavior": { "operator": "OR", "show_count": true } }
+{ "name": "category", "kind": "taxonomy", "source": "product_cat",
+  "display": "checkbox", "settings": { "match": "any" } }
 ```
 
 **All-must-match attribute filter (e.g. "shirts that are *both* organic *and* cotton"):**
 
 ```json
-{ "name": "attributes", "type": "checkbox", "source": "taxonomy:pa_features",
-  "behavior": { "operator": "AND" } }
+{ "name": "features", "kind": "taxonomy", "source": "pa_features",
+  "display": "checkbox", "settings": { "match": "all" } }
 ```
 
-**Long category list with search-within:**
+**Meta-sourced checkbox:**
 
 ```json
-{ "name": "brand", "type": "checkbox", "source": "taxonomy:product_brand",
-  "ui": { "max_visible": 8, "search_within": true, "sort": "name_asc" } }
+{ "name": "brand", "kind": "meta", "source": "_brand", "display": "checkbox" }
 ```
 
 ## see also

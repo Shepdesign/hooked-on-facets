@@ -1,12 +1,10 @@
 # Facet Type: Hierarchy
 
-> ✅ **Shipped (experimental).**
-
 Tree-shaped facet for nested taxonomies. Categories with subcategories, locations with regions, etc.
 
 ## what it is
 
-A nested, indented list (or progressive disclosure pattern) for hierarchical taxonomies. Selecting a parent can optionally include all descendants. Expansion state syncs to URL.
+A nested, indented list for hierarchical taxonomies, rendered from the taxonomy's own parent/child structure. It requires a taxonomy source — for any other source it falls back to the checkbox renderer at runtime.
 
 ## when to use it
 
@@ -25,22 +23,11 @@ A nested, indented list (or progressive disclosure pattern) for hierarchical tax
 
 ```json
 {
-  "name": "category_tree",
-  "type": "hierarchy",
-  "label": "Category",
-  "source": "taxonomy:product_cat",
-  "behavior": {
-    "operator": "OR",
-    "include_descendants": true,
-    "show_count": true,
-    "selection_mode": "leaf_or_branch"
-  },
-  "ui": {
-    "expanded_by_default": false,
-    "max_depth": 4,
-    "indent_size": 20,
-    "expand_on_select": true
-  }
+  "name": "category",
+  "kind": "taxonomy",
+  "source": "product_cat",
+  "display": "hierarchy",
+  "label": "Category"
 }
 ```
 
@@ -48,49 +35,31 @@ A nested, indented list (or progressive disclosure pattern) for hierarchical tax
 
 | Field | Values | Default | What |
 |---|---|---|---|
-| `behavior.operator` | `"OR"` \| `"AND"` | `"OR"` | Match any vs. match all selections |
-| `behavior.include_descendants` | bool | `true` | Selecting parent matches all children |
-| `behavior.show_count` | bool | `true` | Show count per node |
-| `behavior.selection_mode` | `"leaf_only"` \| `"branch_only"` \| `"leaf_or_branch"` | `"leaf_or_branch"` | What level(s) can be selected |
-| `ui.expanded_by_default` | bool \| `"selected_only"` | `false` | Initial expansion state |
-| `ui.max_depth` | int | `null` | Don't render below this depth |
-| `ui.indent_size` | int (px) | `20` | Indentation per level |
-| `ui.expand_on_select` | bool | `true` | Expand a node when selected |
+| `kind` | `"taxonomy"` | — | Required; non-taxonomy sources fall back to checkbox |
+| `source` | string | — | The hierarchical taxonomy slug (e.g. `product_cat`) |
+
+The tree is built from the taxonomy's own parent/child relationships and indented per level. It has no display-specific `settings` in 1.0.0.
 
 ## URL state
 
 ```text
-?_hof_category_tree=15,42
+?hof[category]=tops,t-shirts
 ```
 
-Term IDs (or slugs, configurable). Descendant inclusion is config-driven, not URL-driven.
-
-## planned PHP filters
-
-```php
-apply_filters( 'hof_facet_hierarchy_tree', $tree, $facet );
-apply_filters( 'hof_facet_hierarchy_max_depth', $depth, $facet );
-apply_filters( 'hof_facet_hierarchy_node_label', $label, $term, $facet );
-apply_filters( 'hof_facet_hierarchy_include_descendants', $include, $facet );
-do_action( 'hof_facet_hierarchy_node_rendered', $term, $facet );
-```
+Comma-separated term slugs.
 
 ## examples
 
-**WooCommerce category tree, all-descendants:**
+**WooCommerce category tree:**
 
 ```json
-{ "name": "category", "type": "hierarchy", "source": "taxonomy:product_cat",
-  "behavior": { "include_descendants": true, "operator": "OR" },
-  "ui": { "expanded_by_default": "selected_only" } }
+{ "name": "category", "kind": "taxonomy", "source": "product_cat", "display": "hierarchy" }
 ```
 
-**Geographic taxonomy, leaf-only selection:**
+**Geographic taxonomy:**
 
 ```json
-{ "name": "location", "type": "hierarchy", "source": "taxonomy:locations",
-  "behavior": { "selection_mode": "leaf_only" },
-  "ui": { "max_depth": 3 } }
+{ "name": "location", "kind": "taxonomy", "source": "locations", "display": "hierarchy" }
 ```
 
 ## see also

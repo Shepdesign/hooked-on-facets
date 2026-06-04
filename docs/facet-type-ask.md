@@ -1,7 +1,5 @@
 # Facet Type: Ask
 
-> 💬 **Shipped (experimental).**
-
 A conversational, multi-turn natural-language facet. Shoppers type what they want in plain English; the model returns each constraint it heard as a removable chip. Tap × on any chip to drop it. Type another turn to refine. Powered by Anthropic's Claude — **bring your own key**.
 
 ## what it is
@@ -100,10 +98,10 @@ The model is instructed to return the **full resulting state**, not a delta — 
 
 ## URL state
 
-Ask writes through to whichever facets the model fills. Like 2D slider, it has no URL key of its own.
+Ask writes through to whichever facets the model fills. Like Visual DNA, it has no URL key of its own.
 
 ```text
-?_hof_color=red,burgundy&_hof_price=0,50
+?hof[color]=red,burgundy&hof[price]=0,50
 ```
 
 Same wire format as user-driven filters. Deep links work; switching display modes doesn't break them.
@@ -121,14 +119,11 @@ The endpoint friendly-maps Anthropic's jargon so shoppers never see raw API erro
 
 Verbose errors go to the PHP error log for the site owner.
 
-## planned PHP filters
+## PHP filters
 
 ```php
-apply_filters( 'hof_ai_model',         'claude-haiku-4-5' );
-apply_filters( 'hof_ai_system_prompt', $prompt, $facets );
-apply_filters( 'hof_ai_tool_schema',   $schema, $facets );
-apply_filters( 'hof_ai_request_body',  $body, $facets, $query, $prior_state );
-apply_filters( 'hof_ai_apply_filters', $applied, $tool_input, $facets );
+// Override the Claude model used for constraint extraction.
+apply_filters( 'hof_ai_model', 'claude-haiku-4-5' );
 ```
 
 ## see also

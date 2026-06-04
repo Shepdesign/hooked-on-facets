@@ -1,12 +1,10 @@
 # Facet Type: Radio
 
-> ✅ **Shipped (experimental).**
-
 Single-select from a small list. The "pick exactly one" facet.
 
 ## what it is
 
-A list of mutually exclusive options. Users pick one (or none, with `allow_clear`). Useful when the data shape demands exclusivity.
+A list of mutually exclusive options. Users pick one, or clear back to "no filter". Useful when the data shape demands exclusivity.
 
 ## when to use it
 
@@ -26,18 +24,10 @@ A list of mutually exclusive options. Users pick one (or none, with `allow_clear
 ```json
 {
   "name": "shipping_class",
-  "type": "radio",
-  "label": "Shipping",
-  "source": "meta:_shipping_class",
-  "behavior": {
-    "allow_clear": true,
-    "default": null,
-    "show_count": true
-  },
-  "ui": {
-    "layout": "vertical",
-    "show_clear_button": true
-  }
+  "kind": "meta",
+  "source": "_shipping_class",
+  "display": "radio",
+  "label": "Shipping"
 }
 ```
 
@@ -45,44 +35,31 @@ A list of mutually exclusive options. Users pick one (or none, with `allow_clear
 
 | Field | Values | Default | What |
 |---|---|---|---|
-| `behavior.allow_clear` | bool | `true` | User can deselect to "no filter" |
-| `behavior.default` | string \| `null` | `null` | Pre-selected value |
-| `behavior.show_count` | bool | `true` | Show match count per option |
-| `ui.layout` | `"vertical"` \| `"horizontal"` | `"vertical"` | Stacking direction |
-| `ui.show_clear_button` | bool | `true` | Render an explicit "Clear" affordance |
+| `kind` | `"taxonomy"` \| `"meta"` \| `"field"` | — | Where the indexed values come from |
+| `source` | string | — | The taxonomy slug or meta/field key |
+
+The radio facet renders one option per indexed value plus a "clear" affordance, with match counts shown next to each option. It has no display-specific `settings` in 1.0.0.
 
 ## URL state
 
 ```text
-?_hof_shipping_class=express
+?hof[shipping_class]=express
 ```
 
-Single value. Empty/absent param = no filter (or `default` if configured).
-
-## planned PHP filters
-
-```php
-apply_filters( 'hof_facet_radio_choices', $choices, $facet );
-apply_filters( 'hof_facet_radio_default', $default, $facet );
-apply_filters( 'hof_facet_radio_label', $label, $value, $facet );
-do_action( 'hof_facet_radio_rendered', $facet );
-```
+Single value. Empty/absent param = no filter.
 
 ## examples
-
-**Result sort order:**
-
-```json
-{ "name": "sort", "type": "radio", "source": "virtual:sort",
-  "behavior": { "default": "relevance" },
-  "ui": { "layout": "horizontal" } }
-```
 
 **Single-select pricing tier:**
 
 ```json
-{ "name": "tier", "type": "radio", "source": "taxonomy:pricing_tier",
-  "behavior": { "allow_clear": true, "show_count": true } }
+{ "name": "tier", "kind": "taxonomy", "source": "pricing_tier", "display": "radio" }
+```
+
+**Meta-sourced shipping class:**
+
+```json
+{ "name": "shipping_class", "kind": "meta", "source": "_shipping_class", "display": "radio" }
 ```
 
 ## see also

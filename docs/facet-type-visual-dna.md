@@ -1,7 +1,5 @@
 # Facet Type: Visual DNA
 
-> 🎨 **Shipped (experimental).**
-
 Drop an image, paste an image URL, or eyedrop any color visible on screen — the catalog filters to products in the closest matching color term.
 
 ## what it is
@@ -85,7 +83,7 @@ The built-in table covers ~35 common color words (`red`, `navy`, `olive`, `burgu
 Visual DNA writes through to the underlying color facet — it has no URL key of its own.
 
 ```text
-?_hof_color=red
+?hof[color]=red
 ```
 
 Identical wire format to a normal checkbox/radio/dropdown selection. Deep links survive a display swap; the chip in the active-filters bar reads the same.
@@ -131,16 +129,8 @@ The `bin/verify-visual-dna.{php,sh}` harness regenerates 20 solid + 5 mixed-colo
 | Paste URL | Universal — but cross-origin images require permissive CORS on the host |
 | EyeDropper | Chromium-only (~80% global usage). Gracefully hidden in Firefox/Safari. |
 
-## planned PHP filters
-
-```php
-apply_filters( 'hof_visual_dna_color_map',       $map,      $target_facet );
-apply_filters( 'hof_visual_dna_css_name_map',    $fallback );
-apply_filters( 'hof_visual_dna_match',           $term,     $hex, $map );
-```
-
 ## see also
 
 - [Color Swatch](Facet-Type-Color-Swatch) — the visual-by-attribute alternative (shopper picks from a set of squares, not from arbitrary input)
-- [Ask](Facet-Type-Ask) — natural-language alternative when "find me things this color" lives in a longer sentence
+- [Ask](Facet-Type-Ask) — the conversational alternative when "find me things this color" lives in a longer sentence
 - [Architecture](Architecture) — how view facets fit
