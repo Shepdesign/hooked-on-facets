@@ -29,11 +29,23 @@ trap 'rm -rf "$WORK"' EXIT
 git archive --worktree-attributes HEAD | tar -x -C "$STAGE"
 echo "==> Staged archive tree"
 
-# --- 4. Regenerate .pot (before vendor exists, so vendor isn't scanned) ---
+# --- 4. Regenerate .pot (before vendor exists, so vendor isn't scanned).
+#        Preserve the committed header (brand metadata: Report-Msgid-Bugs-To,
+#        Language-Team, Plural-Forms) and splice in the freshly-scanned body,
+#        so the shipped template matches the committed one rather than carrying
+#        WP-CLI placeholder headers (FULL NAME / YEAR-MO-DA / X-Generator). The
+#        committed languages/<slug>.pot is the canonical header source. ---
+POT="$STAGE/languages/$SLUG.pot"
+HEADER_LINES="$(grep -n '^$' "$POT" | head -1 | cut -d: -f1)"   # committed header incl. trailing blank
+head -n "$HEADER_LINES" "$POT" > "$STAGE/.pot-header"
 docker run --rm --user "$UID_GID" -v "$STAGE":/app -w /app wordpress:cli \
-  i18n make-pot . "languages/$SLUG.pot" --slug="$SLUG" --domain="$SLUG" \
-  --exclude=node_modules,tests,bin
-echo "==> Regenerated .pot"
+  i18n make-pot . "languages/$SLUG.pot.fresh" --slug="$SLUG" --domain="$SLUG" \
+  --exclude=node_modules,tests,bin,assets
+FRESH_BODY_START="$(( $(grep -n '^$' "$STAGE/languages/$SLUG.pot.fresh" | head -1 | cut -d: -f1) + 1 ))"
+cat "$STAGE/.pot-header" > "$POT"
+tail -n +"$FRESH_BODY_START" "$STAGE/languages/$SLUG.pot.fresh" >> "$POT"
+rm -f "$STAGE/.pot-header" "$STAGE/languages/$SLUG.pot.fresh"
+echo "==> Regenerated .pot (committed header preserved)"
 
 # --- 5. Production composer deps (no dev) ---
 docker run --rm --user "$UID_GID" -e COMPOSER_HOME=/tmp -v "$STAGE":/app -w /app composer:2 \
