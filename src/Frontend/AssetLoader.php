@@ -135,7 +135,7 @@ final class AssetLoader implements Bootable {
          *
          * @param array<string, string> $tokens
          */
-        // The token contract is documented in SHEPDESIGN.md's "Theming" section.
+        // The token contract is documented in the project's theming notes.
         // What's shipped here is the curated set people typically want to
         // override (brand colors, radii, focus ring, label/count/input chrome).
         // The CSS bundle defines ~50 more tokens with sensible defaults — any

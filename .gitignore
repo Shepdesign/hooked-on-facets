@@ -27,5 +27,8 @@ Thumbs.db
 .env
 .env.local
 
-# Claude Code local dev aid — kept out of the public repo (sole credit: shepdesign)
-/CLAUDE.md
+# Local development notes and tooling config — not part of the distributed plugin
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.mcp.json

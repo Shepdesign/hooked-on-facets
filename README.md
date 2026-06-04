@@ -30,8 +30,7 @@ developer can define and place facets without touching code.
 
 - **[Changelog](CHANGELOG.md)** — release history (also on the
   [GitHub Releases](https://github.com/Shepdesign/hooked-on-facets/releases) page).
-- **[Roadmap & status](plan.md)** — what's shipped and what's deferred.
-- **[Architecture](SHEPDESIGN.md)** — the load-bearing SQL shape and design decisions.
+- **[Roadmap & status](plan.md)** — what's shipped and what's deferred, plus the load-bearing SQL shape and design decisions.
 - **[Contributing](CONTRIBUTING.md)** · **[Security policy](SECURITY.md)**
 
 ## Development
