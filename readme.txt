@@ -15,7 +15,7 @@ Ultra-modern faceted search and filtering for WordPress + WooCommerce — sub-50
 
 Hooked on Facets (HOF) is a faceted search and filtering plugin for WordPress and
 WooCommerce, built for speed at scale and a builder-first admin experience. The
-promise: **sub-50ms p95 filter queries on 100k+ product catalogs**, paired with a
+promise: **sub-50ms filter queries on 100k+ product catalogs**, paired with a
 no-code admin where a non-developer can define and place facets without touching
 template files.
 

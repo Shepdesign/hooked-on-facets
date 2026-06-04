@@ -10,6 +10,9 @@ pnpm-debug.log*
 # Vite build output
 /assets/dist/
 
+# Release packages
+/dist/
+
 # PHPUnit cache
 /.phpunit.cache/
 
