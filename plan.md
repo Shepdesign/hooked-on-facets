@@ -1,6 +1,6 @@
 # Roadmap — Hooked on Facets
 
-> Status snapshot at `v0.13.1-alpha` — **feature-complete**, plus the first
+> Status snapshot at `v1.0.0` — **feature-complete and stable**, plus the first
 > round of post-1.0 enhancements (SEO, analytics, resolver cache + counts
 > optimization; see
 > "Enhancements" below). Every planned facet (16 types), source (WooCommerce,
@@ -47,10 +47,10 @@ Ship a faceted-filtering plugin that is measurably faster than FacetWP on a 100,
 - [x] Shortcode `[hof_facet name="..."]` (`src/Frontend/Shortcodes.php`) + Gutenberg block `hof/facet` (`integrations/gutenberg/blocks/facet/`, server-rendered via `render_callback`)
 - [x] Manual binding override via the `hof_facet_target` query var
 
-### Facet types — 14 shipped (plan called for 3)
+### Facet types — 16 shipped (plan called for 3)
 
 Baseline three: **checkbox**, **range slider**, **search box**.
-Also shipped: **radio**, **dropdown**, **toggle**, **date_range**, **hierarchy**, **pagination**, **active_filters** (the chip strip), **swatch** (fluid swatches), **swiper** (swipe deck), **visual_dna**, **ask** (AI natural-language). All live in `src/Facets/Renderer.php` (server-rendered) with matching runtime in `public/src/`.
+Also shipped: **radio**, **dropdown**, **toggle**, **date_range**, **hierarchy**, **pagination**, **swatch** (fluid swatches), **swiper** (swipe deck), **spin_the_wheel**, **matrix** (intersection), **saved_bin**, **visual_dna**, **ask** (AI natural-language). All live in `src/Facets/Renderer.php` (server-rendered) with matching runtime in `public/src/`. The **active_filters** chip strip rides the same renderer as a display helper (not counted among the 16 filter types).
 
 ### Admin SPA — `admin/src/`
 
@@ -145,7 +145,8 @@ development TODOs**. The roadmap is complete across:
 
 - **Facet types (16)** — checkbox, radio, dropdown, toggle, hierarchy, range,
   date_range, search, swatch, swipe deck, **spin the wheel**, **intersection
-  matrix**, **saved bin**, active filters, ask (AI), visual DNA, plus pagination.
+  matrix**, **saved bin**, ask (AI), visual DNA, and pagination — plus the
+  `active_filters` chip strip as a display helper.
 - **Resolver** — INTERSECT engine with OR-within-facet and **AND-within-facet**
   (`settings.match`), the matrix's intersection semantics, and the reserved
   `_visual_ids` / `_bin_ids` ID restrictions.

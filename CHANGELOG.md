@@ -4,13 +4,18 @@ All notable changes to Hooked on Facets are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-Until 1.0, every version is an `-alpha` pre-release — the public API and the
-index schema may change between them. Each version links to its full GitHub
-release notes.
+As of 1.0.0 the public API and index schema are stable; breaking changes bump the
+major version. Each version links to its full GitHub release notes.
 
 ## [Unreleased]
 
 _No unreleased changes._
+
+## [1.0.0] - 2026-06-04
+
+First stable release. Promotes the feature-complete 0.13.x line to general
+availability with a committed public API and index schema. No functional changes
+from 0.13.1-alpha.
 
 ## [0.13.1-alpha] - 2026-05-29
 
@@ -130,7 +135,8 @@ Custom-field source line — ACF, Meta Box, and Pods.
 
 - First public alpha.
 
-[Unreleased]: https://github.com/Shepdesign/hooked-on-facets/compare/v0.13.1-alpha...HEAD
+[Unreleased]: https://github.com/Shepdesign/hooked-on-facets/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v1.0.0
 [0.13.1-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.13.1-alpha
 [0.13.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.13.0-alpha
 [0.12.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.12.0-alpha

@@ -1,7 +1,7 @@
 # Hooked on Facets
 
 Ultra-modern faceted search and filtering for WordPress + WooCommerce — built by
-[shepdesign](https://shepdesign.com).
+[SHEPDESIGN](https://shepdesign.com).
 
 The promise: **sub-50ms filter queries on 100k+ product catalogs**, paired with
 UI inventions legacy faceting plugins don't ship, and an admin where a non-PHP
@@ -28,9 +28,10 @@ developer can define and place facets without touching code.
 
 ## Documentation
 
+- **[Documentation](docs/)** — getting started, facet types, page builders, and architecture.
 - **[Changelog](CHANGELOG.md)** — release history (also on the
   [GitHub Releases](https://github.com/Shepdesign/hooked-on-facets/releases) page).
-- **[Roadmap & status](plan.md)** — what's shipped and what's deferred, plus the load-bearing SQL shape and design decisions.
+- **[Roadmap & status](plan.md)** — what's shipped and what's deferred.
 - **[Contributing](CONTRIBUTING.md)** · **[Security policy](SECURITY.md)**
 
 ## Development
@@ -46,4 +47,4 @@ JavaScript, and Markdown lint on every push.
 
 ## License
 
-[GPL-2.0-or-later](https://www.gnu.org/licenses/gpl-2.0.html). © shepdesign.
+[GPL-2.0-or-later](https://www.gnu.org/licenses/gpl-2.0.html). © SHEPDESIGN.
