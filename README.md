@@ -28,7 +28,12 @@ developer can define and place facets without touching code.
 
 ## Documentation
 
-- **[Documentation](docs/)** — getting started, facet types, page builders, and architecture.
+Full documentation lives in the **[GitHub Wiki](https://github.com/Shepdesign/hooked-on-facets/wiki)** (source in [`docs/`](docs/)):
+
+- **Start here** — [Getting Started](https://github.com/Shepdesign/hooked-on-facets/wiki/Getting-Started) · [Installation](https://github.com/Shepdesign/hooked-on-facets/wiki/Installation) · [Requirements](https://github.com/Shepdesign/hooked-on-facets/wiki/Requirements)
+- **Facets** — [Facet Types](https://github.com/Shepdesign/hooked-on-facets/wiki/Facet-Types) (a deep-dive page for each of the 16) · [Page Builders](https://github.com/Shepdesign/hooked-on-facets/wiki/Page-Builders)
+- **Under the hood** — [Core Concepts](https://github.com/Shepdesign/hooked-on-facets/wiki/Core-Concepts) · [Architecture](https://github.com/Shepdesign/hooked-on-facets/wiki/Architecture) · [Developer Guide](https://github.com/Shepdesign/hooked-on-facets/wiki/Developer-Guide)
+- **More** — [FAQ](https://github.com/Shepdesign/hooked-on-facets/wiki/FAQ) · [Comparison](https://github.com/Shepdesign/hooked-on-facets/wiki/Comparison) · [Licensing & Updates](https://github.com/Shepdesign/hooked-on-facets/wiki/Licensing-And-Updates)
 - **[Changelog](CHANGELOG.md)** — release history (also on the
   [GitHub Releases](https://github.com/Shepdesign/hooked-on-facets/releases) page).
 - **[Roadmap & status](plan.md)** — what's shipped and what's deferred.
