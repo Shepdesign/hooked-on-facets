@@ -3,10 +3,10 @@
  * Plugin Name:       Hooked on Facets
  * Plugin URI:        https://hookedonfacets.com
  * Description:       Ultra-modern faceted search and filtering for WordPress + WooCommerce.
- * Version:           0.13.1-alpha
+ * Version:           1.0.0
  * Requires at least: 6.4
  * Requires PHP:      8.2
- * Author:            shepdesign
+ * Author:            SHEPDESIGN
  * Author URI:        https://shepdesign.com
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
@@ -33,7 +33,7 @@ if ( defined( 'HOF_VERSION' ) ) {
 | Absolute paths/URLs are resolved once, here. Every other file should read
 | from these constants rather than calling plugin_dir_* repeatedly.
 */
-define( 'HOF_VERSION',          '0.13.1-alpha' );
+define( 'HOF_VERSION',          '1.0.0' );
 define( 'HOF_PLUGIN_FILE',      __FILE__ );
 define( 'HOF_PLUGIN_DIR',       plugin_dir_path( __FILE__ ) );
 define( 'HOF_PLUGIN_URL',       plugin_dir_url( __FILE__ ) );

@@ -1,6 +1,6 @@
 # Roadmap — Hooked on Facets
 
-> Status snapshot at `v0.13.1-alpha` — **feature-complete**, plus the first
+> Status snapshot at `v1.0.0` — **feature-complete and stable**, plus the first
 > round of post-1.0 enhancements (SEO, analytics, resolver cache + counts
 > optimization; see
 > "Enhancements" below). Every planned facet (16 types), source (WooCommerce,

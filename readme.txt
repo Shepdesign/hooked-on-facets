@@ -5,7 +5,7 @@ Tags: facets, faceted search, filters, woocommerce, product filter
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 0.13.1-alpha
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -97,6 +97,11 @@ block, or your page builder's binding (Elementor Query ID, Bricks CSS class, etc
 
 == Changelog ==
 
+= 1.0.0 =
+* First stable release. Promotes the feature-complete 0.13.x line to general
+  availability with a committed public API and index schema. No functional changes
+  from 0.13.1-alpha.
+
 = 0.13.1-alpha =
 * Counts query optimization — drill-down counts now `GROUP BY facet_value` alone
   (display via `MIN(facet_display)`); `resolve()` p95 dropped ~465ms → ~63ms on 100k
@@ -140,8 +145,8 @@ block, or your page builder's binding (Elementor Query ID, Bricks CSS class, etc
 
 == Upgrade Notice ==
 
-= 0.13.1-alpha =
-Until 1.0, every release is an alpha pre-release: the public API and the index schema
-may change between versions. Re-run the indexer after upgrading.
+= 1.0.0 =
+First stable release. The public API and index schema are now stable. Re-run the
+indexer after upgrading.
 </content>
 </invoke>
