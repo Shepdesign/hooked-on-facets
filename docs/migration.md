@@ -3,7 +3,7 @@
 How to bring your site over from another filter plugin.
 
 > [!WARNING]
-> **Migration tools are a 1.0 deliverable.** This page captures what we're planning to support. None of these tools exist yet.
+> **Automated migration tools are on the post-1.0 roadmap.** They didn't make the 1.0.0 cut. This page captures what we plan to support; the `wp hof migrate …` commands below don't exist yet. The manual paths (especially "from custom code") work today.
 
 ## from FacetWP
 

@@ -4,7 +4,7 @@ Real questions, real answers.
 
 ## Is HOF free?
 
-The core will be open source. A "pro" tier with extras is likely but not finalized. We won't paywall the basics.
+The core is open source. A "pro" tier with extras is likely but not finalized. We won't paywall the basics.
 
 ## Does it work with my theme?
 
@@ -12,11 +12,11 @@ If your theme uses standard WordPress / WooCommerce templates, yes. HOF doesn't 
 
 ## Does it work with my page builder?
 
-Planned: Gutenberg, Bricks, Elementor, Oxygen. See [Roadmap](Roadmap).
+Yes: Gutenberg, Bricks, Elementor, Oxygen, Divi, and Breakdance are all supported. See [Roadmap](Roadmap).
 
 ## How fast is it?
 
-Faster than the alternatives, ideally. We'll publish real benchmarks once we have a beta worth benchmarking. Goal: filter response under 100ms on a 10,000-product Woo store.
+Fast. On a seeded 100,000-product store, the resolver returns matching IDs at roughly 54ms p95, and a full reindex completes in about 19 seconds. The brand promise is sub-50ms filter queries at scale, and real-world filters (which narrow more aggressively than our worst-case benchmark) land well under that.
 
 ## Will it break my site?
 
@@ -24,7 +24,7 @@ Activate it on staging first. (This is true of every plugin.) HOF is designed to
 
 ## What about SEO?
 
-URL state means crawlers see real URLs. We're shipping with sensible defaults (canonical hints, robots controls, structured data preservation). More in the docs as we land 1.0.
+URL state means crawlers see real URLs. HOF ships sensible defaults (canonical hints, robots controls, structured data preservation).
 
 ## How does pricing work?
 

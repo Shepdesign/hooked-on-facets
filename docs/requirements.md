@@ -6,15 +6,16 @@ What you need to run HOF without sadness.
 
 | | Minimum | Recommended |
 |---|---|---|
-| PHP | 8.1 | 8.3+ |
+| PHP | 8.2 | 8.3+ |
 | WordPress | 6.4 | latest |
 | WooCommerce *(if filtering products)* | 8.0 | latest |
-| MySQL | 5.7 | 8.0+ |
-| MariaDB | 10.3 | 10.6+ |
+| MySQL | 8.0.31 | latest |
 | Memory limit | 128M | 256M+ |
 
-> [!NOTE]
-> We don't support PHP 7.x. PHP 7.4 has been EOL since November 2022. If your host is still on it, ask them why.
+> [!IMPORTANT]
+> MySQL **8.0.31 or newer** is required. The resolver runs on the SQL `INTERSECT` operator, which MySQL added in 8.0.31. MariaDB does not implement `INTERSECT` the same way and is not supported.
+>
+> We also don't support PHP 7.x. PHP 7.4 has been EOL since November 2022. If your host is still on it, ask them why.
 
 ## hosting notes
 

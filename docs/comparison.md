@@ -29,7 +29,7 @@ HOF enters with a specific bet: **modern stack, open core, dev-friendly, fair pr
 | Live URL state | ✅ | ✅ | ✅ |
 | Indexed queries | ✅ | ✅ | ✅ |
 | WooCommerce focus | First-class | Strong | Strong |
-| Page builder support | Gutenberg, Bricks, Elementor, Oxygen *(planned)* | All major | All major |
+| Page builder support | Gutenberg, Bricks, Elementor, Oxygen, Divi, Breakdance | All major | All major |
 | Multilingual | Planned | ✅ | ✅ |
 | Last major rewrite | Built fresh 2025+ | 2017 era | 2020 era |
 
@@ -61,7 +61,7 @@ HOF is new. We don't pretend to match FacetWP's edge-case coverage on day one. W
 
 ## migration
 
-We're building migration tools (planned for 1.0):
+Automated migration tools are on the post-1.0 roadmap. The planned scope:
 
 - [Migrating from FacetWP](Migration#from-facetwp)
 - [Migrating from WP Grid Builder](Migration#from-wp-grid-builder)

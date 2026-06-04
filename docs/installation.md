@@ -1,11 +1,10 @@
 # Installation
 
-> [!WARNING]
-> **Pre-alpha.** HOF hasn't shipped a public build yet. This page captures the *planned* install paths. Bookmark and check back.
+HOF 1.0.0 is shipped and feature-complete. Pick whichever install path fits how you work.
 
-## planned install paths
+## install paths
 
-### 1. zip upload (when alpha lands)
+### 1. zip upload
 
 1. Download `hooked-on-facets.zip` from the [Releases page](https://github.com/Shepdesign/hooked-on-facets/releases).
 2. WordPress admin → **Plugins** → **Add New** → **Upload Plugin**

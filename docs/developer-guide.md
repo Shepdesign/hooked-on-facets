@@ -3,7 +3,7 @@
 Everything for the people who hook things.
 
 > [!NOTE]
-> Detailed reference pages (PHP API, JS API, REST API, hooks) will be added as the plugin lands. This page is the index.
+> This page is the index. Detailed reference pages (PHP API, JS API, REST API, hooks) are being filled in.
 
 ## what's here
 
@@ -25,14 +25,11 @@ See [Architecture → Dev Environment](Architecture#dev-environment).
 ### running tests
 
 ```bash
-# PHP unit + integration
+# PHP unit + integration (PHPUnit)
 composer test
 
-# JS / component
+# JS / component (Vitest)
 npm run test
-
-# End-to-end (Playwright)
-npm run test:e2e
 ```
 
 ### code style
@@ -44,22 +41,16 @@ npm run test:e2e
 ### running the indexer manually
 
 ```bash
-wp hof index rebuild --site=demo.test
+wp hof reindex --url=demo.test
 ```
 
 ## debugging
 
-HOF ships a debug mode that exposes:
-
-- The full SQL of the last facet query
-- Index hit/miss counts
-- Frontend signal state at any moment
-
-Enable via `define( 'HOF_DEBUG', true );` in `wp-config.php`. Debug output goes to a dock at the bottom of the screen for logged-in admins.
+HOF honors the standard WordPress debug constants. Set `WP_DEBUG` (and `SCRIPT_DEBUG` for unminified assets) in `wp-config.php` to surface PHP notices and load readable frontend bundles. The **Indexer** admin screen reports index stats (rows, objects, per-facet breakdown), which `wp hof status` also prints from the CLI.
 
 ## design tokens
 
-HOF's CSS uses CSS custom properties exclusively. Want to retheme everything? Override the variables on `:root` or scope to your container. See [`brand/colors.css`](https://github.com/Shepdesign/hooked-on-facets/blob/main/brand/colors.css) in the main repo.
+HOF's CSS uses CSS custom properties exclusively. Want to retheme everything? Override the variables on `:root` or scope to your container, edit them in the **Design tokens** admin screen, or filter them in PHP via `hof_public_css_tokens`.
 
 ```css
 :root {

@@ -29,7 +29,9 @@ flowchart LR
 
 The indexer is **event-driven** — it updates when a product changes, not on a cron. (A scheduled full re-index is available for cases where the event hook misses something.)
 
-## facet types (planned for 1.0)
+## facet types
+
+HOF ships **16 facet types**. A representative handful:
 
 | Type | Use case |
 |---|---|
@@ -43,7 +45,7 @@ The indexer is **event-driven** — it updates when a product changes, not on a 
 | [Color Swatch](Facet-Type-Color-Swatch) | Variation colors, attribute swatches |
 | [Toggle](Facet-Type-Toggle) | Boolean filters ("In stock", "On sale") |
 
-→ Full [Facet Types catalog](Facet-Types) with a decision tree and shared config schema.
+→ Full [Facet Types catalog](Facet-Types) with all 16 types, a decision tree, and the shared config schema.
 
 ## state lives in the URL
 
