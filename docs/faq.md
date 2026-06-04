@@ -12,7 +12,7 @@ If your theme uses standard WordPress / WooCommerce templates, yes. HOF doesn't 
 
 ## Does it work with my page builder?
 
-Yes: Gutenberg, Bricks, Elementor, Oxygen, Divi, and Breakdance are all supported. See [Roadmap](Roadmap).
+Yes: Gutenberg, Bricks, Elementor, Divi, and Breakdance are all supported. See [Roadmap](Roadmap).
 
 ## How fast is it?
 

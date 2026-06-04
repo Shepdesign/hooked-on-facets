@@ -29,7 +29,7 @@ HOF enters with a specific bet: **modern stack, open core, dev-friendly, fair pr
 | Live URL state | ✅ | ✅ | ✅ |
 | Indexed queries | ✅ | ✅ | ✅ |
 | WooCommerce focus | First-class | Strong | Strong |
-| Page builder support | Gutenberg, Bricks, Elementor, Oxygen, Divi, Breakdance | All major | All major |
+| Page builder support | Gutenberg, Bricks, Elementor, Divi, Breakdance | All major | All major |
 | Multilingual | Planned | ✅ | ✅ |
 | Last major rewrite | Built fresh 2025+ | 2017 era | 2020 era |
 

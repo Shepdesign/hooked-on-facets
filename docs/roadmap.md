@@ -19,7 +19,7 @@ HOF 1.0.0 is feature-complete. Everything below is in the box today.
 - [x] Admin UI: full CRUD with drag-reorder + validation
 - [x] WP-CLI: `wp hof reindex`, `wp hof status`, `wp hof facets`
 - [x] Custom-field sources: ACF, Meta Box, Pods
-- [x] Page builder integrations: Gutenberg, Bricks, Elementor, Divi, Breakdance, Oxygen
+- [x] Page builder integrations: Gutenberg, Bricks, Elementor, Divi, Breakdance
 - [x] Licensing for premium distribution
 - [x] Performance: `resolve_ids()` ~54ms p95 and full reindex ~19s on 100k products
 - [x] Security & quality scaffold (CodeQL, Dependabot, secret scanning, branch ruleset)
