@@ -41,6 +41,9 @@
 /package-lock.json      export-ignore
 /vite.config.js         export-ignore
 /vitest.config.js       export-ignore
+/BRAND.md               export-ignore
+/brand                  export-ignore
+/marketing              export-ignore
 
 # Linguist overrides — accurate language stats on GitHub
 *.svg linguist-vendored

@@ -1,0 +1,47 @@
+/*
+ * Hooked on Facets — Typography Tokens
+ * Geist Sans for display + body, Geist Mono for labels + code.
+ * Import this file once in your root layout.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap');
+
+:root {
+  --hof-font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --hof-font-mono: 'Geist Mono', 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* ----- Base resets ----- */
+.hof-body {
+  font-family: var(--hof-font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--hof-color-text-primary);
+  font-feature-settings: 'ss01', 'cv11';
+}
+
+/* ----- Type scale utilities ----- */
+.hof-display-xl  { font: 500 44px/1.05 var(--hof-font-sans); letter-spacing: -0.03em; }
+.hof-display-l   { font: 500 30px/1.1  var(--hof-font-sans); letter-spacing: -0.02em; }
+.hof-heading     { font: 500 22px/1.2  var(--hof-font-sans); letter-spacing: -0.02em; }
+.hof-subhead     { font: 500 20px/1.25 var(--hof-font-sans); letter-spacing: -0.02em; }
+.hof-body        { font: 400 15px/1.55 var(--hof-font-sans); }
+.hof-body-sm     { font: 400 13px/1.5  var(--hof-font-sans); }
+.hof-label       { font: 500 12px/1.3  var(--hof-font-sans); }
+
+.hof-eyebrow {
+  font-family: var(--hof-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hof-color-facet-coral);
+}
+
+.hof-mono {
+  font-family: var(--hof-font-mono);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.hof-tabular { font-variant-numeric: tabular-nums; }

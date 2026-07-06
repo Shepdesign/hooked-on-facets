@@ -1,0 +1,56 @@
+/*
+ * Hooked on Facets — Color Tokens
+ * Single source of truth for every color in the brand system.
+ * Import this file once in your root layout.
+ */
+
+:root {
+  /* ----- Primary palette ----- */
+  --hof-color-hook-purple: #534AB7;     /* Brand primary — actions, system states */
+  --hof-color-facet-coral: #D85A30;     /* Brand accent — energy, wins, deploy */
+  --hof-color-deep-ink: #2C2C2A;        /* Foreground text, dark surfaces */
+  --hof-color-warm-cream: #F1EFE8;      /* Light marketing surfaces */
+
+  /* ----- Purple ramp ----- */
+  --hof-color-purple-50:  #EEEDFE;
+  --hof-color-purple-200: #CECBF6;
+  --hof-color-purple-400: #7F77DD;
+  --hof-color-purple-700: #3C3489;
+
+  /* ----- Coral ramp ----- */
+  --hof-color-coral-50:  #FAECE7;
+  --hof-color-coral-200: #F5C4B3;
+
+  /* ----- Warm neutrals (ink) ----- */
+  --hof-color-ink-900: #1A1A19;         /* Top bars, darkest surfaces */
+  --hof-color-ink-700: #5F5E5A;         /* Secondary text */
+  --hof-color-ink-500: #888780;         /* Tertiary text, muted labels */
+  --hof-color-ink-300: #B4B2A9;         /* Disabled, faint indicators */
+  --hof-color-ink-200: #D3D1C7;         /* Borders, dividers */
+  --hof-color-ink-100: #E6E3D9;         /* Canvas backgrounds */
+  --hof-color-ink-50:  #F8F6EE;         /* Group header stripes */
+
+  /* ----- Semantic shortcuts ----- */
+  --hof-color-text-primary:   var(--hof-color-deep-ink);
+  --hof-color-text-secondary: var(--hof-color-ink-700);
+  --hof-color-text-tertiary:  var(--hof-color-ink-500);
+  --hof-color-text-on-dark:   var(--hof-color-warm-cream);
+
+  --hof-color-bg-default:  #FFFFFF;
+  --hof-color-bg-cream:    var(--hof-color-warm-cream);
+  --hof-color-bg-canvas:   var(--hof-color-ink-100);
+  --hof-color-bg-dark:     var(--hof-color-ink-900);
+
+  --hof-color-border:         var(--hof-color-ink-200);
+  --hof-color-border-subtle:  var(--hof-color-ink-100);
+
+  /* ----- Radii ----- */
+  --hof-radius-sm: 6px;
+  --hof-radius-md: 8px;
+  --hof-radius-lg: 14px;
+  --hof-radius-pill: 999px;
+
+  /* ----- Borders ----- */
+  --hof-border-default: 0.5px solid var(--hof-color-border);
+  --hof-border-subtle:  0.5px solid var(--hof-color-border-subtle);
+}
