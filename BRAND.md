@@ -36,6 +36,7 @@
 Three-plane isometric faceted hexagon with a coral spark at the apex. Reads as a gem, a node, and a wireframe object simultaneously.
 
 Standalone files in this repo:
+
 - `brand/logo.svg` — full lockup (mark + wordmark)
 - `brand/logo-mark.svg` — mark only (favicon, sidebar, small contexts)
 
@@ -166,7 +167,7 @@ Standalone files in this repo:
 - Default border color: `#D3D1C7` (ink-200)
 - Subtle divider color: `#E6E3D9` (ink-100)
 
-### No shadows. No gradients.
+### No shadows, no gradients
 
 Flat surfaces only. Depth comes from color tone contrast and 0.5px borders.
 
@@ -191,26 +192,31 @@ Use multiples of 4px: 4, 8, 12, 16, 20, 24, 32, 40, 48.
 ## Brand-In-Use Patterns
 
 ### The "Live" indicator
+
 - 7px coral circle (`#D85A30`) next to a monospace uppercase label
 - Used for active states: "AUTO-HOOK ENGINE · LIVE", "EDITING", facet status dots
 
 ### The "Editing" badge
+
 - Floats top-right of selected items, slight overhang (`top: -9px`)
 - Coral background, cream text, 9–10px monospace, letter-spacing 0.1em
 - Rounded pill (`border-radius: 999px`)
 
 ### The builder badge row
+
 - Always lists: Bricks, Elementor, Breakdance, Oxygen, Gutenberg, WooCommerce
 - Small cream pills with 0.5px gray border
 - Preceded by monospace label: `AUTO-HOOKS:`
 
 ### The comparison table
+
 - HOF column always has tinted purple background (`#EEEDFE`)
 - HOF wins are 22px coral filled circles with cream check icons inside
 - Competitor partial wins are italic gray text ("shortcodes", "basic", "partial")
 - Missing features are gray em-dashes (`—`)
 
 ### The monospace eyebrow
+
 - Coral text (`#D85A30`), Geist Mono, ~10–11px
 - `letter-spacing: 0.12em–0.14em`
 - `text-transform: uppercase` via CSS
