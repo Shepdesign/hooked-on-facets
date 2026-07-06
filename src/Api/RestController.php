@@ -392,7 +392,24 @@ final class RestController implements Bootable {
             );
         }
 
-        $query       = (string) $request->get_param( 'query' );
+        $query = (string) $request->get_param( 'query' );
+
+        // This endpoint is public and each call bills the site owner's Anthropic
+        // key, so cap input size and throttle per IP to prevent budget-drain /
+        // application-level DoS by anonymous callers.
+        if ( strlen( $query ) > 500 ) {
+            return new \WP_REST_Response(
+                [ 'ok' => false, 'error' => 'Query too long', 'error_code' => 'query_too_long' ],
+                400
+            );
+        }
+        if ( $this->rate_limited( 'ask', 20, MINUTE_IN_SECONDS ) ) {
+            return new \WP_REST_Response(
+                [ 'ok' => false, 'error' => 'Too many requests', 'error_code' => 'rate_limited' ],
+                429
+            );
+        }
+
         $prior_state = $request->get_param( 'prior_state' );
         $prior_state = is_array( $prior_state ) ? $prior_state : [];
 
@@ -450,6 +467,13 @@ final class RestController implements Bootable {
                 [ 'ok' => false, 'error' => 'no valid color in hex/hexes', 'error_code' => 'invalid_hex' ],
                 400
             );
+        }
+
+        // Each query color adds a per-row ΔE expression evaluated against every
+        // indexed LAB row, so an unbounded palette on this public endpoint is a
+        // DB-load vector. Cap it — no real palette match needs more than a few.
+        if ( count( $query_labs ) > 8 ) {
+            $query_labs = array_slice( $query_labs, 0, 8 );
         }
 
         $limit = (int) $request->get_param( 'limit' );
@@ -524,6 +548,27 @@ final class RestController implements Bootable {
     public function reset_telemetry( \WP_REST_Request $request ): \WP_REST_Response {
         $this->recorder?->reset();
         return new \WP_REST_Response( $this->recorder ? $this->recorder->snapshot() : [], 200 );
+    }
+
+    /**
+     * Fixed-window per-IP rate limiter backed by transients. Returns true when
+     * the caller has already used its allowance for the current window. Used to
+     * protect public, expensive endpoints (e.g. /ask) from anonymous abuse.
+     *
+     * The get-then-set is not atomic; a small burst can slip through under
+     * concurrency, which is acceptable for abuse mitigation on these endpoints.
+     */
+    private function rate_limited( string $bucket, int $max, int $window ): bool {
+        $ip = isset( $_SERVER['REMOTE_ADDR'] )
+            ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
+            : 'unknown';
+        $key  = 'hof_rl_' . $bucket . '_' . md5( $ip );
+        $hits = (int) get_transient( $key );
+        if ( $hits >= $max ) {
+            return true;
+        }
+        set_transient( $key, $hits + 1, $window );
+        return false;
     }
 
     public function list_facets( \WP_REST_Request $request ): \WP_REST_Response {
