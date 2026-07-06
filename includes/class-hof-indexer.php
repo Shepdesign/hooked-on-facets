@@ -80,8 +80,14 @@ final class Indexer implements Bootable {
         if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
             return;
         }
-        // Trash → wipe rows. Restore from trash re-fires save_post with a live status, which reindexes.
-        if ( in_array( $post->post_status, [ 'auto-draft', 'trash' ], true ) ) {
+        // Only published objects belong in the index — the bulk rebuild path
+        // (bulk_reindex_all / run_background_chunk) filters on post_status =
+        // 'publish', and the incremental path must agree. Any non-published
+        // status (auto-draft, draft, pending, private, future, trash) wipes the
+        // rows so unpublished data is never exposed through the public /filter
+        // endpoint. Publishing (or restoring from trash) re-fires save_post with
+        // a 'publish' status, which reindexes.
+        if ( 'publish' !== $post->post_status ) {
             $this->delete_object( $post_id );
             return;
         }
