@@ -9,7 +9,20 @@ major version. Each version links to its full GitHub release notes.
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Security
+
+- The public `/visual-dna` endpoint is now rate-limited (30 requests/min per
+  IP), completing the hardening that capped its palette at 8 colors — the cap
+  bounded per-request DB cost but not request rate.
+
+### Fixed
+
+- The REST rate limiter is now a true fixed window: the reset time is anchored
+  at the window's first hit and the transient TTL is set to the remaining
+  window on each increment. Previously every under-limit hit reset the TTL to
+  the full window, so steady below-limit traffic (e.g. one `/ask` request every
+  50 seconds) never let the window expire, accumulated to the cap, and was
+  blocked despite being far under the allowed rate.
 
 ## [1.0.0] - 2026-06-04
 

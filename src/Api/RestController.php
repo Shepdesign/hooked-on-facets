@@ -440,6 +440,17 @@ final class RestController implements Bootable {
     public function visual_dna( \WP_REST_Request $request ): \WP_REST_Response {
         global $wpdb;
 
+        // Public and unauthenticated, and every request runs a ΔE scan over all
+        // indexed LAB rows — the palette cap below bounds per-request cost, this
+        // bounds request rate. Slightly looser than /ask (no external API bill),
+        // but a color-picker UI can legitimately fire in quick bursts.
+        if ( $this->rate_limited( 'visual_dna', 30, MINUTE_IN_SECONDS ) ) {
+            return new \WP_REST_Response(
+                [ 'ok' => false, 'error' => 'Too many requests', 'error_code' => 'rate_limited' ],
+                429
+            );
+        }
+
         // v3: accept either single `hex` (back-compat) or `hexes` array.
         // Build the query palette as a list of LAB triplets.
         $hexes_param = $request->get_param( 'hexes' );
@@ -553,7 +564,15 @@ final class RestController implements Bootable {
     /**
      * Fixed-window per-IP rate limiter backed by transients. Returns true when
      * the caller has already used its allowance for the current window. Used to
-     * protect public, expensive endpoints (e.g. /ask) from anonymous abuse.
+     * protect public, expensive endpoints (/ask, /visual-dna) from anonymous abuse.
+     *
+     * The window's reset time is anchored at its first hit and stored alongside
+     * the counter, and the transient TTL is set to the *remaining* window on
+     * each increment. Anchoring matters: passing the full window as the TTL on
+     * every hit would let steady under-limit traffic keep the window alive
+     * indefinitely, accumulating hits until a caller far below the per-window
+     * rate got blocked. A bare-int value (written by the pre-anchor version of
+     * this limiter) carries no anchor, so it is treated as a fresh window.
      *
      * The get-then-set is not atomic; a small burst can slip through under
      * concurrency, which is acceptable for abuse mitigation on these endpoints.
@@ -563,11 +582,16 @@ final class RestController implements Bootable {
             ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
             : 'unknown';
         $key  = 'hof_rl_' . $bucket . '_' . md5( $ip );
-        $hits = (int) get_transient( $key );
-        if ( $hits >= $max ) {
+        $now  = time();
+        $data = get_transient( $key );
+        if ( ! is_array( $data ) || $now >= (int) ( $data['reset'] ?? 0 ) ) {
+            $data = [ 'hits' => 0, 'reset' => $now + $window ];
+        }
+        if ( (int) $data['hits'] >= $max ) {
             return true;
         }
-        set_transient( $key, $hits + 1, $window );
+        $data['hits'] = (int) $data['hits'] + 1;
+        set_transient( $key, $data, max( 1, (int) $data['reset'] - $now ) );
         return false;
     }
 
