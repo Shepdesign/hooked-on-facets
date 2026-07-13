@@ -27,12 +27,18 @@ if ( ! defined( 'ARRAY_A' ) ) {
     define( 'ARRAY_A', 'ARRAY_A' );
 }
 
+// Time constant used by the REST rate limiter's window sizing.
+if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
+    define( 'MINUTE_IN_SECONDS', 60 );
+}
+
 require_once dirname( __DIR__, 2 ) . '/vendor/autoload.php';
 
 // Global WP class stubs live outside tests/php/ to avoid composer's
 // autoload-dev PSR-4 scan flagging them as misplaced.
 require_once dirname( __DIR__ ) . '/stubs/WP_Query.php';
 require_once dirname( __DIR__ ) . '/stubs/WP_Post.php';
+require_once dirname( __DIR__ ) . '/stubs/WP_REST.php';
 
 // \Bricks\Elements stub so the Bricks bridge's element registration has a
 // target to call into without a live Bricks theme.
