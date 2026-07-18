@@ -678,8 +678,8 @@ git commit -m "feat(routing): add SlugMapper with version-cached, collision-safe
 Rules locked here:
 
 - **Path-eligible facet:** `display` ∈ `checkbox, radio, dropdown, toggle, hierarchy, swatch, swiper, spin, matrix` AND the mapper says `is_mappable()`. Everything else — ranges, `search`, `ask`, `visual_dna`, `saved_bin`, `pagination`, reserved `_*` keys, unknown keys, over-cap facets — goes to the tail.
-- **Canonical ordering:** facets in `hof_facets` saved order; values sorted by slug (`strcmp`). `encode()` output IS the canonical form.
-- **Decode:** odd segment count, unknown facet, non-path-eligible facet, or unresolvable slug → `null` (caller hard-404s). Decoded values always come back as lists.
+- **Canonical ordering:** facets in `hof_facets` saved order; values sorted by slug (`strcmp`). `encode()` output IS the canonical form. The tail is canonically ordered too (configured facets in config order, then remaining keys sorted) so canonical URLs never depend on `$_GET` arrival order.
+- **Decode:** odd segment count, unknown facet, non-path-eligible facet, or unresolvable slug → `null` (caller hard-404s). Duplicate name/slug pairs dedupe silently (the 301 layer then collapses `/brand/nike/brand/nike/` to the canonical single form — without dedupe that URL family is a self-canonical crawl trap). Decoded values always come back as lists; numeric facet names surface as int keys (PHP coercion) — callers must cast.
 - **Range-shaped values** (`min`/`max` keys) always tail even on a discrete display (defensive).
 - `strip_base_path()` lives here too: given a request path and the base segment, return the archive path with the `/{base}/…` suffix removed — shared by SeoManager and AssetLoader.
 
@@ -1283,8 +1283,15 @@ final class FilterState {
             return self::$memo = $tail;
         }
 
-        // Union; the decoded path wins for any key present in both.
-        return self::$memo = array_merge( $tail, $decoded );
+        // Union; the decoded path wins for any key present in both. A keyed
+        // loop, NOT array_merge: array_merge renumbers integer keys, and a
+        // digits-only facet name ('56') decodes to an int key (PHP array-key
+        // coercion) — merge would silently rename facet 56 to facet 0.
+        $state = $tail;
+        foreach ( $decoded as $name => $values ) {
+            $state[ $name ] = $values;
+        }
+        return self::$memo = $state;
     }
 
     /** True when hof_path was present but didn't fully resolve → hard 404. */
