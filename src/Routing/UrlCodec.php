@@ -6,11 +6,19 @@
  * and emits /base/name/slug segments for every path-eligible discrete value,
  * values sorted by slug — deterministic ordering is what makes canonical
  * URLs stable. Everything else (ranges, search, reserved _* keys, unmappable
- * facets) lands in the returned tail, which callers append as ?hof[*].
+ * facets) lands in the returned tail, which callers append as ?hof[*]. The
+ * tail is canonically ordered too — configured facets first in saved order,
+ * then remaining keys sorted by key — because live $state comes from $_GET,
+ * whose arrival order is user-controlled; the same logical state must always
+ * produce the same canonical URL.
  *
  * decode(path) is strict: any segment it cannot fully resolve nulls the whole
  * request — the caller turns that into a hard 404, never a soft-404
  * duplicate page.
+ *
+ * Slugs travel percent-encoded (rawurlencode on encode, rawurldecode on
+ * decode — UTF-8 slugs are double-encoded on the wire), symmetrically in
+ * both directions.
  *
  * Pure by construction: no WP calls, all lookups via the injected mapper.
  *
@@ -103,14 +111,27 @@ final class UrlCodec {
             $path_handled[ $name ] = true;
         }
 
-        // Pass 2: the tail preserves the caller's original key order —
-        // everything not consumed into a path segment above, in the order
-        // it appeared in $state.
+        // Pass 2: canonical tail order — configured facets first, in facet-
+        // config order, then the remaining (unconfigured/reserved) keys
+        // sorted by key. Never $state insertion order: on live requests that
+        // is $_GET arrival order, which is user-controlled.
         $tail = [];
-        foreach ( $state as $name => $value ) {
-            if ( ! isset( $path_handled[ (string) $name ] ) ) {
-                $tail[ (string) $name ] = $value;
+        foreach ( $this->facets as $def ) {
+            $name = (string) ( $def['name'] ?? '' );
+            if ( $name !== '' && array_key_exists( $name, $state ) && ! isset( $path_handled[ $name ] ) ) {
+                $tail[ $name ] = $state[ $name ];
             }
+        }
+        $rest = [];
+        foreach ( $state as $name => $value ) {
+            $name = (string) $name;
+            if ( ! isset( $path_handled[ $name ] ) && ! array_key_exists( $name, $tail ) ) {
+                $rest[ $name ] = $value;
+            }
+        }
+        ksort( $rest, SORT_STRING );
+        foreach ( $rest as $name => $value ) {
+            $tail[ $name ] = $value;
         }
 
         return [
@@ -120,16 +141,25 @@ final class UrlCodec {
     }
 
     /**
+     * Duplicate name/slug pairs are silently collapsed: without the dedupe,
+     * /brand/nike/brand/nike/ would re-encode to itself and become a
+     * self-canonical, infinitely extensible crawl trap; deduped, it re-encodes
+     * to the single canonical form and the 301 layer collapses it.
+     *
+     * Numeric facet names surface as int array keys (PHP key coercion);
+     * callers must cast.
+     *
      * @return array<string, list<string>>|null Null = unresolvable → hard 404.
      */
     public function decode( string $hof_path ): ?array {
         $segments = array_values( array_filter( explode( '/', trim( $hof_path, '/' ) ), static fn( $s ) => $s !== '' ) );
-        if ( $segments === [] || count( $segments ) % 2 !== 0 ) {
+        $count    = count( $segments );
+        if ( $count === 0 || $count % 2 !== 0 ) {
             return null;
         }
 
         $out = [];
-        for ( $i = 0; $i < count( $segments ); $i += 2 ) {
+        for ( $i = 0; $i < $count; $i += 2 ) {
             $name = rawurldecode( strtolower( $segments[ $i ] ) );
             $slug = rawurldecode( strtolower( $segments[ $i + 1 ] ) );
 
@@ -141,6 +171,9 @@ final class UrlCodec {
             if ( $value === null ) {
                 return null;
             }
+            if ( in_array( $value, $out[ $name ] ?? [], true ) ) {
+                continue; // Duplicate pair — silently collapse.
+            }
             $out[ $name ][] = $value;
         }
 
@@ -150,6 +183,11 @@ final class UrlCodec {
     /**
      * Remove the /{base}/… suffix from a request path, yielding the archive
      * base path. Whole-segment match only — /shop-filter/ is untouched.
+     *
+     * First occurrence wins: everything from the leftmost /{base}/ segment to
+     * the end is stripped, so an archive whose own path contains a segment
+     * literally named like the base would be over-stripped — the configurable
+     * base is the escape hatch for that collision.
      */
     public function strip_base_path( string $path ): string {
         $stripped = preg_replace( '#/' . preg_quote( $this->base, '#' ) . '(/.*)?$#', '/', $path );

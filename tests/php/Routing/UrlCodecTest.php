@@ -25,13 +25,15 @@ final class UrlCodecTest extends TestCase {
                 'brand' => [ 'adidas' => 'adidas', 'nike' => 'nike' ],
                 'color' => [ 'blue' => 'blue', 'red' => 'red' ],
                 'material' => [ 'Solid Oak' => 'solid-oak', 'Walnut' => 'walnut' ],
+                '56' => [ '99' => '99' ], // Numeric facet name — PHP coerces the keys to ints.
             ];
             public function slug( string $f, string $v ): ?string {
                 return self::SETS[ $f ][ $v ] ?? null;
             }
             public function value( string $f, string $s ): ?string {
                 $flipped = array_flip( self::SETS[ $f ] ?? [] );
-                return $flipped[ $s ] ?? null;
+                // Cast: numeric-string map keys come back from array_flip as ints.
+                return isset( $flipped[ $s ] ) ? (string) $flipped[ $s ] : null;
             }
             public function is_mappable( string $f ): bool {
                 return isset( self::SETS[ $f ] );
@@ -49,6 +51,7 @@ final class UrlCodecTest extends TestCase {
             [ 'name' => 'material', 'kind' => 'meta', 'display' => 'dropdown' ],
             [ 'name' => 'price', 'kind' => 'meta', 'display' => 'range' ],
             [ 'name' => 'sku', 'kind' => 'meta', 'display' => 'checkbox' ], // unmappable → tail
+            [ 'name' => '56', 'kind' => 'taxonomy', 'display' => 'checkbox' ], // numeric name
         ];
         return new UrlCodec( $defs, $this->mapper(), $base );
     }
@@ -85,12 +88,15 @@ final class UrlCodecTest extends TestCase {
         ];
         $out = $this->codec()->encode( $state );
         self::assertSame( '/filter/brand/nike/', $out['path'] );
+        // Tail order is canonical: configured facets in config order (price,
+        // sku), then remaining keys sorted ('_bin_ids' < 'search') — never
+        // the user-controlled $_GET arrival order.
         self::assertSame(
             [
                 'price'    => [ 'min' => 10.0, 'max' => 50.0 ],
-                'search'   => 'oak desk',
                 'sku'      => [ 'A100' ],
                 '_bin_ids' => [ 12, 34 ],
+                'search'   => 'oak desk',
             ],
             $out['tail']
         );
@@ -152,6 +158,23 @@ final class UrlCodecTest extends TestCase {
         );
     }
 
+    public function test_decode_dedupes_repeated_pairs(): void {
+        // Silent collapse — otherwise /brand/nike/brand/nike/ re-encodes to
+        // itself and becomes a self-canonical, unbounded crawl trap.
+        self::assertSame(
+            [ 'brand' => [ 'nike' ] ],
+            $this->codec()->decode( 'brand/nike/brand/nike' )
+        );
+    }
+
+    public function test_decode_tolerates_uppercase_input(): void {
+        // Load-bearing for the later 301 normalization layer.
+        self::assertSame(
+            [ 'brand' => [ 'nike' ] ],
+            $this->codec()->decode( 'BRAND/NIKE' )
+        );
+    }
+
     // ── round trip + strip ──────────────────────────────────────────────────
 
     public function test_round_trip_discrete_state_is_stable(): void {
@@ -161,6 +184,15 @@ final class UrlCodecTest extends TestCase {
         // '/filter/…' → codec path input strips the base segment.
         $inner = preg_replace( '#^/filter/#', '', rtrim( $enc['path'], '/' ) );
         self::assertSame( $state, $codec->decode( $inner ) );
+    }
+
+    public function test_numeric_facet_name_round_trips(): void {
+        $codec = $this->codec();
+        $out   = $codec->encode( [ '56' => [ '99' ] ] );
+        self::assertSame( '/filter/56/99/', $out['path'] );
+        self::assertSame( [], $out['tail'] );
+        // PHP coerces the numeric-string key to int 56 — callers must cast.
+        self::assertSame( [ 56 => [ '99' ] ], $codec->decode( '56/99' ) );
     }
 
     public function test_strip_base_path_removes_filter_suffix(): void {
