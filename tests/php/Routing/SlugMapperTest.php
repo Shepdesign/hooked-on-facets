@@ -124,6 +124,47 @@ final class SlugMapperTest extends TestCase {
         self::assertArrayHasKey( 'hof_slugmap:map:brand:v7', $this->cache );
     }
 
+    public function test_second_instance_reuses_cache_without_requerying(): void {
+        // Warm the cache with one instance, then drop the fixture rows: a
+        // second instance can only resolve via a genuine wp_cache_get hit,
+        // so a key-format mismatch between the get and set sites would fail
+        // here rather than being masked by the in-request memo.
+        $this->rows['brand'] = [ 'nike' ];
+        $warm = $this->mapper( [ [ 'name' => 'brand', 'kind' => 'taxonomy' ] ] );
+        self::assertSame( 'nike', $warm->slug( 'brand', 'nike' ) );
+        self::assertSame( 1, $this->query_count );
+
+        $this->rows = [];
+        $cold = $this->mapper( [ [ 'name' => 'brand', 'kind' => 'taxonomy' ] ] );
+        self::assertSame( 'nike', $cold->slug( 'brand', 'nike' ) );
+        self::assertSame( 1, $this->query_count );
+    }
+
+    public function test_real_value_colliding_with_generated_suffix_stays_bijective(): void {
+        // 'foo bar' bumps to the generated 'foo-bar-2' — which the real value
+        // 'foo-bar-2' then finds taken, bumping again to 'foo-bar-2-2'. The
+        // map must stay bijective through the cascade.
+        $this->rows['finish'] = [ 'Foo Bar', 'foo bar', 'foo-bar-2' ];
+        $m = $this->mapper( [ [ 'name' => 'finish', 'kind' => 'meta' ] ] );
+
+        self::assertSame( 'foo-bar', $m->slug( 'finish', 'Foo Bar' ) );
+        self::assertSame( 'foo-bar-2', $m->slug( 'finish', 'foo bar' ) );
+        self::assertSame( 'foo-bar-2-2', $m->slug( 'finish', 'foo-bar-2' ) );
+        self::assertSame( 'Foo Bar', $m->value( 'finish', 'foo-bar' ) );
+        self::assertSame( 'foo bar', $m->value( 'finish', 'foo-bar-2' ) );
+        self::assertSame( 'foo-bar-2', $m->value( 'finish', 'foo-bar-2-2' ) );
+    }
+
+    public function test_empty_rows_facet_is_unmappable(): void {
+        // Configured facet with nothing indexed yet — empty map, not null,
+        // but still unmappable to callers.
+        $m = $this->mapper( [ [ 'name' => 'material', 'kind' => 'meta' ] ] );
+
+        self::assertFalse( $m->is_mappable( 'material' ) );
+        self::assertNull( $m->slug( 'material', 'oak' ) );
+        self::assertNull( $m->client_map( 'material' ) );
+    }
+
     public function test_over_cap_facet_is_unmappable(): void {
         Functions\when( 'apply_filters' )->alias(
             static fn( $hook, $value ) => $hook === 'hof_pretty_urls_max_values' ? 2 : $value
