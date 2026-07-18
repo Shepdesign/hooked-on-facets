@@ -82,4 +82,19 @@ final class PrettyUrlsTest extends TestCase {
         PrettyUrls::update( [ 'enabled' => false, 'base' => 'filter' ] );
         self::assertArrayNotHasKey( PrettyUrls::FLUSH_FLAG, $this->options );
     }
+
+    public function test_base_falls_back_to_filter_on_read(): void {
+        // Seed directly, bypassing update() — e.g. a migration or a direct
+        // wp_options edit persisted an empty base.
+        $this->options[ PrettyUrls::OPTION ] = [ 'enabled' => true, 'base' => '' ];
+        self::assertSame( 'filter', PrettyUrls::base() );
+    }
+
+    public function test_settings_tolerates_non_array_stored_value(): void {
+        $this->options[ PrettyUrls::OPTION ] = 'corrupt-string';
+        self::assertSame(
+            [ 'enabled' => false, 'base' => 'filter' ],
+            PrettyUrls::settings()
+        );
+    }
 }

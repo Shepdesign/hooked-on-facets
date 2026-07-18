@@ -42,9 +42,10 @@ final class PrettyUrls {
         $stored = get_option( self::OPTION, [] );
         $stored = is_array( $stored ) ? $stored : [];
         $merged = array_merge( self::defaults(), $stored );
+        $base   = (string) $merged['base'];
         return [
             'enabled' => (bool) $merged['enabled'],
-            'base'    => (string) $merged['base'],
+            'base'    => $base !== '' ? $base : self::defaults()['base'],
         ];
     }
 
