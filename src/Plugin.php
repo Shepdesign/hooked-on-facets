@@ -107,6 +107,15 @@ final class Plugin {
     }
 
     /**
+     * True when this is the free WordPress.org edition, which omits the licensed
+     * self-updater and every license-server call (WordPress.org handles
+     * updates). Driven by the HOF_EDITION constant; see bin/build-wporg.sh.
+     */
+    public static function is_free(): bool {
+        return defined( 'HOF_EDITION' ) && HOF_EDITION === 'free';
+    }
+
+    /**
      * Wire up bindings for services that need constructor injection.
      *
      * Services with zero-arg constructors (Indexer, Resolver) auto-resolve and
@@ -175,7 +184,7 @@ final class Plugin {
             $c->make( \HookedOnFacets\Telemetry\Recorder::class ),
             $c->make( \HookedOnFacets\Ai\NlFilter::class ),
             $c->make( \HookedOnFacets\Ai\Settings::class ),
-            $c->make( \HookedOnFacets\Licensing\LicenseManager::class ),
+            self::is_free() ? null : $c->make( \HookedOnFacets\Licensing\LicenseManager::class ),
             $c->make( \HookedOnFacets\Integrations\WooCommerce::class ),
             $c->make( \HookedOnFacets\Integrations\Acf::class ),
             $c->make( \HookedOnFacets\Integrations\MetaBox::class ),
@@ -207,7 +216,7 @@ final class Plugin {
      * @return array<int, class-string>
      */
     private function core_services(): array {
-        return [
+        $services = [
             \HookedOnFacets\Telemetry\Recorder::class,
             Indexer::class,
             QueryHook::class,
@@ -227,5 +236,22 @@ final class Plugin {
             \HookedOnFacets\Integrations\Divi::class,
             \HookedOnFacets\Cli\Commands::class,
         ];
+
+        // The free (WordPress.org) edition never boots the licensed self-updater,
+        // the license revalidation cron, or the license admin notice — so it
+        // makes no calls to the license server and updates only via WordPress.org.
+        if ( self::is_free() ) {
+            $premium_only = [
+                \HookedOnFacets\Licensing\LicenseManager::class,
+                \HookedOnFacets\Licensing\Updater::class,
+                \HookedOnFacets\Admin\LicenseNotice::class,
+            ];
+            $services = array_values( array_filter(
+                $services,
+                static fn( string $service ): bool => ! in_array( $service, $premium_only, true )
+            ) );
+        }
+
+        return $services;
     }
 }

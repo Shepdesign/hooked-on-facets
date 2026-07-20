@@ -95,6 +95,39 @@ indexed post type, taxonomy, or custom field.
 Use the `[hof_facet name="your-facet"]` shortcode, the **Hooked on Facets** Gutenberg
 block, or your page builder's binding (Elementor Query ID, Bricks CSS class, etc.).
 
+= Where is the source of the bundled JavaScript? =
+
+The admin and front-end JavaScript is built with Vite. The unminified source ships
+inside the plugin under `admin/src/` and `public/src/`, and the full build tooling
+lives in the public repository: https://github.com/Shepdesign/hooked-on-facets
+
+== External services ==
+
+This plugin connects to the Anthropic API to power the optional AI "ask" facet. This
+is the only external service the plugin contacts, and only under these conditions:
+
+* It is used **only** when a site administrator enables an "ask" facet and enters
+  their own Anthropic API key on the AI Settings screen.
+* A request is made **only** when a visitor submits a natural-language query on a
+  page that contains an "ask" facet.
+
+What is sent, and when: the visitor's typed query and your configured facet schema
+(facet names and their allowed values) are sent to Anthropic to convert the query
+into filter selections. Product data, order data, and personal customer data are
+**not** sent. If the "ask" facet is not enabled, the plugin makes no external
+requests at all.
+
+* Service: Anthropic API — https://www.anthropic.com
+* Terms of service: https://www.anthropic.com/legal/commercial-terms
+* Privacy policy: https://www.anthropic.com/legal/privacy
+
+== Screenshots ==
+
+1. The facet builder — define, configure, and preview facets without code.
+2. The performance dashboard — facet usage, zero-result filters, and latency percentiles.
+3. Facets filtering a WooCommerce shop archive on the front end.
+4. The design-tokens editor for theming facets with CSS custom properties.
+
 == Changelog ==
 
 = 1.0.0 =
@@ -148,5 +181,3 @@ block, or your page builder's binding (Elementor Query ID, Bricks CSS class, etc
 = 1.0.0 =
 First stable release. The public API and index schema are now stable. Re-run the
 indexer after upgrading.
-</content>
-</invoke>
