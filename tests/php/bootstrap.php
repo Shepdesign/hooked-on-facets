@@ -38,6 +38,7 @@ require_once dirname( __DIR__, 2 ) . '/vendor/autoload.php';
 // autoload-dev PSR-4 scan flagging them as misplaced.
 require_once dirname( __DIR__ ) . '/stubs/WP_Query.php';
 require_once dirname( __DIR__ ) . '/stubs/WP_Post.php';
+require_once dirname( __DIR__ ) . '/stubs/WP_Term.php';
 require_once dirname( __DIR__ ) . '/stubs/WP_REST.php';
 
 // \Bricks\Elements stub so the Bricks bridge's element registration has a
