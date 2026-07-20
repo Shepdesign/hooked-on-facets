@@ -75,7 +75,7 @@ self-verifies (including that `src/Licensing` is absent and `HOF_EDITION` is
 
 WordPress.org distributes from SVN, not the ZIP. Layout:
 
-```
+```text
 hooked-on-facets/
   trunk/            # current development version (the plugin files)
   tags/1.0.0/       # a copy of trunk at each release (matches Stable tag)
