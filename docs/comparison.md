@@ -17,14 +17,22 @@ HOF enters with a specific bet: **modern stack, open core, dev-friendly, fair pr
 
 ## quick comparison
 
+*Competitor pricing verified July 2026.*
+
 | | **hooked on facets** | FacetWP | WP Grid Builder |
 |---|---|---|---|
-| Frontend stack | Preact + Signals | jQuery | jQuery + custom |
-| Admin UI | React + `@wp/components` | Custom PHP/jQuery | React (partial) |
+| Frontend stack | Vanilla JS — zero runtime dependencies | jQuery | jQuery + custom |
+| Admin UI | React 18 SPA | Custom PHP/jQuery | React (partial) |
 | Architecture | PSR-4 + Composer | Procedural-heavy | OOP, mixed |
+| **Ask** — AI natural-language facet | ✅ Pro | ❌ | ❌ |
+| **Visual DNA** — perceptual color matching | ✅ Pro | ❌ | ❌ |
+| Swipe deck facet | ✅ Pro | ❌ | ❌ |
+| Spin-the-wheel facet | ✅ Pro | ❌ | ❌ |
+| Intersection matrix facet | ✅ Pro | ❌ | ❌ |
+| Comparison bin facet | ✅ Pro | ❌ | ❌ |
 | Open source core | ✅ | ❌ | ❌ |
-| WP.org listing | Planned | No | No |
-| Pricing | Open core + TBD pro tier | $99–$249/yr | $69–$249/yr |
+| Free version on WordPress.org | ✅ (planned listing) | ❌ | ❌ |
+| Pricing | Free core · Pro $99–$399/yr, renewals 50% off | $99–$499/yr, renewals 20% off, limited free trial | $49–$249/yr |
 | Dev environment included | ✅ docker-compose | ❌ | ❌ |
 | Live URL state | ✅ | ✅ | ✅ |
 | Indexed queries | ✅ | ✅ | ✅ |
@@ -35,7 +43,8 @@ HOF enters with a specific bet: **modern stack, open core, dev-friendly, fair pr
 
 ## where HOF wins (or aims to)
 
-- **Bundle size.** Preact's ~4kb runtime vs jQuery's ~30kb plus the plugins' own UI code.
+- **Zero-framework frontend.** The public runtime is dependency-free vanilla JS (~9kb gzipped) — no jQuery, no framework, nothing to conflict with your theme's stack.
+- **Facets nobody else ships.** Ask (natural language → filters) and Visual DNA (perceptual CIELAB color matching) don't exist anywhere else in this space — plus swipe deck, spin-the-wheel, intersection matrix, and the comparison bin.
 - **Developer experience.** PSR-4, Composer, real namespaces, Vite, HMR, Docker dev env.
 - **Theme-ability.** CSS custom properties everywhere. No `!important` arms race.
 - **Openness.** Core is open source. You can read the indexer, audit it, fix it.
