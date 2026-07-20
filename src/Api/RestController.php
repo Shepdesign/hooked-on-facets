@@ -198,26 +198,30 @@ final class RestController implements Bootable {
             ],
         ] );
 
-        register_rest_route( self::NAMESPACE_V1, '/license', [
-            'methods'             => \WP_REST_Server::READABLE,
-            'callback'            => [ $this, 'get_license' ],
-            'permission_callback' => static fn() => current_user_can( 'manage_options' ),
-        ] );
+        // License routes exist only in the premium edition (a LicenseManager is
+        // injected). The free WordPress.org build passes null and omits them.
+        if ( $this->license !== null ) {
+            register_rest_route( self::NAMESPACE_V1, '/license', [
+                'methods'             => \WP_REST_Server::READABLE,
+                'callback'            => [ $this, 'get_license' ],
+                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+            ] );
 
-        register_rest_route( self::NAMESPACE_V1, '/license/activate', [
-            'methods'             => \WP_REST_Server::CREATABLE,
-            'callback'            => [ $this, 'activate_license' ],
-            'permission_callback' => static fn() => current_user_can( 'manage_options' ),
-            'args'                => [
-                'key' => [ 'type' => 'string', 'required' => true ],
-            ],
-        ] );
+            register_rest_route( self::NAMESPACE_V1, '/license/activate', [
+                'methods'             => \WP_REST_Server::CREATABLE,
+                'callback'            => [ $this, 'activate_license' ],
+                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+                'args'                => [
+                    'key' => [ 'type' => 'string', 'required' => true ],
+                ],
+            ] );
 
-        register_rest_route( self::NAMESPACE_V1, '/license/deactivate', [
-            'methods'             => \WP_REST_Server::CREATABLE,
-            'callback'            => [ $this, 'deactivate_license' ],
-            'permission_callback' => static fn() => current_user_can( 'manage_options' ),
-        ] );
+            register_rest_route( self::NAMESPACE_V1, '/license/deactivate', [
+                'methods'             => \WP_REST_Server::CREATABLE,
+                'callback'            => [ $this, 'deactivate_license' ],
+                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
+            ] );
+        }
 
         register_rest_route( self::NAMESPACE_V1, '/integrations/woocommerce/suggest', [
             'methods'             => \WP_REST_Server::READABLE,

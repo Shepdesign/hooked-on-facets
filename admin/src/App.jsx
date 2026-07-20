@@ -48,6 +48,10 @@ const blankFacet = () => ({
 
 export default function App({ bootstrap }) {
     const [view, setView] = useState('dashboard');
+    // The free (WordPress.org) edition has no license screen.
+    const availableViews = bootstrap.edition === 'free'
+        ? VIEWS.filter((v) => v.id !== 'license')
+        : VIEWS;
     const [facets, setFacets] = useState(() =>
         Array.isArray(bootstrap.facets) ? bootstrap.facets : []
     );
@@ -253,7 +257,7 @@ export default function App({ bootstrap }) {
                     {SECTION_ORDER.map((section) => (
                         <div key={section} className="hof-nav-section">
                             <p className="hof-nav-section-label">{section}</p>
-                            {VIEWS.filter((v) => v.section === section).map(({ id, label, Icon }) => (
+                            {availableViews.filter((v) => v.section === section).map(({ id, label, Icon }) => (
                                 <button
                                     key={id}
                                     type="button"

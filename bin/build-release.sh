@@ -9,6 +9,12 @@ cd "$REPO"
 SLUG="hooked-on-facets"
 UID_GID="$(id -u):$(id -g)"
 
+# Edition: 'premium' (default) ships the licensed self-updater; 'free' is the
+# WordPress.org build — it updates through WordPress.org and carries no
+# license-server code. Usage: EDITION=free ./bin/build-release.sh
+EDITION="${EDITION:-premium}"
+case "$EDITION" in premium|free) ;; *) echo "ERROR: EDITION must be 'premium' or 'free'" >&2; exit 1 ;; esac
+
 # --- 1. Resolve + verify version (single source of truth = plugin header) ---
 HEADER_VER="$(grep -E '^[[:space:]]*\*?[[:space:]]*Version:' "$SLUG.php" | head -1 | sed -E 's/.*Version:[[:space:]]*//' | tr -d '[:space:]\r')"
 CONST_VER="$(grep -E "define\([[:space:]]*'HOF_VERSION'" "$SLUG.php" | sed -E "s/.*'HOF_VERSION'[^']*'([^']+)'.*/\1/")"
@@ -28,6 +34,16 @@ trap 'rm -rf "$WORK"' EXIT
 # --- 3. Export tracked, non-export-ignored files (honors .gitattributes) ---
 git archive --worktree-attributes HEAD | tar -x -C "$STAGE"
 echo "==> Staged archive tree"
+
+# --- 3b. Free (WordPress.org) edition transforms (before composer, so the
+#         regenerated autoloader classmap never references stripped files) ---
+if [ "$EDITION" = "free" ]; then
+  sed -i.bak "s/define( 'HOF_EDITION', 'premium' )/define( 'HOF_EDITION', 'free' )/" "$STAGE/$SLUG.php" && rm -f "$STAGE/$SLUG.php.bak"
+  # WordPress.org forbids self-updating: strip the licensed updater + client.
+  rm -rf "$STAGE/src/Licensing"
+  rm -f  "$STAGE/src/Admin/LicenseNotice.php"
+  echo "==> Applied free edition (flipped HOF_EDITION -> free, removed self-updater)"
+fi
 
 # --- 4. Regenerate .pot (before vendor exists, so vendor isn't scanned).
 #        Preserve the committed header (brand metadata: Report-Msgid-Bugs-To,
@@ -66,7 +82,8 @@ rm -f "$STAGE/composer.json" "$STAGE/composer.lock"
 find "$STAGE/assets/dist" -name '*.map' -delete 2>/dev/null || true
 
 # --- 8. Zip with a top-level hooked-on-facets/ folder ---
-OUT="$REPO/dist/$SLUG-$VERSION.zip"
+SUFFIX=""; [ "$EDITION" = "free" ] && SUFFIX="-free"
+OUT="$REPO/dist/$SLUG$SUFFIX-$VERSION.zip"
 rm -f "$OUT"
 ( cd "$WORK" && zip -rq "$OUT" "$SLUG" -x '*.DS_Store' )
 echo "==> Wrote $OUT ($(du -h "$OUT" | cut -f1))"
@@ -88,5 +105,10 @@ fi
 if find "$VERIFY/$SLUG/assets/dist" -name '*.map' | grep -q .; then
   echo "VERIFY FAIL: source map(s) shipped in assets/dist" >&2; fail=1
 fi
+if [ "$EDITION" = "free" ]; then
+  if [ -e "$VERIFY/$SLUG/src/Licensing" ]; then echo "VERIFY FAIL: free build ships src/Licensing (self-updater)" >&2; fail=1; fi
+  if [ -e "$VERIFY/$SLUG/src/Admin/LicenseNotice.php" ]; then echo "VERIFY FAIL: free build ships LicenseNotice" >&2; fail=1; fi
+  if ! grep -q "define( 'HOF_EDITION', 'free' )" "$VERIFY/$SLUG/$SLUG.php"; then echo "VERIFY FAIL: free build did not flip HOF_EDITION" >&2; fail=1; fi
+fi
 if [ "$fail" -ne 0 ]; then echo "==> PACKAGE VERIFICATION FAILED" >&2; exit 1; fi
-echo "==> Package verified OK"
+echo "==> Package verified OK ($EDITION edition)"
