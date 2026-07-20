@@ -107,15 +107,6 @@ final class Plugin {
     }
 
     /**
-     * True when this is the free WordPress.org edition, which omits the licensed
-     * self-updater and every license-server call (WordPress.org handles
-     * updates). Driven by the HOF_EDITION constant; see bin/build-wporg.sh.
-     */
-    public static function is_free(): bool {
-        return defined( 'HOF_EDITION' ) && HOF_EDITION === 'free';
-    }
-
-    /**
      * Wire up bindings for services that need constructor injection.
      *
      * Services with zero-arg constructors (Indexer, Resolver) auto-resolve and
@@ -130,13 +121,6 @@ final class Plugin {
         $this->bind( QueryHook::class, static fn( self $c ) => new QueryHook(
             $c->make( \HookedOnFacets\Filter\Resolver::class ),
             $c->make( \HookedOnFacets\Telemetry\Recorder::class )
-        ) );
-
-        $this->bind( \HookedOnFacets\Ai\Settings::class, static fn() => new \HookedOnFacets\Ai\Settings() );
-
-        $this->bind( \HookedOnFacets\Ai\NlFilter::class, static fn( self $c ) => new \HookedOnFacets\Ai\NlFilter(
-            $c->make( \HookedOnFacets\Filter\Resolver::class ),
-            $c->make( \HookedOnFacets\Ai\Settings::class ),
         ) );
 
         $this->bind( \HookedOnFacets\Integrations\WooCommerce::class, static fn() => new \HookedOnFacets\Integrations\WooCommerce() );
@@ -164,27 +148,10 @@ final class Plugin {
             $c->make( \HookedOnFacets\Telemetry\Recorder::class ),
         ) );
 
-        $this->bind( \HookedOnFacets\Licensing\LicenseClient::class, static fn() => new \HookedOnFacets\Licensing\LicenseClient() );
-
-        $this->bind( \HookedOnFacets\Licensing\LicenseManager::class, static fn( self $c ) => new \HookedOnFacets\Licensing\LicenseManager(
-            $c->make( \HookedOnFacets\Licensing\LicenseClient::class ),
-        ) );
-
-        $this->bind( \HookedOnFacets\Licensing\Updater::class, static fn( self $c ) => new \HookedOnFacets\Licensing\Updater(
-            $c->make( \HookedOnFacets\Licensing\LicenseClient::class ),
-        ) );
-
-        $this->bind( \HookedOnFacets\Admin\LicenseNotice::class, static fn( self $c ) => new \HookedOnFacets\Admin\LicenseNotice(
-            $c->make( \HookedOnFacets\Licensing\LicenseManager::class ),
-        ) );
-
         $this->bind( \HookedOnFacets\Api\RestController::class, static fn( self $c ) => new \HookedOnFacets\Api\RestController(
             $c->make( \HookedOnFacets\Filter\Resolver::class ),
             $c->make( Indexer::class ),
             $c->make( \HookedOnFacets\Telemetry\Recorder::class ),
-            $c->make( \HookedOnFacets\Ai\NlFilter::class ),
-            $c->make( \HookedOnFacets\Ai\Settings::class ),
-            self::is_free() ? null : $c->make( \HookedOnFacets\Licensing\LicenseManager::class ),
             $c->make( \HookedOnFacets\Integrations\WooCommerce::class ),
             $c->make( \HookedOnFacets\Integrations\Acf::class ),
             $c->make( \HookedOnFacets\Integrations\MetaBox::class ),
@@ -216,16 +183,13 @@ final class Plugin {
      * @return array<int, class-string>
      */
     private function core_services(): array {
-        $services = [
+        return [
             \HookedOnFacets\Telemetry\Recorder::class,
             Indexer::class,
             QueryHook::class,
-            \HookedOnFacets\Licensing\LicenseManager::class,
-            \HookedOnFacets\Licensing\Updater::class,
             \HookedOnFacets\Api\RestController::class,
             \HookedOnFacets\Admin\MenuRegistrar::class,
             \HookedOnFacets\Admin\SwatchTermFields::class,
-            \HookedOnFacets\Admin\LicenseNotice::class,
             \HookedOnFacets\Frontend\AssetLoader::class,
             \HookedOnFacets\Frontend\Shortcodes::class,
             \HookedOnFacets\Frontend\BlockRegistrar::class,
@@ -236,22 +200,5 @@ final class Plugin {
             \HookedOnFacets\Integrations\Divi::class,
             \HookedOnFacets\Cli\Commands::class,
         ];
-
-        // The free (WordPress.org) edition never boots the licensed self-updater,
-        // the license revalidation cron, or the license admin notice — so it
-        // makes no calls to the license server and updates only via WordPress.org.
-        if ( self::is_free() ) {
-            $premium_only = [
-                \HookedOnFacets\Licensing\LicenseManager::class,
-                \HookedOnFacets\Licensing\Updater::class,
-                \HookedOnFacets\Admin\LicenseNotice::class,
-            ];
-            $services = array_values( array_filter(
-                $services,
-                static fn( string $service ): bool => ! in_array( $service, $premium_only, true )
-            ) );
-        }
-
-        return $services;
     }
 }

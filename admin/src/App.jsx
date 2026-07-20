@@ -48,10 +48,10 @@ const blankFacet = () => ({
 
 export default function App({ bootstrap }) {
     const [view, setView] = useState('dashboard');
-    // The free (WordPress.org) edition has no license screen.
-    const availableViews = bootstrap.edition === 'free'
-        ? VIEWS.filter((v) => v.id !== 'license')
-        : VIEWS;
+    // The License screen belongs to the HOF Pro add-on.
+    const availableViews = bootstrap.proActive
+        ? VIEWS
+        : VIEWS.filter((v) => v.id !== 'license');
     const [facets, setFacets] = useState(() =>
         Array.isArray(bootstrap.facets) ? bootstrap.facets : []
     );
@@ -367,6 +367,7 @@ export default function App({ bootstrap }) {
                                             onChange={updateSelected}
                                             onDelete={deleteSelected}
                                             allFacets={facets}
+                                            availableDisplays={bootstrap.availableDisplays}
                                         />
                                     ) : (
                                         <div className="hof-empty">
@@ -405,7 +406,18 @@ export default function App({ bootstrap }) {
                     )}
 
                     {view === 'settings' && (
-                        <AiSettings bootstrap={bootstrap} />
+                        bootstrap.proActive ? (
+                            <AiSettings bootstrap={bootstrap} />
+                        ) : (
+                            <div className="hof-panel">
+                                <p>
+                                    AI settings (the Ask facet) are part of{' '}
+                                    <a href="https://hookedonfacets.com/#pricing" target="_blank" rel="noreferrer">
+                                        HOF Pro
+                                    </a>.
+                                </p>
+                            </div>
+                        )
                     )}
                 </main>
             </div>
