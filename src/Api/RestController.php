@@ -17,8 +17,6 @@ declare(strict_types=1);
 
 namespace HookedOnFacets\Api;
 
-use HookedOnFacets\Ai\NlFilter;
-use HookedOnFacets\Ai\Settings as AiSettings;
 use HookedOnFacets\Contracts\Bootable;
 use HookedOnFacets\Filter\Resolver;
 use HookedOnFacets\Indexer;
@@ -26,7 +24,6 @@ use HookedOnFacets\Integrations\Acf;
 use HookedOnFacets\Integrations\MetaBox;
 use HookedOnFacets\Integrations\Pods;
 use HookedOnFacets\Integrations\WooCommerce;
-use HookedOnFacets\Licensing\LicenseManager;
 use HookedOnFacets\Seo\SeoManager;
 use HookedOnFacets\Telemetry\Recorder;
 
@@ -40,9 +37,6 @@ final class RestController implements Bootable {
         private readonly Resolver $resolver,
         private readonly Indexer $indexer,
         private readonly ?Recorder $recorder = null,
-        private readonly ?NlFilter $nl_filter = null,
-        private readonly ?AiSettings $ai_settings = null,
-        private readonly ?LicenseManager $license = null,
         private readonly ?WooCommerce $woocommerce = null,
         private readonly ?Acf $acf = null,
         private readonly ?MetaBox $metabox = null,
@@ -129,62 +123,6 @@ final class RestController implements Bootable {
             ],
         ] );
 
-        register_rest_route( self::NAMESPACE_V1, '/ask', [
-            'methods'             => \WP_REST_Server::CREATABLE,
-            'callback'            => [ $this, 'ask' ],
-            'permission_callback' => '__return_true',
-            'args'                => [
-                'query' => [
-                    'type'     => 'string',
-                    'required' => true,
-                ],
-                'prior_state' => [
-                    'type'     => 'object',
-                    'required' => false,
-                ],
-            ],
-        ] );
-
-        register_rest_route( self::NAMESPACE_V1, '/visual-dna', [
-            'methods'             => \WP_REST_Server::CREATABLE,
-            'callback'            => [ $this, 'visual_dna' ],
-            'permission_callback' => '__return_true',
-            'args'                => [
-                'hex' => [
-                    'type'     => 'string',
-                    'required' => false,
-                ],
-                'hexes' => [
-                    'type'     => 'array',
-                    'items'    => [ 'type' => 'string' ],
-                    'required' => false,
-                ],
-                'limit' => [
-                    'type'     => 'integer',
-                    'required' => false,
-                ],
-            ],
-        ] );
-
-        register_rest_route( self::NAMESPACE_V1, '/ai-settings', [
-            [
-                'methods'             => \WP_REST_Server::READABLE,
-                'callback'            => [ $this, 'get_ai_settings' ],
-                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
-            ],
-            [
-                'methods'             => \WP_REST_Server::EDITABLE,
-                'callback'            => [ $this, 'save_ai_settings' ],
-                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
-                'args'                => [
-                    'api_key' => [
-                        'type'     => 'string',
-                        'required' => false,
-                    ],
-                ],
-            ],
-        ] );
-
         register_rest_route( self::NAMESPACE_V1, '/seo-settings', [
             [
                 'methods'             => \WP_REST_Server::READABLE,
@@ -197,31 +135,6 @@ final class RestController implements Bootable {
                 'permission_callback' => static fn() => current_user_can( 'manage_options' ),
             ],
         ] );
-
-        // License routes exist only in the premium edition (a LicenseManager is
-        // injected). The free WordPress.org build passes null and omits them.
-        if ( $this->license !== null ) {
-            register_rest_route( self::NAMESPACE_V1, '/license', [
-                'methods'             => \WP_REST_Server::READABLE,
-                'callback'            => [ $this, 'get_license' ],
-                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
-            ] );
-
-            register_rest_route( self::NAMESPACE_V1, '/license/activate', [
-                'methods'             => \WP_REST_Server::CREATABLE,
-                'callback'            => [ $this, 'activate_license' ],
-                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
-                'args'                => [
-                    'key' => [ 'type' => 'string', 'required' => true ],
-                ],
-            ] );
-
-            register_rest_route( self::NAMESPACE_V1, '/license/deactivate', [
-                'methods'             => \WP_REST_Server::CREATABLE,
-                'callback'            => [ $this, 'deactivate_license' ],
-                'permission_callback' => static fn() => current_user_can( 'manage_options' ),
-            ] );
-        }
 
         register_rest_route( self::NAMESPACE_V1, '/integrations/woocommerce/suggest', [
             'methods'             => \WP_REST_Server::READABLE,
@@ -308,56 +221,6 @@ final class RestController implements Bootable {
         ], 200 );
     }
 
-    public function get_license( \WP_REST_Request $request ): \WP_REST_Response {
-        if ( ! $this->license ) {
-            return new \WP_REST_Response( [ 'configured' => false, 'status' => 'unavailable' ], 200 );
-        }
-        return new \WP_REST_Response( $this->license->state(), 200 );
-    }
-
-    public function activate_license( \WP_REST_Request $request ): \WP_REST_Response {
-        if ( ! $this->license ) {
-            return new \WP_REST_Response( [ 'ok' => false, 'error' => 'License manager unavailable' ], 503 );
-        }
-        $key    = (string) $request->get_param( 'key' );
-        $result = $this->license->activate( $key );
-        return new \WP_REST_Response(
-            array_merge( $result, [ 'state' => $this->license->state() ] ),
-            $result['ok'] ? 200 : 400
-        );
-    }
-
-    public function deactivate_license( \WP_REST_Request $request ): \WP_REST_Response {
-        if ( ! $this->license ) {
-            return new \WP_REST_Response( [ 'ok' => false, 'error' => 'License manager unavailable' ], 503 );
-        }
-        $this->license->deactivate();
-        return new \WP_REST_Response( [ 'ok' => true, 'state' => $this->license->state() ], 200 );
-    }
-
-    public function get_ai_settings( \WP_REST_Request $request ): \WP_REST_Response {
-        if ( ! $this->ai_settings ) {
-            return new \WP_REST_Response( [ 'configured' => false ], 200 );
-        }
-        $key = $this->ai_settings->api_key();
-        return new \WP_REST_Response( [
-            'configured' => $key !== '',
-            'fingerprint' => $key !== '' ? substr( $key, 0, 14 ) . '…' . substr( $key, -6 ) : '',
-            'model'       => apply_filters( 'hof_ai_model', NlFilter::MODEL_HAIKU ),
-        ], 200 );
-    }
-
-    public function save_ai_settings( \WP_REST_Request $request ): \WP_REST_Response {
-        if ( ! $this->ai_settings ) {
-            return new \WP_REST_Response( [ 'ok' => false, 'error' => 'AI settings unavailable' ], 503 );
-        }
-        // Accept null/empty to clear. Trim whitespace from paste.
-        $raw = $request->get_param( 'api_key' );
-        $key = is_string( $raw ) ? trim( $raw ) : '';
-        $this->ai_settings->set_api_key( $key );
-        return $this->get_ai_settings( $request );
-    }
-
     public function get_seo_settings( \WP_REST_Request $request ): \WP_REST_Response {
         if ( ! $this->seo ) {
             return new \WP_REST_Response( [ 'available' => false, 'settings' => SeoManager::defaults() ], 200 );
@@ -386,167 +249,6 @@ final class RestController implements Bootable {
         }
         $this->seo->update_settings( $clean );
         return $this->get_seo_settings( $request );
-    }
-
-    public function ask( \WP_REST_Request $request ): \WP_REST_Response {
-        if ( ! $this->nl_filter ) {
-            return new \WP_REST_Response(
-                [ 'ok' => false, 'error' => 'Ask is not available', 'error_code' => 'unavailable' ],
-                503
-            );
-        }
-
-        $query = (string) $request->get_param( 'query' );
-
-        // This endpoint is public and each call bills the site owner's Anthropic
-        // key, so cap input size and throttle per IP to prevent budget-drain /
-        // application-level DoS by anonymous callers.
-        if ( strlen( $query ) > 500 ) {
-            return new \WP_REST_Response(
-                [ 'ok' => false, 'error' => 'Query too long', 'error_code' => 'query_too_long' ],
-                400
-            );
-        }
-        if ( $this->rate_limited( 'ask', 20, MINUTE_IN_SECONDS ) ) {
-            return new \WP_REST_Response(
-                [ 'ok' => false, 'error' => 'Too many requests', 'error_code' => 'rate_limited' ],
-                429
-            );
-        }
-
-        $prior_state = $request->get_param( 'prior_state' );
-        $prior_state = is_array( $prior_state ) ? $prior_state : [];
-
-        $result = $this->nl_filter->translate( $query, $prior_state );
-
-        if ( ! $result['ok'] ) {
-            $status = match ( $result['error_code'] ?? '' ) {
-                'empty_query'      => 400,
-                'no_api_key'       => 503,
-                'no_facets'        => 503,
-                'authentication_error' => 503,
-                default            => 502,
-            };
-            return new \WP_REST_Response( $result, $status );
-        }
-
-        return new \WP_REST_Response( $result, 200 );
-    }
-
-    /**
-     * Visual DNA v2 — accept a hex color, return the top-K product IDs
-     * ranked by ΔE76 distance against the indexed `_visual_dna_lab` rows.
-     *
-     * SQL math runs the conversion against pre-extracted LAB coords — no
-     * per-product image processing happens here, so 10k+ catalogs respond
-     * in tens of ms.
-     */
-    public function visual_dna( \WP_REST_Request $request ): \WP_REST_Response {
-        global $wpdb;
-
-        // Public and unauthenticated, and every request runs a ΔE scan over all
-        // indexed LAB rows — the palette cap below bounds per-request cost, this
-        // bounds request rate. Slightly looser than /ask (no external API bill),
-        // but a color-picker UI can legitimately fire in quick bursts.
-        if ( $this->rate_limited( 'visual_dna', 30, MINUTE_IN_SECONDS ) ) {
-            return new \WP_REST_Response(
-                [ 'ok' => false, 'error' => 'Too many requests', 'error_code' => 'rate_limited' ],
-                429
-            );
-        }
-
-        // v3: accept either single `hex` (back-compat) or `hexes` array.
-        // Build the query palette as a list of LAB triplets.
-        $hexes_param = $request->get_param( 'hexes' );
-        $single_hex  = $request->get_param( 'hex' );
-
-        $query_hexes = [];
-        if ( is_array( $hexes_param ) ) {
-            foreach ( $hexes_param as $h ) {
-                if ( is_scalar( $h ) ) $query_hexes[] = (string) $h;
-            }
-        }
-        if ( $single_hex !== null && is_scalar( $single_hex ) ) {
-            $query_hexes[] = (string) $single_hex;
-        }
-
-        $query_labs = [];
-        foreach ( $query_hexes as $h ) {
-            $lab = \HookedOnFacets\VisualDna\ColorExtractor::hex_to_lab( $h );
-            if ( $lab !== null ) {
-                $query_labs[] = [ 'hex' => $h, 'L' => $lab['L'], 'a' => $lab['a'], 'b' => $lab['b'] ];
-            }
-        }
-        if ( empty( $query_labs ) ) {
-            return new \WP_REST_Response(
-                [ 'ok' => false, 'error' => 'no valid color in hex/hexes', 'error_code' => 'invalid_hex' ],
-                400
-            );
-        }
-
-        // Each query color adds a per-row ΔE expression evaluated against every
-        // indexed LAB row, so an unbounded palette on this public endpoint is a
-        // DB-load vector. Cap it — no real palette match needs more than a few.
-        if ( count( $query_labs ) > 8 ) {
-            $query_labs = array_slice( $query_labs, 0, 8 );
-        }
-
-        $limit = (int) $request->get_param( 'limit' );
-        if ( $limit <= 0 ) $limit = 60;
-        $limit = min( 500, $limit );
-
-        $table = $wpdb->prefix . \HookedOnFacets\Activator::TABLE;
-
-        // Per-product ΔE = MIN over the cross product (query palette × product
-        // palette). We compute one ΔE expression per query color, wrap them
-        // in LEAST(...) when multi, then aggregate MIN across the product's
-        // palette rows via GROUP BY.
-        $params   = [];
-        $exprs    = [];
-        foreach ( $query_labs as $q ) {
-            $exprs[]  = "SQRT(POW(lab_l - %f, 2) + POW(lab_a - %f, 2) + POW(lab_b - %f, 2))";
-            $params[] = $q['L'];
-            $params[] = $q['a'];
-            $params[] = $q['b'];
-        }
-        $row_de = count( $exprs ) === 1
-            ? $exprs[0]
-            : ( 'LEAST(' . implode( ', ', $exprs ) . ')' );
-
-        $params[] = $limit;
-
-        $sql = $wpdb->prepare(
-            "SELECT object_id, MIN({$row_de}) AS delta_e
-             FROM {$table}
-             WHERE facet_name = '_visual_dna_lab'
-               AND lab_l IS NOT NULL
-             GROUP BY object_id
-             ORDER BY delta_e ASC
-             LIMIT %d",
-            $params
-        );
-        $rows = $wpdb->get_results( $sql, ARRAY_A ) ?: [];
-
-        $ids = [];
-        foreach ( $rows as $r ) {
-            $ids[] = (int) $r['object_id'];
-        }
-
-        // Indexed-count probe: number of distinct products with palette rows.
-        $indexed = (int) $wpdb->get_var(
-            "SELECT COUNT(DISTINCT object_id) FROM {$table} WHERE facet_name = '_visual_dna_lab'"
-        );
-
-        return new \WP_REST_Response(
-            [
-                'ok'             => true,
-                'query_palette'  => $query_labs,
-                'ids'            => $ids,
-                'indexed_count'  => $indexed,
-                'returned_count' => count( $ids ),
-            ],
-            200
-        );
     }
 
     public function telemetry( \WP_REST_Request $request ): \WP_REST_Response {
@@ -581,24 +283,6 @@ final class RestController implements Bootable {
      * The get-then-set is not atomic; a small burst can slip through under
      * concurrency, which is acceptable for abuse mitigation on these endpoints.
      */
-    private function rate_limited( string $bucket, int $max, int $window ): bool {
-        $ip = isset( $_SERVER['REMOTE_ADDR'] )
-            ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
-            : 'unknown';
-        $key  = 'hof_rl_' . $bucket . '_' . md5( $ip );
-        $now  = time();
-        $data = get_transient( $key );
-        if ( ! is_array( $data ) || $now >= (int) ( $data['reset'] ?? 0 ) ) {
-            $data = [ 'hits' => 0, 'reset' => $now + $window ];
-        }
-        if ( (int) $data['hits'] >= $max ) {
-            return true;
-        }
-        $data['hits'] = (int) $data['hits'] + 1;
-        set_transient( $key, $data, max( 1, (int) $data['reset'] - $now ) );
-        return false;
-    }
-
     public function list_facets( \WP_REST_Request $request ): \WP_REST_Response {
         $facets = (array) get_option( Indexer::OPTION_FACETS, [] );
 
@@ -628,11 +312,9 @@ final class RestController implements Bootable {
      */
     private function sanitize_facets( array $raw ): array {
         $allowed_kinds    = [ 'taxonomy', 'meta', 'field', 'view' ];
-        $allowed_displays = [
-            'checkbox', 'radio', 'dropdown', 'toggle', 'hierarchy',
-            'range', 'date_range', 'search', 'swatch', 'swiper',
-            'spin_the_wheel', 'matrix', 'saved_bin', 'ask', 'visual_dna', 'pagination',
-        ];
+        // Everything renderable now plus the signature (Pro) displays, so a
+        // save while the add-on is inactive never rewrites stored Pro facets.
+        $allowed_displays = \HookedOnFacets\Facets\Displays::storable();
 
         $clean = [];
         $seen  = [];

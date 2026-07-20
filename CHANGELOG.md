@@ -9,6 +9,22 @@ major version. Each version links to its full GitHub release notes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Free/Pro split.** The six signature facets — Ask (AI natural language),
+  Visual DNA, swipe deck, spin-the-wheel, intersection matrix, and the saved
+  comparison bin — moved to the separate Hooked on Facets Pro add-on, together
+  with the AI settings screen, the `/ask` and `/visual-dna` REST endpoints, and
+  the entire licensing/self-update stack. The free core now ships ten facet
+  types at full resolver speed, contacts no external service, and contains no
+  license code — it is the WordPress.org artifact as-is. Extension seams for
+  add-ons: `hof_available_displays`, `hof_facet_renderers`, `hof_pro_active`,
+  and the `hof_booted` container hook. Stored Pro facet configs are preserved
+  (and simply don't render) while the add-on is inactive.
+- `Tested up to: 7.0` after a smoke test on WordPress 7.0.2.
+- Documented MariaDB 10.3+ support alongside MySQL 8.0.31+ (both provide
+  `INTERSECT`; the plugin feature-uses it without version-sniffing).
+
 ### Security
 
 - The public `/visual-dna` endpoint is now rate-limited (30 requests/min per

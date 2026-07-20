@@ -87,7 +87,10 @@ final class MenuRegistrar implements Bootable {
                 'productsIndexed'    => $this->count_indexed_products(),
                 'telemetry'          => $this->load_telemetry_snapshot(),
                 'version'            => HOF_VERSION,
-                'edition'            => defined( 'HOF_EDITION' ) ? HOF_EDITION : 'premium',
+                // True when the HOF Pro add-on is active (unlocks the
+                // signature displays + the AI/License screens in the SPA).
+                'proActive'          => (bool) apply_filters( 'hof_pro_active', false ),
+                'availableDisplays'  => \HookedOnFacets\Facets\Displays::available(),
                 'woocommerceActive'  => function_exists( 'WC' ) || class_exists( \WooCommerce::class ),
                 'acfActive'          => function_exists( 'acf_get_field_groups' ) && function_exists( 'acf_get_fields' ),
                 'metaboxActive'      => function_exists( 'rwmb_meta' ) && function_exists( 'rwmb_get_registry' ),

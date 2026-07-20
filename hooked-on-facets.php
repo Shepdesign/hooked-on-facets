@@ -41,14 +41,6 @@ define( 'HOF_PLUGIN_BASENAME',  plugin_basename( __FILE__ ) );
 define( 'HOF_MIN_PHP',          '8.2' );
 define( 'HOF_MIN_WP',           '6.4' );
 
-// Distribution edition: 'premium' (default — ships from hookedonfacets.com with
-// the licensed self-updater) or 'free' (the WordPress.org build, which updates
-// through WordPress.org and makes no license-server calls). The WP.org build
-// flips the value on the line below — see bin/build-wporg.sh.
-if ( ! defined( 'HOF_EDITION' ) ) {
-    define( 'HOF_EDITION', 'premium' ); // build:wporg -> free
-}
-
 /*
 |--------------------------------------------------------------------------
 | Environment gates
