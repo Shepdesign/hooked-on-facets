@@ -32,6 +32,7 @@ require_once dirname( __DIR__, 2 ) . '/vendor/autoload.php';
 // Global WP class stubs live outside tests/php/ to avoid composer's
 // autoload-dev PSR-4 scan flagging them as misplaced.
 require_once dirname( __DIR__ ) . '/stubs/WP_Query.php';
+require_once dirname( __DIR__ ) . '/stubs/WP_Term.php';
 
 // \Bricks\Elements stub so the Bricks bridge's element registration has a
 // target to call into without a live Bricks theme.

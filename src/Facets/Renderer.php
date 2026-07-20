@@ -1416,7 +1416,7 @@ final class Renderer {
             if ( ! $term instanceof \WP_Term ) {
                 continue;
             }
-            $hex = (string) get_term_meta( $term->term_id, 'swatch_color', true );
+            $hex = (string) get_term_meta( $term->term_id, SwatchTermFields::META_COLOR, true );
             if ( $hex === '' || ! preg_match( '/^#[0-9a-f]{6}$/i', $hex ) ) {
                 $key = strtolower( $term->slug );
                 $hex = $fallback[ $key ] ?? ( $fallback[ strtolower( $term->name ) ] ?? '' );
