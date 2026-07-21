@@ -338,7 +338,7 @@ final class SeoManagerTest extends TestCase {
         $this->withOptions();
         Functions\when( 'is_ssl' )->justReturn( true );
         Functions\when( 'wp_unslash' )->returnArg();
-        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'sanitize_text_field' )->alias( static fn( $s ) => preg_replace( '/%[a-f0-9]{2}/i', '', (string) $s ) );
 
         $_SERVER['HTTP_HOST']   = 'shop.test';
         $_SERVER['REQUEST_URI'] = '/shop/?hof%5Bbrand%5D%5B%5D=nike';

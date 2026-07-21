@@ -33,6 +33,10 @@ final class RendererHierarchyTest extends TestCase {
         // A non-WP_Term return sends every bucket down the "root" branch — enough
         // to exercise the render-row closure without stubbing the WP_Term class.
         Functions\when( 'get_term_by' )->justReturn( false );
+        // render_hierarchy's rows now probe PrettyUrls::enabled() per option
+        // (pretty-link crawlable-anchor support) — stub get_option() so that
+        // resolves to "off" (no permalink_structure) without a live WP.
+        Functions\when( 'get_option' )->justReturn( false );
     }
 
     protected function tearDown(): void {

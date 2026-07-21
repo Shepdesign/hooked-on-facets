@@ -477,6 +477,13 @@ final class SeoManager implements Bootable {
      * pretty rules on — the shop archive or a product taxonomy — with a
      * non-root base path (shop-as-front-page has no root rules). Everywhere
      * else the legacy clean canonical still applies and we must never 301.
+     *
+     * Surfaces a third party adds via the `hof_pretty_urls_bases` filter are
+     * deliberately excluded here too: this gate only recognizes the shop
+     * archive and product taxonomies, so those extra surfaces get neither a
+     * 301 nor a pretty canonical from SeoManager — conservative by design,
+     * since we can't verify a third-party surface actually has rewrite rules
+     * registered for it.
      */
     private function on_pretty_surface( string $base_path ): bool {
         if ( '/' === $base_path || '' === $base_path ) {
