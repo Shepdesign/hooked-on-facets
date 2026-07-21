@@ -38,6 +38,7 @@ use HookedOnFacets\Contracts\Bootable;
 use HookedOnFacets\Filter\Resolver;
 use HookedOnFacets\Indexer;
 use HookedOnFacets\Routing\FilterState;
+use HookedOnFacets\Routing\PrettySurface;
 use HookedOnFacets\Routing\PrettyUrls;
 use HookedOnFacets\Routing\UrlCodec;
 
@@ -90,7 +91,7 @@ final class SeoManager implements Bootable {
             // has no pretty form, and the legacy clean URL is exactly right.
             if (
                 $codec && ! empty( $state )
-                && $this->on_pretty_surface( $this->current_base_path( $codec ) )
+                && null !== PrettySurface::context()
                 && $codec->encode( $state )['path'] !== ''
             ) {
                 $pretty = $this->pretty_url_for( $this->current_url(), $state, $codec );
@@ -130,7 +131,7 @@ final class SeoManager implements Bootable {
         if ( ! $codec || empty( $state ) ) {
             return;
         }
-        if ( ! $this->on_pretty_surface( $this->current_base_path( $codec ) ) ) {
+        if ( null === PrettySurface::context() ) {
             return;
         }
         $target = $this->redirect_target( $this->current_url(), $state, $codec );
@@ -457,41 +458,6 @@ final class SeoManager implements Bootable {
             return [ (string) preg_replace( '#/page/[0-9]+/?$#', '/', $path ), '/page/' . $m[1] . '/' ];
         }
         return [ $path, '' ];
-    }
-
-    /**
-     * The archive base path for the current request: pagination peeled,
-     * then hof-cruft stripped via the codec. Shared by the pretty-canonical
-     * preference (print_canonical()) and the redirect surface gate
-     * (maybe_redirect()) so the peel+strip logic lives in one place.
-     */
-    private function current_base_path( UrlCodec $codec ): string {
-        $parts = wp_parse_url( $this->current_url() );
-        $path  = is_array( $parts ) ? (string) ( $parts['path'] ?? '/' ) : '/';
-        [ $path, ] = $this->peel_pagination( $path );
-        return $codec->strip_base_path( $path );
-    }
-
-    /**
-     * Whether the current request is a surface RewriteManager registers
-     * pretty rules on — the shop archive or a product taxonomy — with a
-     * non-root base path (shop-as-front-page has no root rules). Everywhere
-     * else the legacy clean canonical still applies and we must never 301.
-     *
-     * Surfaces a third party adds via the `hof_pretty_urls_bases` filter are
-     * deliberately excluded here too: this gate only recognizes the shop
-     * archive and product taxonomies, so those extra surfaces get neither a
-     * 301 nor a pretty canonical from SeoManager — conservative by design,
-     * since we can't verify a third-party surface actually has rewrite rules
-     * registered for it.
-     */
-    private function on_pretty_surface( string $base_path ): bool {
-        if ( '/' === $base_path || '' === $base_path ) {
-            return false;
-        }
-        $is_shop = function_exists( 'is_shop' ) && is_shop();
-        $is_tax  = function_exists( 'is_product_taxonomy' ) && is_product_taxonomy();
-        return $is_shop || $is_tax;
     }
 
     /**

@@ -27,12 +27,16 @@ final class SlugMapperTest extends TestCase {
 
     private int $query_count = 0;
 
+    /** SQL text of the last get_col() call — lets tests assert on the LIMIT clause. */
+    private string $last_sql = '';
+
     protected function setUp(): void {
         parent::setUp();
         Monkey\setUp();
         $this->cache       = [];
         $this->rows        = [];
         $this->query_count = 0;
+        $this->last_sql    = '';
 
         Functions\when( 'get_option' )->alias( static fn( $name, $default = false ) => $name === 'hof_index_version' ? 7 : $default );
         Functions\when( 'sanitize_title' )->alias(
@@ -44,17 +48,21 @@ final class SlugMapperTest extends TestCase {
             return true;
         } );
 
-        // Minimal $wpdb: prepare() interpolates the one %s; get_col() returns fixture rows.
+        // Minimal $wpdb: prepare() interpolates the one %s; get_col() returns
+        // fixture rows and records the executed SQL so tests can assert on
+        // the LIMIT clause.
         $rows        = &$this->rows;
         $query_count = &$this->query_count;
-        $GLOBALS['wpdb'] = new class( $rows, $query_count ) {
+        $last_sql    = &$this->last_sql;
+        $GLOBALS['wpdb'] = new class( $rows, $query_count, $last_sql ) {
             public string $prefix = 'wp_';
-            public function __construct( private array &$rows, private int &$query_count ) {}
+            public function __construct( private array &$rows, private int &$query_count, private string &$last_sql ) {}
             public function prepare( string $sql, ...$args ): string {
                 return str_replace( '%s', "'" . $args[0] . "'", $sql );
             }
             public function get_col( string $sql ): array {
                 $this->query_count++;
+                $this->last_sql = $sql;
                 if ( preg_match( "/facet_name = '([^']+)'/", $sql, $m ) ) {
                     return $this->rows[ $m[1] ] ?? [];
                 }
@@ -182,5 +190,17 @@ final class SlugMapperTest extends TestCase {
         self::assertFalse( $m->is_mappable( 'ghost' ) );
         self::assertNull( $m->slug( 'ghost', 'x' ) );
         self::assertNull( $m->value( 'ghost', 'x' ) );
+    }
+
+    public function test_probe_query_is_bounded_by_the_default_cap(): void {
+        // Bounded probe: the query must ask for at most cap+1 rows, not the
+        // whole distinct-value set, so an over-cap facet never gets fully
+        // hydrated on every render.
+        $this->rows['brand'] = [ 'nike' ];
+        $m = $this->mapper( [ [ 'name' => 'brand', 'kind' => 'taxonomy' ] ] );
+
+        $m->slug( 'brand', 'nike' );
+
+        self::assertStringContainsString( 'LIMIT 501', $this->last_sql );
     }
 }

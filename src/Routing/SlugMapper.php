@@ -120,13 +120,23 @@ final class SlugMapper implements SlugMapperInterface {
         global $wpdb;
         $table = $wpdb->prefix . Activator::TABLE;
 
-        // ORDER BY makes collision suffixes deterministic across requests.
+        $cap = max( 1, (int) apply_filters( 'hof_pretty_urls_max_values', 500 ) );
+
+        // Bounded probe: LIMIT cap+1 is enough rows to tell "over cap" from
+        // "at or under cap" without hydrating a facet with tens of thousands
+        // of distinct values on every call. is_mappable() runs on every
+        // front-end render (Renderer::pretty_link() calls it once per
+        // discrete-facet option), and there's no guarantee the object cache
+        // is anything but a per-request no-op, so an unbounded SELECT here
+        // would mean re-reading the whole distinct-value set on every page
+        // view for any facet that ends up over the cap. ORDER BY still makes
+        // collision suffixes deterministic across requests for the values
+        // actually returned.
         $values = $wpdb->get_col( $wpdb->prepare(
-            "SELECT DISTINCT facet_value FROM {$table} WHERE facet_name = %s ORDER BY facet_value",
+            "SELECT DISTINCT facet_value FROM {$table} WHERE facet_name = %s ORDER BY facet_value LIMIT " . ( $cap + 1 ),
             $facet_name
         ) );
 
-        $cap = max( 1, (int) apply_filters( 'hof_pretty_urls_max_values', 500 ) );
         if ( count( $values ) > $cap ) {
             return null;
         }

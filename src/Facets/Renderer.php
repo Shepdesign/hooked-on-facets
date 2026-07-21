@@ -26,6 +26,7 @@ use HookedOnFacets\Admin\SwatchTermFields;
 use HookedOnFacets\Filter\Resolver;
 use HookedOnFacets\Indexer;
 use HookedOnFacets\Routing\FilterState;
+use HookedOnFacets\Routing\PrettySurface;
 use HookedOnFacets\Routing\PrettyUrls;
 
 defined( 'ABSPATH' ) || exit;
@@ -283,15 +284,15 @@ final class Renderer {
                                            name="hof[<?php echo esc_attr( $name ); ?>][]"
                                            value="<?php echo esc_attr( $value ); ?>"
                                            <?php checked( $checked ); ?>>
-                                    <?php $link = $this->pretty_link( $facet, $value ); ?>
-                                    <?php if ( $link !== '' ) : ?>
-                                        <a class="hof-facet-link hof-facet-name" href="<?php echo esc_url( $link ); ?>"><?php echo esc_html( $bucket['display'] ); ?></a>
-                                    <?php else : ?>
-                                        <span class="hof-facet-name"><?php echo esc_html( $bucket['display'] ); ?></span>
-                                    <?php endif; ?>
-                                    <span class="hof-facet-count"
-                                          data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( (int) $bucket['count'] ) ); ?></span>
                                 </label>
+                                <?php $link = $this->pretty_link( $facet, $value ); ?>
+                                <?php if ( $link !== '' ) : ?>
+                                    <a class="hof-facet-link hof-facet-name" href="<?php echo esc_url( $link ); ?>"><?php echo esc_html( $bucket['display'] ); ?></a>
+                                <?php else : ?>
+                                    <span class="hof-facet-name"><?php echo esc_html( $bucket['display'] ); ?></span>
+                                <?php endif; ?>
+                                <span class="hof-facet-count"
+                                      data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( (int) $bucket['count'] ) ); ?></span>
                             </li>
                         <?php endforeach; ?>
                     </ul>
@@ -346,15 +347,15 @@ final class Renderer {
                                            name="hof[<?php echo esc_attr( $name ); ?>]"
                                            value="<?php echo esc_attr( $value ); ?>"
                                            <?php checked( $is_active ); ?>>
-                                    <?php $link = $this->pretty_link( $facet, $value ); ?>
-                                    <?php if ( $link !== '' ) : ?>
-                                        <a class="hof-facet-link hof-facet-name" href="<?php echo esc_url( $link ); ?>"><?php echo esc_html( $bucket['display'] ); ?></a>
-                                    <?php else : ?>
-                                        <span class="hof-facet-name"><?php echo esc_html( $bucket['display'] ); ?></span>
-                                    <?php endif; ?>
-                                    <span class="hof-facet-count"
-                                          data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( (int) $bucket['count'] ) ); ?></span>
                                 </label>
+                                <?php $link = $this->pretty_link( $facet, $value ); ?>
+                                <?php if ( $link !== '' ) : ?>
+                                    <a class="hof-facet-link hof-facet-name" href="<?php echo esc_url( $link ); ?>"><?php echo esc_html( $bucket['display'] ); ?></a>
+                                <?php else : ?>
+                                    <span class="hof-facet-name"><?php echo esc_html( $bucket['display'] ); ?></span>
+                                <?php endif; ?>
+                                <span class="hof-facet-count"
+                                      data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( (int) $bucket['count'] ) ); ?></span>
                             </li>
                         <?php endforeach; ?>
                     </ul>
@@ -400,9 +401,12 @@ final class Renderer {
                 </select>
             </label>
             <?php
-            // Crawlable but invisible: the <select> stays the interactive
-            // control; bots read hrefs straight from source. Placed outside
-            // the <label> since <ul> isn't valid label content.
+            // Rendered visible on purpose: no-JS users need working links per
+            // the design contract, so the <select> can't be the only way to
+            // filter. Task 9's boot JS hides this list once it owns
+            // interaction (progressive enhancement — JS off means these are
+            // the real navigation). Placed outside the <label> since <ul>
+            // isn't valid label content.
             $seo_links = [];
             foreach ( $buckets as $bucket ) {
                 $link = $this->pretty_link( $facet, (string) $bucket['value'] );
@@ -411,7 +415,7 @@ final class Renderer {
                 }
             }
             if ( $seo_links !== [] ) {
-                echo '<ul class="hof-facet-seo-links" hidden>' . implode( '', $seo_links ) . '</ul>';
+                echo '<ul class="hof-facet-seo-links">' . implode( '', $seo_links ) . '</ul>';
             }
             ?>
         </div>
@@ -542,14 +546,14 @@ final class Renderer {
                                        name="hof[<?php echo esc_attr( $name ); ?>][]"
                                        value="<?php echo esc_attr( $value ); ?>"
                                        <?php checked( $checked ); ?>>
-                                <?php $link = $this->pretty_link( $facet, $value ); ?>
-                                <?php if ( $link !== '' ) : ?>
-                                    <a class="hof-facet-link hof-facet-name" href="<?php echo esc_url( $link ); ?>"><?php echo esc_html( $display ); ?></a>
-                                <?php else : ?>
-                                    <span class="hof-facet-name"><?php echo esc_html( $display ); ?></span>
-                                <?php endif; ?>
-                                <span class="hof-facet-count" data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
                             </label>
+                            <?php $link = $this->pretty_link( $facet, $value ); ?>
+                            <?php if ( $link !== '' ) : ?>
+                                <a class="hof-facet-link hof-facet-name" href="<?php echo esc_url( $link ); ?>"><?php echo esc_html( $display ); ?></a>
+                            <?php else : ?>
+                                <span class="hof-facet-name"><?php echo esc_html( $display ); ?></span>
+                            <?php endif; ?>
+                            <span class="hof-facet-count" data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
                         </summary>
                         <ul class="hof-hierarchy-children">
                             <?php foreach ( $kids as $child_slug ) {
@@ -565,14 +569,14 @@ final class Renderer {
                                name="hof[<?php echo esc_attr( $name ); ?>][]"
                                value="<?php echo esc_attr( $value ); ?>"
                                <?php checked( $checked ); ?>>
-                        <?php $link = $this->pretty_link( $facet, $value ); ?>
-                        <?php if ( $link !== '' ) : ?>
-                            <a class="hof-facet-link hof-facet-name" href="<?php echo esc_url( $link ); ?>"><?php echo esc_html( $display ); ?></a>
-                        <?php else : ?>
-                            <span class="hof-facet-name"><?php echo esc_html( $display ); ?></span>
-                        <?php endif; ?>
-                        <span class="hof-facet-count" data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
                     </label>
+                    <?php $link = $this->pretty_link( $facet, $value ); ?>
+                    <?php if ( $link !== '' ) : ?>
+                        <a class="hof-facet-link hof-facet-name" href="<?php echo esc_url( $link ); ?>"><?php echo esc_html( $display ); ?></a>
+                    <?php else : ?>
+                        <span class="hof-facet-name"><?php echo esc_html( $display ); ?></span>
+                    <?php endif; ?>
+                    <span class="hof-facet-count" data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
                 </li>
             <?php endif;
             return (string) ob_get_clean();
@@ -861,17 +865,17 @@ final class Renderer {
                                     <span class="hof-facet-swatch-initial"><?php echo esc_html( $initial ); ?></span>
                                 <?php endif; ?>
                             </span>
-                            <span class="hof-facet-swatch-text">
-                                <?php $link = $this->pretty_link( $facet, $value ); ?>
-                                <?php if ( $link !== '' ) : ?>
-                                    <a class="hof-facet-link hof-facet-swatch-name" href="<?php echo esc_url( $link ); ?>"><?php echo esc_html( $bucket['display'] ); ?></a>
-                                <?php else : ?>
-                                    <span class="hof-facet-swatch-name"><?php echo esc_html( $bucket['display'] ); ?></span>
-                                <?php endif; ?>
-                                <span class="hof-facet-count"
-                                      data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
-                            </span>
                         </label>
+                        <span class="hof-facet-swatch-text">
+                            <?php $link = $this->pretty_link( $facet, $value ); ?>
+                            <?php if ( $link !== '' ) : ?>
+                                <a class="hof-facet-link hof-facet-swatch-name" href="<?php echo esc_url( $link ); ?>"><?php echo esc_html( $bucket['display'] ); ?></a>
+                            <?php else : ?>
+                                <span class="hof-facet-swatch-name"><?php echo esc_html( $bucket['display'] ); ?></span>
+                            <?php endif; ?>
+                            <span class="hof-facet-count"
+                                  data-hof-count="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
+                        </span>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -1735,9 +1739,13 @@ final class Renderer {
 
     /**
      * Crawlable pretty URL for toggling one discrete value — '' when pretty
-     * URLs are off, the facet isn't path-eligible, or no codec exists. The
-     * href is the full filter state with this value added (or removed when
-     * already selected), canonically encoded.
+     * URLs are off, the facet isn't path-eligible, no codec exists, or
+     * PrettySurface says the current request isn't a rule-bearing storefront
+     * surface. The href is the full filter state with this value applied,
+     * canonically encoded: multi-select displays (checkbox/hierarchy/swatch)
+     * add/remove the value in the existing selection; single-select displays
+     * (radio/dropdown) replace the selection with just this value, or clear
+     * it when this value is already the active one.
      *
      * @param array<string, mixed> $facet
      */
@@ -1777,18 +1785,18 @@ final class Renderer {
 
         $encoded = $codec->encode( $state );
 
-        $host = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
-        $uri  = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
-        if ( $host === '' ) {
+        // PrettySurface owns the "is this request a rule-bearing storefront
+        // surface" gate — shared with SeoManager's 301/canonical layer so the
+        // two never drift — plus the origin/base-path invariants, which are
+        // the same for every option in a facet's bucket loop and so come back
+        // memoized after the first call.
+        $ctx = PrettySurface::context();
+        if ( null === $ctx ) {
             return '';
         }
-        $path = (string) ( wp_parse_url( $uri )['path'] ?? '/' );
-        $path = (string) preg_replace( '#/page/[0-9]+/?$#', '/', $path );
-        $base = $codec->strip_base_path( $path );
 
-        $scheme = is_ssl() ? 'https' : 'http';
-        $target = rtrim( $base, '/' ) . ( $encoded['path'] !== '' ? $encoded['path'] : '/' );
-        $url    = $scheme . '://' . $host . user_trailingslashit( rtrim( $target, '/' ) );
+        $target = rtrim( $ctx['base_path'], '/' ) . ( $encoded['path'] !== '' ? $encoded['path'] : '/' );
+        $url    = $ctx['origin'] . user_trailingslashit( rtrim( $target, '/' ) );
 
         if ( ! empty( $encoded['tail'] ) ) {
             $url .= '?' . http_build_query( [ 'hof' => $encoded['tail'] ] );
