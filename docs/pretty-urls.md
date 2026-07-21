@@ -80,6 +80,13 @@ wheel, and matrix. Range slider, date range, search, ask, visual DNA, and
 saved bin are always query-tail facets — their values aren't a finite,
 slug-mappable set.
 
+Of those, five render a crawlable `<a>` next to each option so no-JS
+visitors and crawlers get a real link to click: **checkbox**, **radio**,
+**dropdown**, **hierarchy**, and **swatch**. Toggle, swipe deck,
+spin-the-wheel, and matrix are still path-eligible — a selection there still
+produces (and accepts) a pretty URL — they just don't render an extra anchor
+per option on top of their own interactive control.
+
 ## SEO behavior
 
 - **Ordered canonical.** The `rel=canonical` tag on a filtered page always

@@ -23,7 +23,6 @@ use HookedOnFacets\Indexer;
 use HookedOnFacets\Routing\FilterState;
 use HookedOnFacets\Routing\PrettySurface;
 use HookedOnFacets\Routing\PrettyUrls;
-use HookedOnFacets\Routing\SlugMapper;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -123,10 +122,14 @@ final class AssetLoader implements Bootable {
      * prettyUrls config and the client falls back to query-string URLs
      * exactly like the server does there.
      *
-     * Ships the path-eligible facets in canonical order plus value→slug maps
-     * for meta facets (taxonomy is identity; over-cap facets are simply
-     * absent, so the client falls back to the query tail exactly like the
-     * server).
+     * Ships the path-eligible facets in canonical order, `facetOrder` (every
+     * configured facet name, path-eligible or not, in saved order — the
+     * client needs the full list to reproduce UrlCodec::encode()'s tail
+     * ordering byte-for-byte, not just the path-eligible subset), and
+     * value→slug maps for every path-eligible facet (taxonomy included —
+     * see SlugMapper::client_map(); over-cap facets are simply absent from
+     * both `facets` and `slugMaps`, so the client falls back to the query
+     * tail exactly like the server).
      *
      * @return array<string, mixed>|null
      */
@@ -139,35 +142,40 @@ final class AssetLoader implements Bootable {
         if ( ! $codec ) {
             return null;
         }
+        // Reuse the SlugMapper FilterState::codec() already built from the
+        // same facet defs, rather than constructing a second instance — a
+        // second instance would double the bounded probe query per facet
+        // (SlugMapper::build_map()) on every request that ships this config.
+        $mapper = FilterState::mapper();
 
         $defs = (array) get_option( Indexer::OPTION_FACETS, [] );
-        $by_name = [];
-        foreach ( $defs as $def ) {
-            if ( is_array( $def ) && isset( $def['name'] ) ) {
-                $by_name[ (string) $def['name'] ] = $def;
-            }
-        }
-        $mapper = new SlugMapper( $by_name );
 
-        $facets    = [];
-        $slug_maps = [];
+        $facet_order = [];
+        $facets      = [];
+        $slug_maps   = [];
         foreach ( $defs as $def ) {
-            if ( ! is_array( $def ) || ! $codec->is_path_facet( $def ) ) {
+            if ( ! is_array( $def ) || ! isset( $def['name'] ) ) {
                 continue;
             }
-            $name     = (string) $def['name'];
+            $name          = (string) $def['name'];
+            $facet_order[] = $name;
+
+            if ( ! $codec->is_path_facet( $def ) ) {
+                continue;
+            }
             $facets[] = $name;
-            $map      = $mapper->client_map( $name );
+            $map      = $mapper?->client_map( $name );
             if ( $map !== null ) {
                 $slug_maps[ $name ] = $map;
             }
         }
 
         return [
-            'base'     => PrettyUrls::base(),
-            'basePath' => $ctx['base_path'],
-            'facets'   => $facets,
-            'slugMaps' => $slug_maps,
+            'base'       => PrettyUrls::base(),
+            'basePath'   => $ctx['base_path'],
+            'facets'     => $facets,
+            'facetOrder' => $facet_order,
+            'slugMaps'   => $slug_maps,
         ];
     }
 

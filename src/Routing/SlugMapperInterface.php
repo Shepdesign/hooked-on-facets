@@ -29,8 +29,13 @@ interface SlugMapperInterface {
     public function is_mappable( string $facet_name ): bool;
 
     /**
-     * value → slug map for the client bundle, or null when identity
-     * (taxonomy), over cap, or unknown. Only meta facets ship a map.
+     * value → slug map for the client bundle, or null when over cap, empty,
+     * or unknown. Every path-eligible facet ships a map — including taxonomy,
+     * whose pairs happen to be identity — because the client must validate
+     * every value against the exact membership set the server enforces
+     * (UrlCodec::decode() hard-404s an unmapped slug); a client that
+     * identity-paths a stale/unknown taxonomy value would build a link the
+     * server rejects.
      *
      * @return array<string, string>|null
      */

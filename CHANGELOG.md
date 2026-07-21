@@ -16,10 +16,12 @@ major version. Each version links to its full GitHub release notes.
   on the shop and product category/tag/attribute archives. Includes canonical
   URLs in a deterministic order, 301 redirects from legacy query-string and
   non-canonical URLs, hard 404s for unresolvable filter paths, crawlable
-  `<a>` links in the discrete facet displays, and a client-side encoder so
-  AJAX filtering pushes the same pretty URLs. Configure on the SEO screen;
-  requires non-plain permalinks. New filters: `hof_pretty_urls_bases`,
-  `hof_pretty_urls_max_values`, `hof_slugmap_cache_ttl`.
+  `<a>` links in the checkbox, radio, dropdown, hierarchy, and swatch
+  displays, and a client-side encoder — byte-for-byte matched to the
+  server's canonical encoding — so AJAX filtering pushes the same pretty
+  URLs. Configure on the SEO screen; requires non-plain permalinks. New
+  filters: `hof_pretty_urls_bases`, `hof_pretty_urls_max_values`,
+  `hof_slugmap_cache_ttl`.
 
 ## [1.0.0] - 2026-06-04
 

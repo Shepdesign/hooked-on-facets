@@ -94,7 +94,9 @@ final class SlugMapperTest extends TestCase {
         self::assertSame( 'nike', $m->value( 'brand', 'nike' ) );
         self::assertNull( $m->slug( 'brand', 'puma' ) );
         self::assertNull( $m->value( 'brand', 'puma' ) );
-        self::assertNull( $m->client_map( 'brand' ) ); // identity → no client map
+        // Identity pairs, but still a real client_map: the client validates
+        // every value against the same membership set the server enforces.
+        self::assertSame( [ 'adidas' => 'adidas', 'nike' => 'nike' ], $m->client_map( 'brand' ) );
     }
 
     public function test_meta_slugifies_and_reverses(): void {

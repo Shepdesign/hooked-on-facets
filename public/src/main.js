@@ -253,6 +253,12 @@ function bootPrettyLinks() {
     // Delegated on document, registered once: keeps working for anchors
     // swapped in by later refreshes without re-attaching.
     document.addEventListener('click', (e) => {
+        // Modifier/middle/right clicks mean "open in a new tab/window" —
+        // respect the browser's native handling instead of intercepting.
+        // e.defaultPrevented means some other handler already dealt with
+        // this click; don't double-handle it.
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
         const link = e.target.closest('.hof-facet-link');
         if (!link) return;
         const input = link.closest('li')?.querySelector('input');

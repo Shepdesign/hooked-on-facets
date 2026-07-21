@@ -36,6 +36,7 @@ final class FilterState {
     private static bool $path_invalid = false;
 
     private static ?UrlCodec $codec      = null;
+    private static ?SlugMapper $mapper   = null;
     private static bool $codec_resolved  = false;
 
     private function __construct() {}
@@ -110,15 +111,42 @@ final class FilterState {
      * Lazily built codec for the configured facets, or null when none exist.
      */
     public static function codec(): ?UrlCodec {
+        self::resolve_codec();
+        return self::$codec;
+    }
+
+    /**
+     * The SlugMapper backing codec() — built together with it in the same
+     * resolve step, so callers that need direct map access (AssetLoader's
+     * client-config payload) don't have to construct a second instance from
+     * the same facet defs, which would double the bounded probe query per
+     * facet on every request that ships pretty-URL config.
+     */
+    public static function mapper(): ?SlugMapper {
+        self::resolve_codec();
+        return self::$mapper;
+    }
+
+    /** Drop all memoized state (tests, and anything that mutates facet config mid-request). */
+    public static function reset(): void {
+        self::$memo           = null;
+        self::$path_invalid   = false;
+        self::$codec          = null;
+        self::$mapper         = null;
+        self::$codec_resolved = false;
+    }
+
+    /** Builds codec() + mapper() together, once, memoized. */
+    private static function resolve_codec(): void {
         if ( self::$codec_resolved ) {
-            return self::$codec;
+            return;
         }
         self::$codec_resolved = true;
 
         $defs = get_option( Indexer::OPTION_FACETS, [] );
         $defs = is_array( $defs ) ? array_values( array_filter( $defs, 'is_array' ) ) : [];
         if ( $defs === [] ) {
-            return self::$codec = null;
+            return;
         }
 
         $by_name = [];
@@ -128,15 +156,8 @@ final class FilterState {
             }
         }
 
-        return self::$codec = new UrlCodec( $defs, new SlugMapper( $by_name ), PrettyUrls::base() );
-    }
-
-    /** Drop all memoized state (tests, and anything that mutates facet config mid-request). */
-    public static function reset(): void {
-        self::$memo           = null;
-        self::$path_invalid   = false;
-        self::$codec          = null;
-        self::$codec_resolved = false;
+        self::$mapper = new SlugMapper( $by_name );
+        self::$codec  = new UrlCodec( $defs, self::$mapper, PrettyUrls::base() );
     }
 
     /**

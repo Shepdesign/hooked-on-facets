@@ -64,16 +64,21 @@ final class SlugMapper implements SlugMapperInterface {
 
     public function client_map( string $facet_name ): ?array {
         $def = $this->defs_by_name[ $facet_name ] ?? null;
-        if ( ! $def || ( $def['kind'] ?? '' ) === 'taxonomy' ) {
-            return null; // Identity — the client needs no map.
+        if ( ! $def ) {
+            return null;
         }
         $map = $this->map( $facet_name );
         if ( $map === null || $map['forward'] === [] ) {
             return null;
         }
-        // Ship the full map — even identity pairs. A partial map would make
-        // the client bail to the query tail for values the server happily
-        // paths, and the two encoders must agree by construction.
+        // Ship the full map for EVERY facet — taxonomy included, even though
+        // its pairs are identity. The client must reject the same values the
+        // server would: UrlCodec::decode() hard-404s a slug that isn't in the
+        // mapper's membership set, so a client that identity-paths an
+        // unmapped taxonomy value (e.g. a stale term from an old page load)
+        // would build a link the server refuses. A partial/missing map would
+        // also make the client bail to the query tail for values the server
+        // happily paths — the two encoders must agree by construction.
         return $map['forward'];
     }
 
