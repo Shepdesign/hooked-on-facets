@@ -5,7 +5,7 @@ Tags: facets, faceted search, filters, woocommerce, product filter
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.2
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -96,6 +96,12 @@ Use the `[hof_facet name="your-facet"]` shortcode, the **Hooked on Facets** Gute
 block, or your page builder's binding (Elementor Query ID, Bricks CSS class, etc.).
 
 == Changelog ==
+
+= 1.0.1 =
+* Fixed: elements toggled with the HTML `hidden` attribute (Visual DNA result row
+  and palette, eyedropper button, swiper done-card) could stay visible because
+  author `display` rules beat the browser's `[hidden]` default. The public
+  stylesheet now ships a scoped guard.
 
 = 1.0.0 =
 * First stable release. Promotes the feature-complete 0.13.x line to general
