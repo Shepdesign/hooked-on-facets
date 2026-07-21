@@ -5,7 +5,7 @@ Tags: facets, faceted search, filters, woocommerce, product filter
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -117,6 +117,29 @@ lives in the public repository: https://github.com/Shepdesign/hooked-on-facets
 
 == Changelog ==
 
+= 1.1.0 =
+* Changed: the six signature facets — Ask (AI natural language), Visual DNA,
+  swipe deck, spin-the-wheel, intersection matrix, and the saved comparison
+  bin — moved to the Hooked on Facets Pro add-on, together with the AI settings
+  screen, the `/ask` and `/visual-dna` REST endpoints, and the licensing stack.
+  The free plugin ships ten facet types at full resolver speed and contacts no
+  external service. Stored Pro facet configs are preserved (and simply don't
+  render) while the add-on is inactive.
+* Security: the public `/visual-dna` endpoint is rate-limited (30 requests/min
+  per IP).
+* Fixed: the REST rate limiter is a true fixed window — steady below-limit
+  traffic no longer accumulates to the cap.
+* Fixed: elements toggled with the HTML `hidden` attribute could stay visible
+  because author `display` rules beat the browser's `[hidden]` default; the
+  public stylesheet now ships a scoped guard.
+
+= 1.0.1 =
+* Fixed: elements toggled with the HTML `hidden` attribute (Visual DNA result
+  row and palette, eyedropper button, swiper done-card) could stay visible
+  because author `display` rules beat the browser's `[hidden]` default.
+* Fixed: the Visual DNA color map read the legacy `swatch_color` term-meta key,
+  so palettes saved through the swatch fields UI never matched.
+
 = 1.0.0 =
 * First stable release. Promotes the feature-complete 0.13.x line to general
   availability with a committed public API and index schema. No functional changes
@@ -164,6 +187,12 @@ lives in the public repository: https://github.com/Shepdesign/hooked-on-facets
 * First public alpha.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+The six signature facets (Ask, Visual DNA, swipe deck, wheel, matrix, saved
+bin) moved to the Hooked on Facets Pro add-on — install and activate Pro to
+keep them rendering. Their stored configs are preserved either way. No reindex
+needed.
 
 = 1.0.0 =
 First stable release. The public API and index schema are now stable. Re-run the
