@@ -59,7 +59,26 @@ final class QueryHook implements Bootable {
         }
 
         // [0] is the canonical "no results" sentinel for post__in.
-        $query->set( 'post__in', ! empty( $ids ) ? $ids : [ 0 ] );
+        $post_in = ! empty( $ids ) ? $ids : [ 0 ];
+        $query->set( 'post__in', $post_in );
+
+        // WooCommerce-managed main queries do NOT keep that post__in:
+        // WC_Query::product_query() (pre_get_posts@10, after us at 9)
+        // overwrites it with the result of its loop_shop_post_in filter
+        // (default []). Feed the ids through that filter too, intersecting
+        // with anything another plugin contributed — HOF narrows, never
+        // widens. Registered per-request; WC only applies the filter on its
+        // own main product loop, so non-Woo queries are untouched.
+        if ( class_exists( 'WooCommerce' ) ) {
+            add_filter( 'loop_shop_post_in', static function ( $existing ) use ( $post_in ) {
+                $existing = (array) $existing;
+                if ( $existing === [] ) {
+                    return $post_in;
+                }
+                $narrowed = array_values( array_intersect( $existing, $post_in ) );
+                return $narrowed !== [] ? $narrowed : [ 0 ];
+            } );
+        }
 
         // Stash the resolved state so other layers (e.g. result-region JSON
         // payload, block render callbacks) can read what was applied.
