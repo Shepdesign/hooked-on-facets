@@ -89,4 +89,28 @@ final class PrettyUrls {
         update_option( self::OPTION, $next, false );
         update_option( self::FLUSH_FLAG, 1, false );
     }
+
+    /**
+     * Warning when a store term is slugged exactly like the base segment —
+     * its archive URLs would collide with the rewrite rules (nested and
+     * paginated forms mis-split and 404). Slug-only lookup on purpose:
+     * term_exists() matches by name first, which false-positives on a term
+     * merely NAMED like the base.
+     */
+    public static function base_collision_warning( ?string $base = null ): ?string {
+        $base = $base ?? self::base();
+        if ( ! function_exists( 'get_term_by' ) ) {
+            return null;
+        }
+        foreach ( [ 'product_cat', 'product_tag' ] as $taxonomy ) {
+            if ( false !== get_term_by( 'slug', $base, $taxonomy ) ) {
+                return sprintf(
+                    /* translators: %s: the configured URL segment */
+                    __( 'A store term is slugged "%s" — its archive URLs will collide with pretty filter URLs. Change the URL segment below.', 'hooked-on-facets' ),
+                    $base
+                );
+            }
+        }
+        return null;
+    }
 }

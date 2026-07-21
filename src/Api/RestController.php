@@ -366,31 +366,9 @@ final class RestController implements Bootable {
                 'enabled'   => $pretty['enabled'],
                 'base'      => $pretty['base'],
                 'available' => \HookedOnFacets\Routing\PrettyUrls::available(),
-                'warning'   => $this->pretty_urls_base_warning( $pretty['base'] ),
+                'warning'   => \HookedOnFacets\Routing\PrettyUrls::base_collision_warning( $pretty['base'] ),
             ],
         ], 200 );
-    }
-
-    /**
-     * Warn when a store term is slugged exactly like the pretty-URL base
-     * segment — its archive URLs would collide with the rewrite rules
-     * (nested/paginated forms mis-split and 404). The base setting is the
-     * escape hatch.
-     */
-    private function pretty_urls_base_warning( string $base ): ?string {
-        if ( ! function_exists( 'term_exists' ) ) {
-            return null;
-        }
-        foreach ( [ 'product_cat', 'product_tag' ] as $taxonomy ) {
-            if ( term_exists( $base, $taxonomy ) ) {
-                return sprintf(
-                    /* translators: %s: the configured URL segment */
-                    __( 'A store term is slugged "%s" — its archive URLs will collide with pretty filter URLs. Change the URL segment below.', 'hooked-on-facets' ),
-                    $base
-                );
-            }
-        }
-        return null;
     }
 
     public function save_seo_settings( \WP_REST_Request $request ): \WP_REST_Response {

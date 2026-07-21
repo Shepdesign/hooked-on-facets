@@ -97,4 +97,38 @@ final class PrettyUrlsTest extends TestCase {
             PrettyUrls::settings()
         );
     }
+
+    public function test_base_collision_warning_null_when_no_term(): void {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'get_term_by' )->justReturn( false );
+        self::assertNull( PrettyUrls::base_collision_warning( 'filter' ) );
+    }
+
+    public function test_base_collision_warning_on_slug_match(): void {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'get_term_by' )->alias(
+            static fn( $field, $value, $taxonomy ) => $taxonomy === 'product_cat'
+                ? (object) [ 'slug' => 'filter' ]
+                : false
+        );
+
+        $warning = PrettyUrls::base_collision_warning( 'filter' );
+
+        self::assertIsString( $warning );
+        self::assertStringContainsString( '"filter"', $warning );
+    }
+
+    public function test_base_collision_warning_ignores_name_only_match(): void {
+        // Regression: term_exists() matches by NAME first, which would
+        // false-positive on a term merely named like the base. get_term_by()
+        // must be called with 'slug' as the lookup field — anything else
+        // fails the assertion here.
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'get_term_by' )->alias( static function ( $field, $value, $taxonomy ) {
+            self::assertSame( 'slug', $field );
+            return false;
+        } );
+
+        self::assertNull( PrettyUrls::base_collision_warning( 'filter' ) );
+    }
 }
