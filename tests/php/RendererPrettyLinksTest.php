@@ -81,6 +81,22 @@ final class RendererPrettyLinksTest extends TestCase {
         $this->options['hof_pretty_urls']     = [ 'enabled' => $pretty, 'base' => 'filter' ];
     }
 
+    /** Same brand facet, but a single-select display — for the radio/dropdown replace-semantics tests. */
+    private function withRadioFacet(): void {
+        $this->options['hof_facets'] = [
+            [ 'name' => 'brand', 'label' => 'Brand', 'kind' => 'taxonomy', 'display' => 'radio', 'settings' => [] ],
+        ];
+        $this->options['permalink_structure'] = '/%postname%/';
+        $this->options['hof_pretty_urls']     = [ 'enabled' => true, 'base' => 'filter' ];
+    }
+
+    /** Invoke the private pretty_link() helper directly via reflection. */
+    private function prettyLink( array $facet, string $value ): string {
+        $method = new \ReflectionMethod( Renderer::class, 'pretty_link' );
+        $method->setAccessible( true );
+        return (string) $method->invoke( new Renderer( new Resolver() ), $facet, $value );
+    }
+
     /**
      * Invoke the private render_checkbox directly, same pattern as
      * RendererHierarchyTest — no resolver round-trip needed.
@@ -128,5 +144,31 @@ final class RendererPrettyLinksTest extends TestCase {
 
         self::assertStringNotContainsString( 'hof-facet-link', $html );
         self::assertStringContainsString( '<span class="hof-facet-name">Nike</span>', $html );
+    }
+
+    public function test_single_select_link_replaces_value(): void {
+        $this->withRadioFacet();
+        $_GET['hof'] = [ 'brand' => [ 'adidas' ] ];
+
+        $facet = [ 'name' => 'brand', 'label' => 'Brand', 'kind' => 'taxonomy', 'display' => 'radio', 'settings' => [] ];
+
+        // adidas is already selected; the nike link must REPLACE it, not stack.
+        self::assertSame(
+            'https://shop.test/shop/filter/brand/nike/',
+            $this->prettyLink( $facet, 'nike' )
+        );
+    }
+
+    public function test_single_select_link_clears_on_selected_value(): void {
+        $this->withRadioFacet();
+        $_GET['hof'] = [ 'brand' => [ 'nike' ] ];
+
+        $facet = [ 'name' => 'brand', 'label' => 'Brand', 'kind' => 'taxonomy', 'display' => 'radio', 'settings' => [] ];
+
+        // nike is already selected; clicking its own link clears the facet.
+        self::assertSame(
+            'https://shop.test/shop/',
+            $this->prettyLink( $facet, 'nike' )
+        );
     }
 }

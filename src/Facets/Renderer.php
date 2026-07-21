@@ -1753,13 +1753,21 @@ final class Renderer {
         $name  = (string) $facet['name'];
         $state = Resolver::parse_request_filters();
 
+        $single = in_array( (string) ( $facet['display'] ?? '' ), [ 'radio', 'dropdown' ], true );
+
         $values = array_map( 'strval', (array) ( $state[ $name ] ?? [] ) );
-        $pos    = array_search( $value, $values, true );
-        if ( $pos !== false ) {
-            unset( $values[ $pos ] );
-            $values = array_values( $values );
+        if ( $single ) {
+            // Single-select semantics: the link selects this value alone;
+            // clicking the already-selected value clears the facet.
+            $values = in_array( $value, $values, true ) ? [] : [ $value ];
         } else {
-            $values[] = $value;
+            $pos = array_search( $value, $values, true );
+            if ( $pos !== false ) {
+                unset( $values[ $pos ] );
+                $values = array_values( $values );
+            } else {
+                $values[] = $value;
+            }
         }
         if ( $values === [] ) {
             unset( $state[ $name ] );
