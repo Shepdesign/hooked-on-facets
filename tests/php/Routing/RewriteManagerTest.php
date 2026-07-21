@@ -196,12 +196,15 @@ final class RewriteManagerTest extends TestCase {
         $options['hof_pretty_urls'] = [ 'enabled' => true, 'base' => 'filter' ];
 
         // 5. Enabled + undecodable path ('puma' isn't a known brand slug) —
-        // hard 404.
+        // hard 404. The no-results sentinel must ship too: set_404() alone
+        // renders the 404 template but WP::handle_404() only sends the 404
+        // STATUS when the query is empty (sandbox-verified soft-404 without it).
         FilterState::reset();
         $query = new \WP_Query();
         $query->is_main = true;
         $query->set( 'hof_path', 'brand/puma' );
         $manager->guard_invalid_path( $query );
         self::assertTrue( $query->is_404, 'unresolvable path must 404' );
+        self::assertSame( [ 0 ], $query->get( 'post__in' ), 'query must be emptied so the 404 status ships' );
     }
 }

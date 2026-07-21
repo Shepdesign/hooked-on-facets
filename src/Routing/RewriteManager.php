@@ -81,6 +81,13 @@ final class RewriteManager implements Bootable {
             return;
         }
         if ( FilterState::codec()?->decode( $path ) === null ) {
+            // set_404() alone renders the 404 template but WP::handle_404()
+            // only sends the 404 STATUS when the query comes back empty — the
+            // unfiltered query would still find posts and the response would
+            // be a soft-404 (200 + "not found" body). Forcing the no-results
+            // sentinel (same one QueryHook uses) empties the query so the
+            // real 404 status ships.
+            $query->set( 'post__in', [ 0 ] );
             $query->set_404();
         }
     }
