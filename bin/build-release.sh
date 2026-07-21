@@ -54,10 +54,15 @@ echo "==> Installed --no-dev vendor"
 
 # --- 6. Build front-end assets in an isolated container, copy dist into stage ---
 # (host node_modules holds macOS-arm64 rolldown bindings that crash in Linux)
+# The container runs as root (npm needs a writable HOME + /build), so chown the
+# copied output back to the invoking user — on native-Linux hosts (CI runners)
+# the bind mount otherwise leaves root-owned files the later steps can't touch,
+# which silently skipped the source-map strip and failed package verification.
 docker run --rm -v "$REPO":/src:ro -v "$STAGE":/out -w /tmp node:20-alpine sh -c '
   tar -C /src --exclude=node_modules --exclude=.git --exclude=dist --exclude=vendor -cf - . | (mkdir -p /build && tar -C /build -xf -) &&
   cd /build && rm -rf node_modules && npm ci && npm run build &&
-  mkdir -p /out/assets && cp -r /build/assets/dist /out/assets/dist'
+  mkdir -p /out/assets && cp -r /build/assets/dist /out/assets/dist &&
+  chown -R '"$UID_GID"' /out/assets'
 echo "==> Built + copied assets/dist"
 
 # --- 7. Strip build-only files that had to be present for steps 5-6 ---
@@ -88,5 +93,10 @@ fi
 if find "$VERIFY/$SLUG/assets/dist" -name '*.map' | grep -q .; then
   echo "VERIFY FAIL: source map(s) shipped in assets/dist" >&2; fail=1
 fi
+# The core is the free WordPress.org artifact: no licensing code, ever.
+# (The signature facets + licensing live in the hooked-on-facets-pro add-on.)
+if [ -e "$VERIFY/$SLUG/src/Licensing" ]; then echo "VERIFY FAIL: build ships src/Licensing" >&2; fail=1; fi
+if [ -e "$VERIFY/$SLUG/src/Ai" ]; then echo "VERIFY FAIL: build ships src/Ai (Pro)" >&2; fail=1; fi
+if [ -e "$VERIFY/$SLUG/src/VisualDna" ]; then echo "VERIFY FAIL: build ships src/VisualDna (Pro)" >&2; fail=1; fi
 if [ "$fail" -ne 0 ]; then echo "==> PACKAGE VERIFICATION FAILED" >&2; exit 1; fi
 echo "==> Package verified OK"

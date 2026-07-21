@@ -23,6 +23,56 @@ major version. Each version links to its full GitHub release notes.
   filters: `hof_pretty_urls_bases`, `hof_pretty_urls_max_values`,
   `hof_slugmap_cache_ttl`.
 
+## [1.1.0] - 2026-07-21
+
+### Changed
+
+- **Free/Pro split.** The six signature facets — Ask (AI natural language),
+  Visual DNA, swipe deck, spin-the-wheel, intersection matrix, and the saved
+  comparison bin — moved to the separate Hooked on Facets Pro add-on, together
+  with the AI settings screen, the `/ask` and `/visual-dna` REST endpoints, and
+  the entire licensing/self-update stack. The free core now ships ten facet
+  types at full resolver speed, contacts no external service, and contains no
+  license code — it is the WordPress.org artifact as-is. Extension seams for
+  add-ons: `hof_available_displays`, `hof_facet_renderers`, `hof_pro_active`,
+  and the `hof_booted` container hook. Stored Pro facet configs are preserved
+  (and simply don't render) while the add-on is inactive.
+- `Tested up to: 7.0` after a smoke test on WordPress 7.0.2.
+- Documented MariaDB 10.3+ support alongside MySQL 8.0.31+ (both provide
+  `INTERSECT`; the plugin feature-uses it without version-sniffing).
+
+### Security
+
+- The public `/visual-dna` endpoint is now rate-limited (30 requests/min per
+  IP), completing the hardening that capped its palette at 8 colors — the cap
+  bounded per-request DB cost but not request rate.
+
+### Fixed
+
+- The REST rate limiter is now a true fixed window: the reset time is anchored
+  at the window's first hit and the transient TTL is set to the remaining
+  window on each increment. Previously every under-limit hit reset the TTL to
+  the full window, so steady below-limit traffic (e.g. one `/ask` request every
+  50 seconds) never let the window expire, accumulated to the cap, and was
+  blocked despite being far under the allowed rate.
+- Elements toggled with the HTML `hidden` attribute (Visual DNA result row and
+  palette, eyedropper button, swiper done-card) could stay visible because
+  author `display` rules beat the browser's `[hidden] { display: none }`
+  default. The public stylesheet now ships a scoped, cascade-final guard with a
+  regression test that models the cascade from the parsed stylesheet. (#38,
+  also shipped in 1.0.1)
+
+## [1.0.1] - 2026-07-21
+
+Hotfix release cut from `v1.0.0` (branch `hotfix/1.0.1`), deployed to
+hookedonfacets.com ahead of the 1.1.0 split.
+
+### Fixed
+
+- The `[hidden]`-attribute CSS guard described under 1.1.0. (#38)
+- The Visual DNA color map read the legacy `swatch_color` term-meta key, so
+  palettes saved through the swatch fields UI never matched. (#35)
+
 ## [1.0.0] - 2026-06-04
 
 First stable release. Promotes the feature-complete 0.13.x line to general
@@ -147,7 +197,9 @@ Custom-field source line — ACF, Meta Box, and Pods.
 
 - First public alpha.
 
-[Unreleased]: https://github.com/Shepdesign/hooked-on-facets/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Shepdesign/hooked-on-facets/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v1.1.0
+[1.0.1]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v1.0.1
 [1.0.0]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v1.0.0
 [0.13.1-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.13.1-alpha
 [0.13.0-alpha]: https://github.com/Shepdesign/hooked-on-facets/releases/tag/v0.13.0-alpha

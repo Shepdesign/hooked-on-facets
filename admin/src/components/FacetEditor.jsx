@@ -97,7 +97,16 @@ const MULTI_VALUE_DISPLAYS = new Set(['checkbox', 'swatch', 'swiper']);
 const sanitizeSlug = (raw) =>
     String(raw || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
 
-export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] }) {
+export default function FacetEditor({ facet, onChange, onDelete, allFacets = [], availableDisplays = null }) {
+    // Only offer displays the installed plugins can render. A stored facet
+    // whose display is unavailable (a Pro facet with the add-on inactive)
+    // keeps its option visible so the select doesn't silently rewrite it.
+    const displayAvailable = (v) =>
+        !Array.isArray(availableDisplays) || availableDisplays.includes(v) || v === facet.display;
+    const visibleGroups = DISPLAY_GROUPS
+        .map((g) => ({ ...g, items: g.items.filter((d) => displayAvailable(d.value)) }))
+        .filter((g) => g.items.length > 0);
+
     const kindDef = KINDS.find((k) => k.value === facet.kind) || KINDS[0];
     const isView  = VIEW_DISPLAYS.has(facet.display);
     const colorTargetFacets = allFacets.filter((f) =>
@@ -204,7 +213,7 @@ export default function FacetEditor({ facet, onChange, onDelete, allFacets = [] 
                                 onChange(patch);
                             }}
                         >
-                            {DISPLAY_GROUPS.map((g) => (
+                            {visibleGroups.map((g) => (
                                 <optgroup key={g.group} label={g.group}>
                                     {g.items.map((d) => (
                                         <option key={d.value} value={d.value}>{d.label}</option>

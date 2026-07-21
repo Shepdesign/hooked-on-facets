@@ -4,7 +4,9 @@ Real questions, real answers.
 
 ## Is HOF free?
 
-The core is open source. A "pro" tier with extras is likely but not finalized. We won't paywall the basics.
+Yes — the core is free and open source, headed for WordPress.org. Free means the real thing: ten facet types (checkbox, radio, dropdown, toggle, hierarchy, range, date range, search, color swatch, pagination), the full-speed resolver, WooCommerce support, and the page-builder bridges. We don't paywall the basics, and we never throttle speed.
+
+**Pro** adds the six signature facets — Ask (AI natural language), Visual DNA (perceptual color matching), swipe deck, spin-the-wheel, intersection matrix, and the comparison bin.
 
 ## Does it work with my theme?
 
@@ -28,7 +30,7 @@ URL state means crawlers see real URLs. HOF ships sensible defaults (canonical h
 
 ## How does pricing work?
 
-TBD. Probably open core + paid pro. Definitely fair. Definitely not "$249/year to unlock checkboxes."
+Free on WordPress.org, forever, for the core. Pro is $99/yr (1 site), $199/yr (5 sites), or $399/yr (25 sites) — every renewal is 50% off. Pro tiers open when 1.1 ships; [beta testers](https://hookedonfacets.com/#beta) get founder pricing, and active testers get offered a lifetime deal. Definitely fair. Definitely not "$249/year to unlock checkboxes" — checkboxes are free.
 
 ## Can I self-host the docs?
 

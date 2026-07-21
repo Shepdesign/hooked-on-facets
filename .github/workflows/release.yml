@@ -5,6 +5,13 @@ name: Release
 # Fires automatically when the plugin version changes on main, and can be
 # run on demand from the Actions tab (or via API). It no-ops if a release
 # for the current version already exists, so it is safe to re-run.
+#
+# Packaging is delegated to bin/build-release.sh — the same Docker-driven
+# build used for manual releases — so the CI artifact can never drift from
+# the canonical package. The version is read from the plugin header, the
+# script's single source of truth (it enforces header == HOF_VERSION and
+# self-verifies the ZIP contents, including admin/ and public/, which the
+# workflow's old inline copy list omitted).
 
 on:
   push:
@@ -21,9 +28,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Read version
+      - name: Read version from the plugin header
         id: v
-        run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
+        run: |
+          VERSION="$(grep -E '^[[:space:]]*\*?[[:space:]]*Version:' hooked-on-facets.php | head -1 | sed -E 's/.*Version:[[:space:]]*//' | tr -d '[:space:]\r')"
+          if [ -z "$VERSION" ]; then
+            echo "Could not read the Version header from hooked-on-facets.php" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Check if release already exists
         id: exists
@@ -37,43 +50,9 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Setup PHP
+      - name: Build release ZIP
         if: steps.exists.outputs.skip == 'false'
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          coverage: none
-          tools: composer:v2
-
-      - name: Setup Node.js
-        if: steps.exists.outputs.skip == 'false'
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Build production assets
-        if: steps.exists.outputs.skip == 'false'
-        run: |
-          composer install --no-dev --optimize-autoloader --no-progress
-          npm ci
-          npm run build
-
-      - name: Package plugin ZIP
-        if: steps.exists.outputs.skip == 'false'
-        id: pkg
-        run: |
-          set -euo pipefail
-          VERSION="${{ steps.v.outputs.version }}"
-          STAGE="$RUNNER_TEMP/hof/hooked-on-facets"
-          mkdir -p "$STAGE/assets"
-          cp hooked-on-facets.php uninstall.php readme.txt "$STAGE/"
-          cp -r includes src integrations languages vendor "$STAGE/"
-          cp -r assets/dist "$STAGE/assets/"
-          find "$STAGE/assets" -name '*.map' -delete
-          ZIP="$RUNNER_TEMP/hof/hooked-on-facets-$VERSION.zip"
-          ( cd "$RUNNER_TEMP/hof" && zip -rqX "hooked-on-facets-$VERSION.zip" hooked-on-facets )
-          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
+        run: bash bin/build-release.sh
 
       - name: Create GitHub Release
         if: steps.exists.outputs.skip == 'false'
@@ -81,7 +60,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ steps.v.outputs.version }}"
-          gh release create "v$VERSION" "${{ steps.pkg.outputs.zip }}" \
+          gh release create "v$VERSION" "dist/hooked-on-facets-$VERSION.zip" \
             --target "${{ github.sha }}" \
             --title "Hooked on Facets $VERSION" \
             --generate-notes

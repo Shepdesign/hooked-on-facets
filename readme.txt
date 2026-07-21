@@ -3,9 +3,9 @@ Contributors: shepdesign
 Plugin URI: https://hookedonfacets.com
 Tags: facets, faceted search, filters, woocommerce, product filter
 Requires at least: 6.4
-Tested up to: 6.8
+Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,12 +24,20 @@ a MySQL `INTERSECT` engine with covering indexes — not live `WP_Query` meta lo
 On a seeded 100k-product / 500k-row dataset, `resolve_ids()` runs at ~54ms p95 and a
 full reindex completes in ~19s.
 
-= Facet types (16) =
+= Facet types (10) =
 
 Checkbox, radio, dropdown, toggle, hierarchy, range slider, date range, search box,
-fluid swatches, swipe deck, spin-the-wheel, intersection (Venn/UpSet) matrix, saved
-comparison bin, AI natural-language ask, visual (color) DNA, and numbered pagination
-— plus an active-filters chip strip.
+fluid color swatches, and numbered pagination — plus an active-filters chip strip.
+Every facet runs at full resolver speed; the free version is the real thing, not a
+teaser.
+
+= Hooked on Facets Pro =
+
+The six signature facets ship in the separate
+[Hooked on Facets Pro](https://hookedonfacets.com) add-on: **Ask** (AI natural
+language — "quick vegan thai dinner" becomes filters), **Visual DNA** (perceptual
+color matching), the swipe deck, spin-the-wheel, the intersection (Venn/UpSet)
+matrix, and the saved comparison bin.
 
 = Resolver =
 
@@ -69,23 +77,22 @@ and Divi.
 
 * WordPress 6.4 or newer
 * PHP 8.2 or newer
-* MySQL 8.0.31 or newer (the resolver uses the `INTERSECT` operator)
+* MySQL 8.0.31 or newer, or MariaDB 10.3 or newer (the resolver uses the
+  `INTERSECT` operator)
 
 == Frequently Asked Questions ==
 
-= Why does it require MySQL 8.0.31+? =
+= Why does it require MySQL 8.0.31+ / MariaDB 10.3+? =
 
 The resolver builds an `INTERSECT` chain of per-facet index scans, which is what
 delivers the sub-50ms performance at scale. The `INTERSECT` operator was added in
-MySQL 8.0.31.
+MySQL 8.0.31 and has been in MariaDB since 10.3.
 
-= Does the AI natural-language facet require a third-party service? =
+= Does this plugin contact any external service? =
 
-Yes. The optional "ask" facet turns free text like "red shoes under $50" into filter
-chips by calling the Anthropic API. It requires your own Anthropic API key, entered
-on the AI Settings screen; each query counts against your Anthropic account credits.
-Your customers' products and personal data are not sent — only the typed query and
-your facet schema. Every other facet type works with no external service.
+No. The free plugin makes no external requests at all. (The AI "ask" facet, which
+calls the Anthropic API with your own key, is part of the separate Hooked on Facets
+Pro add-on and is disclosed there.)
 
 = Does it work without WooCommerce? =
 
@@ -97,7 +104,43 @@ indexed post type, taxonomy, or custom field.
 Use the `[hof_facet name="your-facet"]` shortcode, the **Hooked on Facets** Gutenberg
 block, or your page builder's binding (Elementor Query ID, Bricks CSS class, etc.).
 
+= Where is the source of the bundled JavaScript? =
+
+The admin and front-end JavaScript is built with Vite. The unminified source ships
+inside the plugin under `admin/src/` and `public/src/`, and the full build tooling
+lives in the public repository: https://github.com/Shepdesign/hooked-on-facets
+
+== Screenshots ==
+
+1. The facet builder — define, configure, and preview facets without code.
+2. The performance dashboard — facet usage, zero-result filters, and latency percentiles.
+3. Facets filtering a WooCommerce shop archive on the front end.
+4. The design-tokens editor for theming facets with CSS custom properties.
+
 == Changelog ==
+
+= 1.1.0 =
+* Changed: the six signature facets — Ask (AI natural language), Visual DNA,
+  swipe deck, spin-the-wheel, intersection matrix, and the saved comparison
+  bin — moved to the Hooked on Facets Pro add-on, together with the AI settings
+  screen, the `/ask` and `/visual-dna` REST endpoints, and the licensing stack.
+  The free plugin ships ten facet types at full resolver speed and contacts no
+  external service. Stored Pro facet configs are preserved (and simply don't
+  render) while the add-on is inactive.
+* Security: the public `/visual-dna` endpoint is rate-limited (30 requests/min
+  per IP).
+* Fixed: the REST rate limiter is a true fixed window — steady below-limit
+  traffic no longer accumulates to the cap.
+* Fixed: elements toggled with the HTML `hidden` attribute could stay visible
+  because author `display` rules beat the browser's `[hidden]` default; the
+  public stylesheet now ships a scoped guard.
+
+= 1.0.1 =
+* Fixed: elements toggled with the HTML `hidden` attribute (Visual DNA result
+  row and palette, eyedropper button, swiper done-card) could stay visible
+  because author `display` rules beat the browser's `[hidden]` default.
+* Fixed: the Visual DNA color map read the legacy `swatch_color` term-meta key,
+  so palettes saved through the swatch fields UI never matched.
 
 = 1.0.0 =
 * First stable release. Promotes the feature-complete 0.13.x line to general
@@ -147,8 +190,12 @@ block, or your page builder's binding (Elementor Query ID, Bricks CSS class, etc
 
 == Upgrade Notice ==
 
+= 1.1.0 =
+The six signature facets (Ask, Visual DNA, swipe deck, wheel, matrix, saved
+bin) moved to the Hooked on Facets Pro add-on — install and activate Pro to
+keep them rendering. Their stored configs are preserved either way. No reindex
+needed.
+
 = 1.0.0 =
 First stable release. The public API and index schema are now stable. Re-run the
 indexer after upgrading.
-</content>
-</invoke>

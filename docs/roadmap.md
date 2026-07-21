@@ -28,7 +28,7 @@ HOF 1.0.0 is feature-complete. Everything below is in the box today.
 
 ## post-1.0
 
-- [ ] HOF Pro (premium features TBD)
+- [ ] HOF Pro — the six signature facets (Ask, Visual DNA, swipe deck, spin-the-wheel, intersection matrix, comparison bin) as a separate add-on plugin, sold from hookedonfacets.com
 - [ ] Migration tool: FacetWP → HOF
 - [ ] Migration tool: WP Grid Builder → HOF
 - [ ] Multilingual: WPML + Polylang adapters
