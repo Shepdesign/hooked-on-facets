@@ -5,7 +5,8 @@
  * Intercepts WP_Query loops and applies HOF filters without per-builder
  * configuration. Two attachment paths:
  *
- *   1. Main query, indexed post type, request has ?hof[*] params.
+ *   1. Main query, indexed post type, request carries facet state (?hof[*]
+ *      params or a pretty /filter/ path).
  *      → server-rendered initial state matches client state, no flash.
  *
  *   2. Any query with the `hof_facet_target` query var set true.
@@ -122,14 +123,16 @@ final class QueryHook implements Bootable {
 
         // Only intercept main query if the URL actually carries facet state —
         // legacy ?hof[*] params or a pretty /filter/ path.
+        $hof_path = $query->get( 'hof_path' );
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        return ! empty( $_GET['hof'] ?? null ) || '' !== (string) $query->get( 'hof_path' );
+        return ! empty( $_GET['hof'] ?? null ) || ( is_string( $hof_path ) && '' !== $hof_path );
     }
 
     /**
      * Filter state precedence:
      *   1. query var `hof_filters` (programmatic / block attribute)
-     *   2. URL `?hof[*]`
+     *   2. URL state (pretty /filter/ path ⊕ ?hof[*], via
+     *      Resolver::parse_request_filters)
      *
      * @return array<string, mixed>
      */

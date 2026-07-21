@@ -48,22 +48,45 @@ final class FilterState {
             return self::$memo;
         }
 
+        $state = self::compute();
+
+        // A third-party opt-in WP_Query can run before the `parse_request`
+        // action fires (e.g. built at `init`), at which point hof_path hasn't
+        // been resolved into a query var yet — reading it now would always
+        // see '' and permanently memoize a tail-only state for the rest of
+        // the request, even after the real query var shows up. Skip the memo
+        // in that pre-parse window; only pretty URLs are affected since the
+        // legacy tail never depends on parse_request.
+        if ( PrettyUrls::enabled() && function_exists( 'did_action' ) && ! did_action( 'parse_request' ) ) {
+            return $state;
+        }
+
+        return self::$memo = $state;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function compute(): array {
+        self::$path_invalid = false;
+
         $tail = self::legacy_tail();
 
         if ( ! PrettyUrls::enabled() ) {
-            return self::$memo = $tail;
+            return $tail;
         }
 
-        $path = function_exists( 'get_query_var' ) ? (string) get_query_var( 'hof_path' ) : '';
+        $qv   = function_exists( 'get_query_var' ) ? get_query_var( 'hof_path' ) : '';
+        $path = is_string( $qv ) ? $qv : '';
         if ( $path === '' ) {
-            return self::$memo = $tail;
+            return $tail;
         }
 
         $codec   = self::codec();
         $decoded = $codec?->decode( $path );
         if ( $decoded === null ) {
             self::$path_invalid = true;
-            return self::$memo = $tail;
+            return $tail;
         }
 
         // Union; the decoded path wins for any key present in both. A keyed
@@ -74,7 +97,7 @@ final class FilterState {
         foreach ( $decoded as $name => $values ) {
             $state[ $name ] = $values;
         }
-        return self::$memo = $state;
+        return $state;
     }
 
     /** True when hof_path was present but didn't fully resolve → hard 404. */

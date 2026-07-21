@@ -125,4 +125,44 @@ final class FilterStateTest extends TestCase {
         FilterState::reset(); // codec() memoizes — a config change needs a reset
         self::assertNotNull( FilterState::codec() );
     }
+
+    public function test_pretty_state_not_memoized_before_parse_request(): void {
+        $this->enablePretty();
+        $this->query_var = 'brand/nike';
+        Functions\when( 'did_action' )->justReturn( 0 );
+
+        self::assertSame( [ 'brand' => [ 'nike' ] ], FilterState::current(),
+            'Pre-parse_request read must still resolve the current query var.' );
+
+        // hof_path isn't resolved yet in the pre-parse window — simulate that
+        // by clearing it and re-calling. With did_action() still 0, current()
+        // must recompute (not return the earlier memoized state).
+        $this->query_var = '';
+        self::assertSame( [], FilterState::current(),
+            'A pre-parse_request read must not lock in a memo — it must recompute.' );
+
+        // Once parse_request has fired, memoization kicks back in.
+        Functions\when( 'did_action' )->justReturn( 1 );
+        FilterState::reset();
+        $this->query_var = 'brand/nike';
+
+        $first = FilterState::current();
+        $_GET['hof'] = [ 'search' => 'desk' ]; // mutate between calls
+        $second = FilterState::current();
+
+        self::assertSame( $first, $second, 'Post-parse_request state must be memoized.' );
+        self::assertSame( [ 'brand' => [ 'nike' ] ], $second );
+    }
+
+    public function test_resolver_delegates_to_filter_state(): void {
+        $this->enablePretty();
+        $this->query_var = 'brand/nike';
+        $_GET['hof']     = [ 'search' => 'desk' ];
+        Functions\when( 'did_action' )->justReturn( 1 );
+
+        self::assertSame(
+            [ 'search' => 'desk', 'brand' => [ 'nike' ] ],
+            \HookedOnFacets\Filter\Resolver::parse_request_filters()
+        );
+    }
 }
