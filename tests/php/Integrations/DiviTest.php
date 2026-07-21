@@ -34,6 +34,8 @@ final class DiviTest extends TestCase {
         // The module's init() / get_fields() run through esc_html__ when the
         // bridge constructs it; pass-through is enough for these assertions.
         Functions\when( 'esc_html__' )->returnArg();
+        Functions\when( 'get_option' )->justReturn( false );
+        \HookedOnFacets\Routing\FilterState::reset();
 
         $_GET = [];
         \ET_Builder_Module::reset();
@@ -42,6 +44,7 @@ final class DiviTest extends TestCase {
     protected function tearDown(): void {
         $_GET = [];
         \ET_Builder_Module::reset();
+        \HookedOnFacets\Routing\FilterState::reset();
         Monkey\tearDown();
         parent::tearDown();
     }

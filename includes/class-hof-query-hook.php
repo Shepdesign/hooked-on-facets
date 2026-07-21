@@ -120,8 +120,10 @@ final class QueryHook implements Bootable {
             return false;
         }
 
-        // Only intercept main query if the URL actually carries facet params.
-        return ! empty( $_GET['hof'] ?? null ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        // Only intercept main query if the URL actually carries facet state —
+        // legacy ?hof[*] params or a pretty /filter/ path.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        return ! empty( $_GET['hof'] ?? null ) || '' !== (string) $query->get( 'hof_path' );
     }
 
     /**
