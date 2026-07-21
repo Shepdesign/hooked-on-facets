@@ -63,6 +63,9 @@ final class RewriteManager implements Bootable {
 
     /** Unresolvable pretty path → hard 404 on the main query. */
     public function guard_invalid_path( \WP_Query $query ): void {
+        if ( is_admin() ) {
+            return;
+        }
         if ( ! $query->is_main_query() ) {
             return;
         }
@@ -86,6 +89,14 @@ final class RewriteManager implements Bootable {
      * Pure rule generation. Each base contributes a paginated rule first
      * (so /page/N/ isn't swallowed by the greedy hof_path capture), then the
      * plain rule.
+     *
+     * Base-slug collision: a term slugged exactly like the filter base (e.g.
+     * a product category literally named "filter") will have its own
+     * paginated/nested URLs captured by these rules and 404, since the rule
+     * can't distinguish "…/category/filter/…" (the term) from
+     * "…/category/{term}/filter/…" (the filter segment). The base segment
+     * setting (PrettyUrls::base()) is the escape hatch — rename it away from
+     * any colliding term slug.
      *
      * @param list<array{prefix: string, query: string, captures: int}> $bases
      * @return array<string, string> regex → target
