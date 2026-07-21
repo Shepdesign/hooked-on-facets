@@ -32,6 +32,9 @@ namespace HookedOnFacets\Seo;
 use HookedOnFacets\Contracts\Bootable;
 use HookedOnFacets\Filter\Resolver;
 use HookedOnFacets\Indexer;
+use HookedOnFacets\Routing\FilterState;
+use HookedOnFacets\Routing\PrettyUrls;
+use HookedOnFacets\Routing\UrlCodec;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -50,6 +53,9 @@ final class SeoManager implements Bootable {
         add_action( 'wp_head', [ $this, 'print_canonical' ], 1 );
         add_filter( 'wp_robots', [ $this, 'filter_robots' ] );
         add_filter( 'document_title_parts', [ $this, 'filter_title_parts' ] );
+
+        // Priority 1: redirect before anything renders.
+        add_action( 'template_redirect', [ $this, 'maybe_redirect' ], 1 );
     }
 
     // ── WordPress glue ───────────────────────────────────────────────────────
@@ -69,8 +75,45 @@ final class SeoManager implements Bootable {
         }
 
         $canonical = $this->canonical_url( $this->current_url() );
+        if ( PrettyUrls::enabled() ) {
+            $codec = FilterState::codec();
+            $state = Resolver::parse_request_filters();
+            if ( $codec && ! empty( $state ) ) {
+                $pretty = $this->pretty_url_for( $this->current_url(), $state, $codec );
+                if ( $pretty !== '' ) {
+                    $canonical = $pretty;
+                }
+            }
+        }
         if ( $canonical !== '' ) {
             printf( "<link rel=\"canonical\" href=\"%s\" />\n", esc_url( $canonical ) );
+        }
+    }
+
+    /**
+     * template_redirect glue: 301 legacy/non-canonical faceted URLs to the
+     * canonical pretty form. GET only; invalid paths are the 404 guard's
+     * problem, not ours.
+     */
+    public function maybe_redirect(): void {
+        if ( is_admin() || ! PrettyUrls::enabled() ) {
+            return;
+        }
+        if ( ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) !== 'GET' ) {
+            return;
+        }
+        if ( FilterState::is_path_invalid() ) {
+            return;
+        }
+        $codec = FilterState::codec();
+        $state = Resolver::parse_request_filters();
+        if ( ! $codec || empty( $state ) ) {
+            return;
+        }
+        $target = $this->redirect_target( $this->current_url(), $state, $codec );
+        if ( $target !== '' ) {
+            wp_safe_redirect( $target, 301 );
+            exit;
         }
     }
 
@@ -140,6 +183,85 @@ final class SeoManager implements Bootable {
 
         $qs = http_build_query( $query );
         return $qs !== '' ? $base . '?' . $qs : $base;
+    }
+
+    /**
+     * The canonical pretty URL for a filter state on the current surface:
+     * archive base path (pretty/hof cruft stripped, /page/N/ preserved) +
+     * canonical-ordered /base/facet/slug segments + the non-path tail as
+     * ?hof[*] alongside preserved non-hof params. Empty string when the URL
+     * can't be parsed.
+     *
+     * The query strip removes hof, hof[*], and hof_path — hof_path is a
+     * public query var (WP populates it from ?hof_path=… too, and $_GET wins
+     * over rule-derived vars), so the target must never re-emit it.
+     *
+     * @param array<string, mixed> $state
+     */
+    public function pretty_url_for( string $current_url, array $state, UrlCodec $codec ): string {
+        $parts = wp_parse_url( $current_url );
+        if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
+            return '';
+        }
+
+        $path = (string) ( $parts['path'] ?? '/' );
+
+        // Peel pagination off before stripping so it survives the rebuild.
+        $page_suffix = '';
+        if ( preg_match( '#/page/([0-9]+)/?$#', $path, $m ) ) {
+            $page_suffix = '/page/' . $m[1] . '/';
+            $path        = (string) preg_replace( '#/page/[0-9]+/?$#', '/', $path );
+        }
+
+        $base_path = $codec->strip_base_path( $path );
+        $encoded   = $codec->encode( $state );
+
+        $new_path = rtrim( $base_path, '/' ) . ( $encoded['path'] !== '' ? $encoded['path'] : '/' );
+        $new_path = user_trailingslashit( rtrim( $new_path . ltrim( $page_suffix, '/' ), '/' ) );
+
+        // Non-hof query params survive; the tail re-encodes as hof[*].
+        $query = [];
+        if ( ! empty( $parts['query'] ) ) {
+            parse_str( (string) $parts['query'], $query );
+            foreach ( array_keys( $query ) as $key ) {
+                if ( $key === 'hof' || str_starts_with( (string) $key, 'hof' ) ) {
+                    unset( $query[ $key ] );
+                }
+            }
+        }
+        if ( ! empty( $encoded['tail'] ) ) {
+            $query['hof'] = $encoded['tail'];
+        }
+
+        $scheme = $parts['scheme'] ?? 'https';
+        $url    = $scheme . '://' . $parts['host']
+            . ( isset( $parts['port'] ) ? ':' . $parts['port'] : '' )
+            . $new_path;
+
+        $qs = http_build_query( $query );
+        return $qs !== '' ? $url . '?' . $qs : $url;
+    }
+
+    /**
+     * Where the current request should 301 to — '' for "don't redirect".
+     * Covers legacy ?hof[*] → pretty and non-canonical segment order →
+     * canonical order. Loop-guarded by comparing against the current URL.
+     *
+     * @param array<string, mixed> $state
+     */
+    public function redirect_target( string $current_url, array $state, UrlCodec $codec ): string {
+        $encoded = $codec->encode( $state );
+        if ( $encoded['path'] === '' ) {
+            return ''; // Nothing path-eligible — no pretty form exists.
+        }
+
+        $target = $this->pretty_url_for( $current_url, $state, $codec );
+        if ( $target === '' ) {
+            return '';
+        }
+
+        $normalize = static fn( string $u ): string => rtrim( rawurldecode( $u ), '/' );
+        return $normalize( $target ) === $normalize( $current_url ) ? '' : $target;
     }
 
     /**
