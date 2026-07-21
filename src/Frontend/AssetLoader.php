@@ -6,8 +6,9 @@
  * loads CSS + ES module via the same script_loader_tag rewrite. A
  * `HOF_VITE_DEV` define swaps to the Vite dev server for HMR.
  *
- * Inline-injects window.hofPublic (REST URL, nonce, applied filter state)
- * before the module loads.
+ * Inline-injects window.hofPublic (REST URL, nonce, applied filter state, and
+ * — when the current request is a rule-bearing pretty-URL surface — the
+ * client's pretty-URL encoder config) before the module loads.
  *
  * @package HookedOnFacets
  */
@@ -18,6 +19,10 @@ namespace HookedOnFacets\Frontend;
 
 use HookedOnFacets\Contracts\Bootable;
 use HookedOnFacets\Filter\Resolver;
+use HookedOnFacets\Indexer;
+use HookedOnFacets\Routing\FilterState;
+use HookedOnFacets\Routing\PrettySurface;
+use HookedOnFacets\Routing\PrettyUrls;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -44,9 +49,10 @@ final class AssetLoader implements Bootable {
         $inline = sprintf(
             'window.hofPublic = %s;',
             wp_json_encode( [
-                'restUrl' => esc_url_raw( rest_url( 'hof/v1/' ) ),
-                'nonce'   => wp_create_nonce( 'wp_rest' ),
-                'state'   => Resolver::parse_request_filters(),
+                'restUrl'    => esc_url_raw( rest_url( 'hof/v1/' ) ),
+                'nonce'      => wp_create_nonce( 'wp_rest' ),
+                'state'      => Resolver::parse_request_filters(),
+                'prettyUrls' => $this->pretty_urls_config(),
             ] )
         );
 
@@ -105,6 +111,72 @@ final class AssetLoader implements Bootable {
                 $css_enqueue( $css );
             }
         }
+    }
+
+    /**
+     * Pretty-URL config for the client encoder, or null when pretty links
+     * must not render here. Gated on PrettySurface::context() — the same
+     * "is this request a rule-bearing storefront surface" check SeoManager's
+     * 301/canonical layer and Renderer's crawlable links use, so an
+     * off-surface page (builder/shortcode page, shop-as-front-page) ships no
+     * prettyUrls config and the client falls back to query-string URLs
+     * exactly like the server does there.
+     *
+     * Ships the path-eligible facets in canonical order, `facetOrder` (every
+     * configured facet name, path-eligible or not, in saved order — the
+     * client needs the full list to reproduce UrlCodec::encode()'s tail
+     * ordering byte-for-byte, not just the path-eligible subset), and
+     * value→slug maps for every path-eligible facet (taxonomy included —
+     * see SlugMapper::client_map(); over-cap facets are simply absent from
+     * both `facets` and `slugMaps`, so the client falls back to the query
+     * tail exactly like the server).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function pretty_urls_config(): ?array {
+        $ctx = PrettySurface::context();
+        if ( ! $ctx ) {
+            return null;
+        }
+        $codec = FilterState::codec();
+        if ( ! $codec ) {
+            return null;
+        }
+        // Reuse the SlugMapper FilterState::codec() already built from the
+        // same facet defs, rather than constructing a second instance — a
+        // second instance would double the bounded probe query per facet
+        // (SlugMapper::build_map()) on every request that ships this config.
+        $mapper = FilterState::mapper();
+
+        $defs = (array) get_option( Indexer::OPTION_FACETS, [] );
+
+        $facet_order = [];
+        $facets      = [];
+        $slug_maps   = [];
+        foreach ( $defs as $def ) {
+            if ( ! is_array( $def ) || ! isset( $def['name'] ) ) {
+                continue;
+            }
+            $name          = (string) $def['name'];
+            $facet_order[] = $name;
+
+            if ( ! $codec->is_path_facet( $def ) ) {
+                continue;
+            }
+            $facets[] = $name;
+            $map      = $mapper?->client_map( $name );
+            if ( $map !== null ) {
+                $slug_maps[ $name ] = $map;
+            }
+        }
+
+        return [
+            'base'       => PrettyUrls::base(),
+            'basePath'   => $ctx['base_path'],
+            'facets'     => $facets,
+            'facetOrder' => $facet_order,
+            'slugMaps'   => $slug_maps,
+        ];
     }
 
     public function script_as_module( string $tag, string $handle, string $src ): string {

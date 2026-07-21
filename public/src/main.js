@@ -25,6 +25,7 @@ initBin(store);
 initAsk(store);
 initVisualDna(store);
 initPagination();
+bootPrettyLinks();
 
 const DEBOUNCE_MS = 250;
 
@@ -54,6 +55,15 @@ document.addEventListener('hof:refresh', (e) => {
         if (phase === 'start') el.setAttribute('data-hof-loading', '');
         else el.removeAttribute('data-hof-loading');
     });
+
+    // refresh.js's swapFacets() replaces a facet's whole innerHTML (checkbox,
+    // radio, hierarchy, dropdown) with freshly server-rendered markup on
+    // every completed refresh — including brand-new, untouched
+    // .hof-facet-link / .hof-facet-seo-links elements. Re-run the sweep so
+    // they don't reappear tabbable/visible. Swatch/swiper facets patch counts
+    // in place instead of replacing innerHTML, so their links are unaffected
+    // and re-running the sweep on them is simply a no-op.
+    if (phase === 'end') syncPrettyLinkA11y();
 });
 
 // ── DOM events → state ────────────────────────────────────────────────────
@@ -209,6 +219,54 @@ document.addEventListener('click', (e) => {
     }
 
 });
+
+// ── Pretty-link boot ─────────────────────────────────────────────────────
+//
+// The server renders crawlable <a class="hof-facet-link"> anchors as SIBLINGS
+// of each option's <label> (never inside it — see Renderer.php) so no-JS
+// visitors and crawlers get real working links. Once this runtime owns
+// interaction, those anchors should route through the same store → AJAX +
+// pushState path as clicking the underlying input, the dropdown's visible SEO
+// fallback list should hide, and the anchors should leave the tab order (the
+// inputs are the interactive controls, not their duplicate labels).
+//
+// Every pretty_link() call site wraps its anchor (or the dropdown's SEO <li>)
+// in an <li> — checkbox/radio options, both hierarchy row shapes, and swatch
+// tiles all use <li> as the nearest common ancestor that also contains the
+// option's <input>; the dropdown's hidden-list <li> contains no input, which
+// is exactly how bots/no-JS visitors are meant to fall through to a real
+// navigation instead of being intercepted.
+
+/** Idempotent — safe to call again after AJAX re-renders new facet markup. */
+function syncPrettyLinkA11y() {
+    for (const list of document.querySelectorAll('.hof-facet-seo-links')) {
+        list.hidden = true;
+    }
+    for (const link of document.querySelectorAll('.hof-facet-link')) {
+        link.setAttribute('tabindex', '-1');
+    }
+}
+
+function bootPrettyLinks() {
+    syncPrettyLinkA11y();
+
+    // Delegated on document, registered once: keeps working for anchors
+    // swapped in by later refreshes without re-attaching.
+    document.addEventListener('click', (e) => {
+        // Modifier/middle/right clicks mean "open in a new tab/window" —
+        // respect the browser's native handling instead of intercepting.
+        // e.defaultPrevented means some other handler already dealt with
+        // this click; don't double-handle it.
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+        const link = e.target.closest('.hof-facet-link');
+        if (!link) return;
+        const input = link.closest('li')?.querySelector('input');
+        if (!input) return; // dropdown SEO list — let no-JS/bots navigate
+        e.preventDefault();
+        input.click();
+    });
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 

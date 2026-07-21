@@ -52,6 +52,10 @@ final class Activator {
     public static function install_for_current_site(): void {
         self::install_index_table();
         update_option( self::DB_VERSION_OPTION, self::DB_VERSION, true );
+
+        // Rewrite rules (if pretty URLs are enabled) need a flush after
+        // (re)activation; RewriteManager consumes this on the next admin_init.
+        update_option( \HookedOnFacets\Routing\PrettyUrls::FLUSH_FLAG, 1, false );
     }
 
     /**

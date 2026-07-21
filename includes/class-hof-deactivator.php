@@ -29,6 +29,18 @@ final class Deactivator {
         // Drop any short-lived caches we own.
         delete_transient( 'hof_facet_counts' );
 
+        // Drop HOF's pretty-URL rules before flushing — deactivation runs
+        // after init, so extra_rules_top still carries them and a plain
+        // flush would re-persist rules whose hof_path query var no longer
+        // exists (leaving /filter/ URLs serving unfiltered 200s).
+        if ( isset( $GLOBALS['wp_rewrite'] ) && is_array( $GLOBALS['wp_rewrite']->extra_rules_top ?? null ) ) {
+            foreach ( $GLOBALS['wp_rewrite']->extra_rules_top as $regex => $target ) {
+                if ( is_string( $target ) && str_contains( $target, 'hof_path=' ) ) {
+                    unset( $GLOBALS['wp_rewrite']->extra_rules_top[ $regex ] );
+                }
+            }
+        }
+
         // Required whenever rewrite-affecting plugins change activation state.
         flush_rewrite_rules();
     }

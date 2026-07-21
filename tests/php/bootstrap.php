@@ -45,6 +45,10 @@ require_once dirname( __DIR__ ) . '/stubs/WP_REST.php';
 // target to call into without a live Bricks theme.
 require_once dirname( __DIR__ ) . '/stubs/Bricks.php';
 
+// WooCommerce class stub so class_exists('WooCommerce') gates (QueryHook's
+// loop_shop_post_in feed) can be exercised without a live install.
+require_once dirname( __DIR__ ) . '/stubs/WooCommerce.php';
+
 // \ET_Builder_Module stub so the Divi bridge's module registration can
 // construct its FacetModule subclass without a live Divi builder.
 require_once dirname( __DIR__ ) . '/stubs/ET_Builder_Module.php';

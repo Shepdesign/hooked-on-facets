@@ -30,12 +30,15 @@ final class BreakdanceTest extends TestCase {
         );
         Functions\when( 'sanitize_text_field' )->returnArg();
         Functions\when( 'wp_unslash' )->returnArg();
+        Functions\when( 'get_option' )->justReturn( false );
+        \HookedOnFacets\Routing\FilterState::reset();
 
         $_GET = [];
     }
 
     protected function tearDown(): void {
         $_GET = [];
+        \HookedOnFacets\Routing\FilterState::reset();
         Monkey\tearDown();
         parent::tearDown();
     }

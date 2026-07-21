@@ -25,11 +25,24 @@ class WP_Query {
     /** @var array<string, mixed> */
     public array $query_vars = [];
 
+    /** Defaults true — matches the common case tests exercise (the main query). */
+    public bool $is_main = true;
+
+    public bool $is_404 = false;
+
     public function set( string $key, mixed $value ): void {
         $this->query_vars[ $key ] = $value;
     }
 
     public function get( string $key, mixed $default = '' ): mixed {
         return $this->query_vars[ $key ] ?? $default;
+    }
+
+    public function is_main_query(): bool {
+        return $this->is_main;
+    }
+
+    public function set_404(): void {
+        $this->is_404 = true;
     }
 }

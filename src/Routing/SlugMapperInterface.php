@@ -1,0 +1,43 @@
+<?php
+/**
+ * SlugMapperInterface — value ⇄ slug translation for one facet.
+ *
+ * Null returns mean "cannot map": unknown facet, unknown value/slug, or a
+ * facet over the distinct-value cap. Callers treat null as "not path-eligible"
+ * (encode) or "hard 404" (decode).
+ *
+ * @package HookedOnFacets
+ */
+
+declare(strict_types=1);
+
+namespace HookedOnFacets\Routing;
+
+defined( 'ABSPATH' ) || exit;
+
+interface SlugMapperInterface {
+
+    /** Facet value → URL slug, or null when unmappable. */
+    public function slug( string $facet_name, string $value ): ?string;
+
+    /** URL slug → facet value, or null when unknown. */
+    public function value( string $facet_name, string $slug ): ?string;
+
+    /**
+     * Whether the facet has a usable (under-cap, non-empty) map.
+     */
+    public function is_mappable( string $facet_name ): bool;
+
+    /**
+     * value → slug map for the client bundle, or null when over cap, empty,
+     * or unknown. Every path-eligible facet ships a map — including taxonomy,
+     * whose pairs happen to be identity — because the client must validate
+     * every value against the exact membership set the server enforces
+     * (UrlCodec::decode() hard-404s an unmapped slug); a client that
+     * identity-paths a stale/unknown taxonomy value would build a link the
+     * server rejects.
+     *
+     * @return array<string, string>|null
+     */
+    public function client_map( string $facet_name ): ?array;
+}

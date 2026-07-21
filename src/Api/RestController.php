@@ -225,9 +225,16 @@ final class RestController implements Bootable {
         if ( ! $this->seo ) {
             return new \WP_REST_Response( [ 'available' => false, 'settings' => SeoManager::defaults() ], 200 );
         }
+        $pretty = \HookedOnFacets\Routing\PrettyUrls::settings();
         return new \WP_REST_Response( [
-            'available' => true,
-            'settings'  => $this->seo->settings(),
+            'available'   => true,
+            'settings'    => $this->seo->settings(),
+            'pretty_urls' => [
+                'enabled'   => $pretty['enabled'],
+                'base'      => $pretty['base'],
+                'available' => \HookedOnFacets\Routing\PrettyUrls::available(),
+                'warning'   => \HookedOnFacets\Routing\PrettyUrls::base_collision_warning( $pretty['base'] ),
+            ],
         ], 200 );
     }
 
@@ -248,6 +255,15 @@ final class RestController implements Bootable {
                 : ( is_int( $default ) ? max( 1, (int) $raw[ $key ] ) : sanitize_text_field( (string) $raw[ $key ] ) );
         }
         $this->seo->update_settings( $clean );
+
+        $pretty = $request->get_param( 'pretty_urls' );
+        if ( is_array( $pretty ) ) {
+            \HookedOnFacets\Routing\PrettyUrls::update( [
+                'enabled' => ! empty( $pretty['enabled'] ),
+                'base'    => (string) ( $pretty['base'] ?? 'filter' ),
+            ] );
+        }
+
         return $this->get_seo_settings( $request );
     }
 

@@ -5,7 +5,8 @@
  * Intercepts WP_Query loops and applies HOF filters without per-builder
  * configuration. Two attachment paths:
  *
- *   1. Main query, indexed post type, request has ?hof[*] params.
+ *   1. Main query, indexed post type, request carries facet state (?hof[*]
+ *      params or a pretty /filter/ path).
  *      → server-rendered initial state matches client state, no flash.
  *
  *   2. Any query with the `hof_facet_target` query var set true.
@@ -58,7 +59,26 @@ final class QueryHook implements Bootable {
         }
 
         // [0] is the canonical "no results" sentinel for post__in.
-        $query->set( 'post__in', ! empty( $ids ) ? $ids : [ 0 ] );
+        $post_in = ! empty( $ids ) ? $ids : [ 0 ];
+        $query->set( 'post__in', $post_in );
+
+        // WooCommerce-managed main queries do NOT keep that post__in:
+        // WC_Query::product_query() (pre_get_posts@10, after us at 9)
+        // overwrites it with the result of its loop_shop_post_in filter
+        // (default []). Feed the ids through that filter too, intersecting
+        // with anything another plugin contributed — HOF narrows, never
+        // widens. Registered per-request; WC only applies the filter on its
+        // own main product loop, so non-Woo queries are untouched.
+        if ( class_exists( 'WooCommerce' ) ) {
+            add_filter( 'loop_shop_post_in', static function ( $existing ) use ( $post_in ) {
+                $existing = (array) $existing;
+                if ( $existing === [] ) {
+                    return $post_in;
+                }
+                $narrowed = array_values( array_intersect( $existing, $post_in ) );
+                return $narrowed !== [] ? $narrowed : [ 0 ];
+            } );
+        }
 
         // Stash the resolved state so other layers (e.g. result-region JSON
         // payload, block render callbacks) can read what was applied.
@@ -120,14 +140,18 @@ final class QueryHook implements Bootable {
             return false;
         }
 
-        // Only intercept main query if the URL actually carries facet params.
-        return ! empty( $_GET['hof'] ?? null ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        // Only intercept main query if the URL actually carries facet state —
+        // legacy ?hof[*] params or a pretty /filter/ path.
+        $hof_path = $query->get( 'hof_path' );
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        return ! empty( $_GET['hof'] ?? null ) || ( is_string( $hof_path ) && '' !== $hof_path );
     }
 
     /**
      * Filter state precedence:
      *   1. query var `hof_filters` (programmatic / block attribute)
-     *   2. URL `?hof[*]`
+     *   2. URL state (pretty /filter/ path ⊕ ?hof[*], via
+     *      Resolver::parse_request_filters)
      *
      * @return array<string, mixed>
      */

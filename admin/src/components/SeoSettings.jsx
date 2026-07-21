@@ -36,6 +36,7 @@ const FIELDS = [
 export default function SeoSettings({ bootstrap }) {
     const [loading, setLoading] = useState(true);
     const [settings, setSettings] = useState(null);
+    const [prettyUrls, setPrettyUrls] = useState(null);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -49,6 +50,7 @@ export default function SeoSettings({ bootstrap }) {
                 const res = await fetch(`${restUrl}seo-settings`, { headers: { 'X-WP-Nonce': nonce } });
                 const data = await res.json();
                 setSettings(data.settings || {});
+                setPrettyUrls(data.pretty_urls || null);
             } catch (e) {
                 setError('Could not load SEO settings.');
             } finally {
@@ -86,6 +88,33 @@ export default function SeoSettings({ bootstrap }) {
         const next = { ...settings, [key]: value };
         setSettings(next);
         save(next);
+    };
+
+    // Pretty URLs persist through the same route but as their own option, so
+    // a rewrite flush only fires when these two fields change.
+    const updatePretty = (key, value) => {
+        const next = { ...prettyUrls, [key]: value };
+        setPrettyUrls(next);
+        (async () => {
+            setSaving(true);
+            setError('');
+            setSuccess('');
+            try {
+                const res = await fetch(`${restUrl}seo-settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+                    body: JSON.stringify({ settings, pretty_urls: { enabled: next.enabled, base: next.base } }),
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                setPrettyUrls(data.pretty_urls || next);
+                setSuccess('Saved. Permalinks refresh on your next visit to any admin page.');
+            } catch (e) {
+                setError(e.message || 'Save failed.');
+            } finally {
+                setSaving(false);
+            }
+        })();
     };
 
     if (loading || !settings) {
@@ -150,6 +179,56 @@ export default function SeoSettings({ bootstrap }) {
                     </p>
                 )}
             </section>
+
+            {prettyUrls && (
+                <section className="hof-ai-settings-section">
+                    <h3 className="hof-ai-settings-section-title">Pretty faceted URLs</h3>
+                    {!prettyUrls.available && (
+                        <p className="hof-ai-settings-msg hof-ai-settings-msg--error">
+                            Pretty URLs need non-plain permalinks. Set a permalink structure under
+                            Settings → Permalinks first.
+                        </p>
+                    )}
+                    {prettyUrls.warning && (
+                        <p className="hof-ai-settings-msg hof-ai-settings-msg--error">{prettyUrls.warning}</p>
+                    )}
+                    <div className="hof-ai-settings-input-row">
+                        <label className="hof-ai-settings-label">
+                            <input
+                                type="checkbox"
+                                checked={!!prettyUrls.enabled}
+                                disabled={saving || !prettyUrls.available}
+                                onChange={(e) => updatePretty('enabled', e.target.checked)}
+                            />
+                            {' '}Rewrite filters into the path
+                        </label>
+                        <p className="hof-ai-settings-row-sub">
+                            Turns <code>/shop/?hof[brand]=nike</code> into <code>/shop/filter/brand/nike/</code> on
+                            the shop and product archives — clean, crawlable, shareable. Legacy query URLs
+                            301-redirect to the pretty form.
+                        </p>
+                    </div>
+                    <div className="hof-ai-settings-input-row">
+                        <label className="hof-ai-settings-label">
+                            URL segment
+                            {' '}
+                            <input
+                                type="text"
+                                className="hof-ai-settings-input"
+                                style={{ width: '8rem', display: 'inline-block' }}
+                                value={prettyUrls.base ?? 'filter'}
+                                disabled={saving || !prettyUrls.available}
+                                onBlur={(e) => updatePretty('base', e.target.value || 'filter')}
+                                onChange={(e) => setPrettyUrls({ ...prettyUrls, base: e.target.value })}
+                            />
+                        </label>
+                        <p className="hof-ai-settings-row-sub">
+                            The reserved path segment, default <code>filter</code>. Change it only if a real
+                            category or page on your store is literally named “filter”.
+                        </p>
+                    </div>
+                </section>
+            )}
         </div>
     );
 }

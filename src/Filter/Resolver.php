@@ -254,16 +254,15 @@ final class Resolver implements IdResolver {
     }
 
     /**
-     * Read filter state from the current request's `?hof[*]` params.
+     * Read the current request's filter state — pretty path ⊕ legacy ?hof[*].
+     *
+     * Delegates to Routing\FilterState so every caller is pretty-URL-aware.
+     * Kept as the public API; FilterState owns the raw request read.
      *
      * @return array<string, mixed>
      */
     public static function parse_request_filters(): array {
-        if ( ! isset( $_GET['hof'] ) || ! is_array( $_GET['hof'] ) ) {
-            return [];
-        }
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only, sanitized below.
-        return self::sanitize_filter_state( wp_unslash( $_GET['hof'] ) );
+        return \HookedOnFacets\Routing\FilterState::current();
     }
 
     // ── Internals ───────────────────────────────────────────────────────────

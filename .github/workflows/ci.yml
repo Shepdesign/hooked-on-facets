@@ -129,5 +129,6 @@ jobs:
           globs: |
             *.md
             docs/**/*.md
+            !docs/superpowers
             !node_modules
             !vendor
