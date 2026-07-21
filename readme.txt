@@ -49,9 +49,11 @@ and Divi.
 
 = Also included =
 
-SEO handling for filtered URLs (canonical + conditional noindex), an analytics
-dashboard (facet usage, zero-result combinations, latency percentiles), a full CSS
-custom-property theming UI, and multisite support.
+* SEO handling for filtered URLs (canonical + conditional noindex).
+* Pretty faceted URLs — opt-in `/shop/filter/brand/nike/` paths with canonical + 301 handling.
+* An analytics dashboard (facet usage, zero-result combinations, latency percentiles).
+* A full CSS custom-property theming UI.
+* Multisite support.
 
 == Installation ==
 

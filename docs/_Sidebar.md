@@ -14,6 +14,7 @@
 **🧠 concepts**
 - [[Core Concepts|Core-Concepts]]
 - [[Architecture]]
+- [[Pretty URLs|Pretty-URLs]]
 - [[Brand Voice|Brand-Voice]]
 
 **🎛️ facet types**

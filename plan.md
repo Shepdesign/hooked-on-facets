@@ -205,6 +205,11 @@ Net-new value beyond the original roadmap.
   (7.5×)**, so `resolve()` p95 went **~465ms → ~63ms** *uncached*. `COUNT(DISTINCT
   object_id)` is retained (not `COUNT(*)`) so multi-row-per-object meta facets
   still count each object once. SQL shape locked by a `ResolverTest` case.
+- [x] **Pretty faceted URLs** — opt-in `/shop/filter/brand/nike/` paths on the
+  shop and product category/tag/attribute archives, with canonical ordering,
+  301s from legacy/non-canonical URLs, hard 404s for unresolvable paths, and
+  a client-side encoder so AJAX filtering stays in sync (`src/Routing/`,
+  `docs/pretty-urls.md`).
 
 ### Deferred — gated on a live third-party environment
 
