@@ -102,6 +102,8 @@ block, or your page builder's binding (Elementor Query ID, Bricks CSS class, etc
   and palette, eyedropper button, swiper done-card) could stay visible because
   author `display` rules beat the browser's `[hidden]` default. The public
   stylesheet now ships a scoped guard.
+* Fixed: the Visual DNA color map read the legacy `swatch_color` term-meta key,
+  so palettes saved through the swatch fields UI never matched.
 
 = 1.0.0 =
 * First stable release. Promotes the feature-complete 0.13.x line to general
