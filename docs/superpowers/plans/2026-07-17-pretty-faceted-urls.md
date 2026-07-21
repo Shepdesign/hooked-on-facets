@@ -1745,6 +1745,27 @@ And in `save_seo_settings()` (line ~367), insert **before** the final `return $t
         }
 ```
 
+And extend the GET response's `pretty_urls` array with a collision warning (a term or
+page slugged exactly like the base segment gets its nested/paginated URLs captured by
+the rewrite rules — Task 5 review finding). Add a `warning` key computed like:
+
+```php
+        $base    = \HookedOnFacets\Routing\PrettyUrls::base();
+        $warning = null;
+        foreach ( [ 'product_cat', 'product_tag' ] as $collision_tax ) {
+            if ( function_exists( 'term_exists' ) && term_exists( $base, $collision_tax ) ) {
+                $warning = sprintf(
+                    /* translators: %s: the configured URL segment */
+                    __( 'A store term is slugged "%s" — its archive URLs will collide with pretty filter URLs. Change the URL segment below.', 'hooked-on-facets' ),
+                    $base
+                );
+                break;
+            }
+        }
+        // ...include as 'warning' => $warning in the pretty_urls response array;
+        // SeoSettings.jsx renders it as an error-styled notice when non-null.
+```
+
 - [ ] **Step 2: Extend the admin screen**
 
 In `admin/src/components/SeoSettings.jsx`:
@@ -1869,6 +1890,7 @@ git commit -m "feat(settings): pretty-URL toggle and base segment on the SEO scr
 Design locked here:
 
 - One pure workhorse: `pretty_url_for( string $current_url, array $state, UrlCodec $codec ): string`. It strips hof params and the `/{base}/…` suffix from the current URL (preserving a `/page/N/` pagination segment and all non-hof query params), then appends `encode($state)`'s canonical path and tail. Used by both the canonical tag and the redirect decision — one implementation, no drift.
+- **The strip MUST also remove a bare `hof_path` query param** (the `str_starts_with( $key, 'hof' )` condition already catches it — keep that condition and pin it with a test). `hof_path` is a public query var, so `/shop/?hof_path=brand/nike` serves the same content as the pretty path, and `$_GET` takes precedence over rule-derived vars in `WP::parse_request` — both forms must 301 to the clean pretty URL, never re-emit `hof_path` in the target (Task 5 review finding).
 - `redirect_target(...)` wraps it with the loop guard: returns `''` when the computed target equals the current URL (after trailing-slash normalization) or when nothing is path-eligible.
 - Glue: `maybe_redirect()` on `template_redirect` (priority 1) — GET only, pretty enabled, not admin, not an invalid-path 404 (RewriteManager's guard owns that), state non-empty.
 - `print_canonical()` prefers the pretty target when pretty is enabled; existing plain behavior (and SEO-plugin deference, and noindex logic) is untouched.
@@ -1997,6 +2019,24 @@ use HookedOnFacets\Routing\UrlCodec;
             [ 'price' => [ 'min' => 10 ] ],
             $this->prettyCodec()
         ) );
+    }
+
+    public function test_pretty_url_for_strips_bare_hof_path_param(): void {
+        $this->withOptions();
+        $this->withTrailingSlashit();
+        $seo = new SeoManager();
+
+        // hof_path is a public query var: /shop/?hof_path=brand/nike serves the
+        // same content as the pretty path and must canonicalize to it — the
+        // target must never re-emit hof_path (else the 301 loop-guard parks a
+        // permanent duplicate).
+        $out = $seo->pretty_url_for(
+            'https://shop.test/shop/?hof_path=brand%2Fnike&utm=x',
+            [ 'brand' => [ 'nike' ] ],
+            $this->prettyCodec()
+        );
+
+        self::assertSame( 'https://shop.test/shop/filter/brand/nike/?utm=x', $out );
     }
 ```
 
@@ -2890,6 +2930,8 @@ composer test && npx vitest run && npm run build
 Expected: PHP suite green, JS suite green, admin + public bundles build clean.
 
 Manual smoke (Docker sandbox, if running): enable the toggle on the SEO screen, visit `/shop/filter/<facet>/<value>/`, confirm filtered results, view source for the canonical tag and crawlable links, hit the legacy `?hof[...]` URL and confirm the 301.
+
+Additional sandbox checks from the Task 5 review: a category term slugged exactly `filter` (its paginated archive must survive, or the base-collision warning must surface on the SEO screen); shop-page-as-front-page (known-unsupported — confirm no rules emitted for root, no breakage); a non-public product attribute (no rules emitted); `/shop/?hof_path=brand/nike` and `/shop/filter/brand/nike/?hof_path=brand/adidas` (both must 301 to clean pretty URLs); deactivate the plugin and confirm `/filter/` URLs 404 rather than serving unfiltered 200s.
 
 - [ ] **Step 5: Commit**
 
