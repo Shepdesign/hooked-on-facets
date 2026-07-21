@@ -221,6 +221,7 @@ final class Plugin {
             \HookedOnFacets\Frontend\Shortcodes::class,
             \HookedOnFacets\Frontend\BlockRegistrar::class,
             \HookedOnFacets\Seo\SeoManager::class,
+            \HookedOnFacets\Routing\RewriteManager::class,
             \HookedOnFacets\Integrations\Elementor::class,
             \HookedOnFacets\Integrations\Bricks::class,
             \HookedOnFacets\Integrations\Breakdance::class,
