@@ -48,7 +48,7 @@ actually has working rewrite rules behind it.
 
 ## URL anatomy
 
-```
+```text
 /shop/filter/brand/nike/color/blue/color/red/?hof[price][min]=10&hof[search]=oak
      └base┘  └───────── path segments ─────────┘  └──────── tail ────────┘
 ```
